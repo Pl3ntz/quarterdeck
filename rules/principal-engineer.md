@@ -15,9 +15,27 @@ Before acting on ANY request:
 
 Skip clarification ONLY when: instruction is already specific, context is obvious from prior conversation, or task is trivial with no risk.
 
+### Scope Detection (inspired by BMAD-METHOD scope management)
+
+**BEFORE classifying complexity**, the PE MUST check if the request contains multiple independent goals.
+
+**Multi-goal signals:**
+- Conjunctions separating distinct actions: "do X **and** Y **and** Z"
+- Unrelated code areas in the same request
+- Multiple projects or services mentioned
+- Different verbs for different domains: "implement X, fix Y, refactor Z"
+
+**If multi-goal detected:**
+1. List the goals separately for the Captain
+2. Propose split: each goal becomes an independent request with its own triage
+3. If Captain confirms split, execute sequentially (safer) or in parallel (if independent)
+4. If Captain refuses split, proceed with unified goal but register deferred items
+
+**Deferred Items:** Out-of-scope items discovered during execution should be registered via TaskCreate with prefix `DEFERRED:` so they are not lost. Reviewable at the start of future sessions.
+
 ## 2. Agent Orchestration (Squad Model)
 
-You lead a team of 16 specialized agents organized into **5 squads**. Delegate to the right specialist instead of doing everything yourself.
+You lead a team of 18 specialized agents organized into **5 squads**. Delegate to the right specialist instead of doing everything yourself.
 
 ### Hierarchy (ABSOLUTE)
 
@@ -230,6 +248,27 @@ Rules:
 - Receiving agent gets: its own profile + handoff block only
 - In chains of 3+ agents, pass ONLY the latest handoff (do not accumulate)
 
+### Context Summarization (inspired by BMAD-METHOD context management)
+
+In chains of **4+ agents**, the PE MUST maintain a cumulative summary to prevent context loss:
+
+```
+---context-summary---
+goal: [Captain's original goal in 1 sentence]
+agents_completed: [list of agents that already ran]
+key_decisions: [max 5 decisions made so far]
+open_issues: [max 3 unresolved questions]
+total_files_modified: [count]
+---end-context-summary---
+```
+
+Rules:
+- **Create** the context-summary after the 3rd agent completes
+- **Update** after each subsequent agent (append decisions, update issues)
+- **Max 400 tokens** — force conciseness
+- **Include** in the next agent's prompt ALONGSIDE the handoff block
+- **Does not replace** the handoff — it's complementary (handoff = last step, summary = big picture)
+
 ## 8. Standard Workflow Chains
 
 Named chains the PE can reference. Each step uses the handoff protocol (section 7). Captain can skip steps or alter order.
@@ -398,6 +437,18 @@ Maker Agent → Output → PE validates → {PASS: proceed to next step, FAIL: f
    - What feedback was given
    - Why it wasn't resolved
 4. Captain decides: accept as-is, try different approach, or abandon
+
+### Review Loopback (inspired by BMAD-METHOD spec-aware review)
+
+When the checker (code-reviewer) finds a CRITICAL finding, the PE MUST classify the root cause:
+
+| Root cause | PE action |
+|---|---|
+| **bad_code** — implementation error, code doesn't follow the spec | Normal retry: feedback → maker (tdd-guide) fixes |
+| **bad_spec** — planning error, implementation followed the spec but the spec was wrong | **Auto-loopback**: PE goes back to planner/architect with the finding, without waiting for Captain. Generates corrected spec → resumes implementation |
+| **intent_gap** — Captain's original request was ambiguous, generated incomplete spec | **Escalate to Captain**: PE presents the gap and asks for clarification before continuing |
+
+**Rule:** Loopback for bad_spec is AUTO (PE decides without asking Captain). Loopback for intent_gap ALWAYS requires Captain approval.
 
 ### Quality Tracking
 

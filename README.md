@@ -4,12 +4,12 @@
 
 <p align="center">
   <strong>A ponte de comando para Claude Code</strong><br>
-  Transforme o Claude em uma equipe completa de engenharia com 16 agentes especializados trabalhando em paralelo.
+  Transforme o Claude em uma equipe completa de engenharia com 18 agentes especializados trabalhando em paralelo.
 </p>
 
 <p align="center">
   <a href="#instala%C3%A7%C3%A3o">Instalação</a> &bull;
-  <a href="#os-16-agentes">Agentes</a> &bull;
+  <a href="#os-18-agentes">Agentes</a> &bull;
   <a href="docs/ARCHITECTURE.md">Arquitetura</a> &bull;
   <a href="docs/CUSTOMIZATION.md">Customização</a> &bull;
   <a href="docs/PATTERNS-APPLIED.md">Padrões</a>
@@ -21,13 +21,13 @@
 
 **Quarterdeck** é a área de comando de um navio — onde o Captain coordena toda a tripulação. Neste projeto, **você é o Captain**.
 
-O [Claude Code](https://claude.ai/code) (ferramenta CLI da Anthropic para desenvolvimento com IA) por padrão opera como um único agente genérico. O Quarterdeck transforma ele em uma **equipe de 16 especialistas** — cada um focado em uma área (code review, segurança, testes, deploy, pesquisa, etc.) — que trabalham **em paralelo**, como uma squad real de desenvolvedores.
+O [Claude Code](https://claude.ai/code) (ferramenta CLI da Anthropic para desenvolvimento com IA) por padrão opera como um único agente genérico. O Quarterdeck transforma ele em uma **equipe de 18 especialistas** — cada um focado em uma área (code review, segurança, testes, deploy, pesquisa, etc.) — que trabalham **em paralelo**, como uma squad real de desenvolvedores.
 
 ### Antes vs Depois
 
 | Sem Quarterdeck | Com Quarterdeck |
 |---|---|
-| 1 agente genérico faz tudo | 16 especialistas, cada um no que é bom |
+| 1 agente genérico faz tudo | 18 especialistas, cada um no que é bom |
 | Execução sequencial (1 coisa por vez) | Execução paralela (3-5 agentes simultaneamente) |
 | Output livre e imprevisível | Output padronizado (ACHADOS + RESUMO) |
 | Sem memória de erros passados | Agentes lembram e avisam sobre erros recorrentes |
@@ -40,7 +40,7 @@ O [Claude Code](https://claude.ai/code) (ferramenta CLI da Anthropic para desenv
 ### Quem é quem
 
 ```
-Captain (você) ──→ PE (Principal Engineer) ──→ 16 Agentes
+Captain (você) ──→ PE (Principal Engineer) ──→ 18 Agentes
    decide              coordena                  executam
 ```
 
@@ -48,7 +48,7 @@ Captain (você) ──→ PE (Principal Engineer) ──→ 16 Agentes
 |-------|--------|-----------|
 | **Captain** | **Você** — a pessoa usando o Claude Code | Dá demandas, aprova planos, toma decisões |
 | **PE** | O Claude Code com as rules do Quarterdeck | Interpreta sua demanda, escolhe quais agentes usar, coordena trabalho em paralelo, sintetiza resultados |
-| **Agentes** | 16 especialistas (arquivos `.md`) | Cada um executa uma tarefa focada e reporta ao PE |
+| **Agentes** | 18 especialistas (arquivos `.md`) | Cada um executa uma tarefa focada e reporta ao PE |
 
 **Regra absoluta:** Agentes nunca agem sozinhos. O PE coordena tudo e apresenta a você. Você decide.
 
@@ -85,9 +85,9 @@ Wave 4 — Validação (2 agentes em paralelo):
 
 ---
 
-## Os 16 Agentes
+## Os 18 Agentes
 
-Organizados em 5 squads (equipes funcionais):
+Organizados em 6 squads (equipes funcionais):
 
 ### Planning & Design — pensam antes de fazer
 
@@ -129,6 +129,13 @@ Organizados em 5 squads (equipes funcionais):
 |--------|-----------|--------|
 | **deep-researcher** | Pesquisa profunda na web com triangulação de fontes | Opus |
 | **doc-updater** | Gera documentação a partir do código real | Haiku |
+
+### Language — revisam ortografia e gramática
+
+| Agente | O que faz | Modelo |
+|--------|-----------|--------|
+| **ortografia-reviewer** | Revisor PT-BR nível ENEM nota 1000 (ortografia, gramática, concordância, regência, crase) | Sonnet |
+| **grammar-reviewer** | Revisor EN-US nível GRE score 6/6 (spelling, grammar, punctuation, style) | Sonnet |
 
 > Veja [docs/AGENTS.md](docs/AGENTS.md) para o catálogo completo com ferramentas e exemplos de output.
 
