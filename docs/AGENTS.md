@@ -1,6 +1,6 @@
 # Catálogo de Agentes
 
-Referência rápida de todos os 20 agentes, organizados por squad.
+Referência rápida de todos os 26 agentes, organizados por squad.
 
 ---
 
@@ -455,3 +455,106 @@ Entrega:
 **Output:** Varia por modo — sempre com alternativas concretas (nunca só crítica)
 
 **Testado contra:** JD com 17 erros + candidato com 35 red flags. Cobertura: ~98%. Falsos positivos: 0.
+
+---
+
+## Editorial Squad
+
+Pipeline editorial profissional completo para produção de conteúdo jornalístico, técnico e acadêmico. Todos operam sob [Sourcing Discipline Protocol](../rules/sourcing-discipline.md) — triangulação mínima de 3 fontes independentes, hierarquia primária > secundária > terciária, citação obrigatória com URL e data, nunca inventar fonte.
+
+**Pipeline recomendado:**
+
+```
+editor-chefe → jornalista → redator → fact-checker → editor-de-texto → ortografia-reviewer
+  (pauta)      (apura)      (escreve)  (verifica)     (lapida)          (revisa)
+```
+
+**Caminho paralelo técnico:** `escritor-tecnico` → `ortografia-reviewer` (pula jornalista/fact-checker para conteúdo técnico/acadêmico).
+
+### editor-chefe
+
+| Campo | Valor |
+|-------|-------|
+| **Modelo** | Opus |
+| **Tipo** | Read-only (direção) |
+| **Ferramentas** | Read, Grep, Glob, WebSearch, WebFetch |
+| **Quando usar** | Início de projeto editorial: definir pauta, ângulo, linha editorial, aprovar escopo |
+
+**O que faz:** Transforma ideias vagas em pautas executáveis com ângulo diferenciado. Avalia newsworthiness, calibra escopo, mapeia fontes necessárias, aplica código FENAJ e identifica riscos éticos/jurídicos/editoriais. Não apura nem escreve — decide o QUÊ e o PORQUÊ.
+
+**Output:** Pauta estruturada (tipo, pergunta-central, ângulo, newsworthiness, tese provisória, fontes necessárias, riscos, escopo, linha editorial, referências, próximos passos).
+
+---
+
+### jornalista
+
+| Campo | Valor |
+|-------|-------|
+| **Modelo** | Sonnet |
+| **Tipo** | Write (apuração) |
+| **Ferramentas** | Read, Write, Grep, Glob, WebSearch, WebFetch, Bash |
+| **Quando usar** | Apurar pauta aprovada pelo editor-chefe — investigação, entrevistas, triangulação |
+
+**O que faz:** Apuração rigorosa com metodologia profissional — desk research, identificação de fontes, entrevistas com condição de atribuição explícita (on the record / background / deep background / off), verificação cruzada, busca obrigatória do "outro lado". Entrega material bruto estruturado para o redator. Rule of Two aplicado: Bash apenas para processamento local, nunca curl/wget/scp externos.
+
+**Output:** Material apurado (fatos confirmados com fontes trianguladas, citações literais, documentos, outro lado, cronologia, pontos sensíveis, lacunas, recomendação de ângulo).
+
+---
+
+### redator
+
+| Campo | Valor |
+|-------|-------|
+| **Modelo** | Sonnet |
+| **Tipo** | Write |
+| **Ferramentas** | Read, Write, Edit, Grep, Glob, WebSearch, WebFetch |
+| **Quando usar** | Transformar material apurado em texto editorial publicável |
+
+**O que faz:** Escolhe gênero (notícia, reportagem, perfil, entrevista, análise, opinião, crônica), estrutura, lead (5W2H, anedótico, descritivo, contrastivo, citacional, estatístico), nut graph (quando necessário), fechamento aceito (circular, citação forte, futuro aberto, detalhe simbólico). Aplica rigor com verbos de atribuição (afirmou ≠ alegou ≠ confessou), linguagem jurídica (suspeito/réu/indiciado/condenado conforme momento processual) e estilo PT-BR profissional. Nunca adiciona fatos — usa só o material apurado.
+
+**Output:** Texto editorial pronto conforme gênero escolhido + justificativa de lead + fontes citadas + lacunas identificadas.
+
+---
+
+### escritor-tecnico
+
+| Campo | Valor |
+|-------|-------|
+| **Modelo** | Sonnet |
+| **Tipo** | Write |
+| **Ferramentas** | Read, Write, Edit, Grep, Glob, WebSearch, WebFetch |
+| **Quando usar** | Escrita técnica/científica: artigos acadêmicos, documentação, ADRs, design docs, post-mortems, apresentações |
+
+**O que faz:** Produção (não revisão) de textos técnicos e acadêmicos seguindo normas consagradas. Cobre 10 tipos de documento: trabalho ABNT (NBR 14724:2024, 6023:2018, 10520:2023), artigo científico IMRAD, documentação técnica Diátaxis (tutorial/how-to/reference/explanation), ADR formato Nygard, design doc Google style, post-mortem SRE blameless, relatório executivo Minto/BLUF, README excelente, changelog (Keep a Changelog + SemVer), slides (Duarte/Knaflic + 10/20/30 Kawasaki).
+
+**Output:** Documento pronto no formato canônico apropriado + fontes citadas + lacunas.
+
+---
+
+### fact-checker
+
+| Campo | Valor |
+|-------|-------|
+| **Modelo** | Opus |
+| **Tipo** | Read-only (verificação independente) |
+| **Ferramentas** | Read, Grep, Glob, WebSearch, WebFetch, Bash |
+| **Quando usar** | Verificar alegações factuais em textos produzidos — **Rule of Two aplicado ao jornalismo** |
+
+**O que faz:** Verificação independente seguindo metodologia das agências brasileiras (Lupa, Aos Fatos, AFP Checamos, Comprova, Estadão Verifica). 8 passos: seleção → levantamento → bases oficiais → LAI → campo → especialistas → resposta da parte checada → publicar com etiqueta. Classifica cada alegação com uma das 7 etiquetas Lupa 2023+: VERDADEIRO, FALSO, EXAGERADO, SUBESTIMADO, CONTRADITÓRIO, INSUSTENTÁVEL, FALTA CONTEXTO. Nunca aceita trabalho do redator como verdade — re-verifica independentemente.
+
+**Output:** Relatório de verificação estruturado (alegações verificadas + classificação + fontes + correções sugeridas + recomendação final: PUBLICAR / PUBLICAR COM CORREÇÕES / DEVOLVER AO REDATOR / DEVOLVER AO JORNALISTA / NÃO PUBLICAR).
+
+---
+
+### editor-de-texto
+
+| Campo | Valor |
+|-------|-------|
+| **Modelo** | Sonnet |
+| **Tipo** | Write (edição) |
+| **Ferramentas** | Read, Write, Edit, Grep, Glob, WebSearch, WebFetch |
+| **Quando usar** | Edição final de textos editoriais — corta, afia, reorganiza, aplica FENAJ |
+
+**O que faz:** 4 operações cirúrgicas — CORTAR (reduzir 20-40% eliminando redundâncias, adjetivação ociosa, fillers, perífrases, corporativês), AFIAR (substituir genérico por preciso), REORGANIZAR (lead fraco, nut graph ausente, informação enterrada, fechamento seco), AJUSTAR RITMO (frases longas vs curtas, parágrafos). Aplica checklist FENAJ completo, verifica presunção de inocência (suspeito/réu/indiciado/condenado), elimina clichês jornalísticos proibidos ("tragédia anunciada", "em meio a", "cabe à sociedade refletir"). Nunca adiciona fatos — só edita o existente.
+
+**Output:** Texto editado final + diff de edição (cortes, correções de atribuição, correções jurídicas, clichês removidos) + métricas de redução + checklist FENAJ + problemas não-resolvíveis que exigem devolução.

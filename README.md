@@ -4,12 +4,12 @@
 
 <p align="center">
   <strong>A ponte de comando para Claude Code</strong><br>
-  Transforme o Claude em uma equipe completa de engenharia com 20 agentes especializados trabalhando em paralelo.
+  Transforme o Claude em uma equipe completa de engenharia com 26 agentes especializados trabalhando em paralelo.
 </p>
 
 <p align="center">
   <a href="#instala%C3%A7%C3%A3o">Instalação</a> &bull;
-  <a href="#os-20-agentes">Agentes</a> &bull;
+  <a href="#os-26-agentes">Agentes</a> &bull;
   <a href="docs/ARCHITECTURE.md">Arquitetura</a> &bull;
   <a href="docs/CUSTOMIZATION.md">Customização</a> &bull;
   <a href="docs/PATTERNS-APPLIED.md">Padrões</a>
@@ -21,13 +21,13 @@
 
 **Quarterdeck** é a área de comando de um navio — onde o Captain coordena toda a tripulação. Neste projeto, **você é o Captain**.
 
-O [Claude Code](https://claude.ai/code) (ferramenta CLI da Anthropic para desenvolvimento com IA) por padrão opera como um único agente genérico. O Quarterdeck transforma ele em uma **equipe de 20 especialistas** — cada um focado em uma área (code review, segurança, testes, deploy, pesquisa, etc.) — que trabalham **em paralelo**, como uma squad real de desenvolvedores.
+O [Claude Code](https://claude.ai/code) (ferramenta CLI da Anthropic para desenvolvimento com IA) por padrão opera como um único agente genérico. O Quarterdeck transforma ele em uma **equipe de 26 especialistas** — cada um focado em uma área (code review, segurança, testes, deploy, pesquisa, etc.) — que trabalham **em paralelo**, como uma squad real de desenvolvedores.
 
 ### Antes vs Depois
 
 | Sem Quarterdeck | Com Quarterdeck |
 |---|---|
-| 1 agente genérico faz tudo | 20 especialistas, cada um no que é bom |
+| 1 agente genérico faz tudo | 26 especialistas, cada um no que é bom |
 | Execução sequencial (1 coisa por vez) | Execução paralela (3-5 agentes simultaneamente) |
 | Output livre e imprevisível | Output padronizado (ACHADOS + RESUMO) |
 | Sem memória de erros passados | Agentes lembram e avisam sobre erros recorrentes |
@@ -40,7 +40,7 @@ O [Claude Code](https://claude.ai/code) (ferramenta CLI da Anthropic para desenv
 ### Quem é quem
 
 ```
-Captain (você) ──→ PE (Principal Engineer) ──→ 20 Agentes
+Captain (você) ──→ PE (Principal Engineer) ──→ 26 Agentes
    decide              coordena                  executam
 ```
 
@@ -48,7 +48,7 @@ Captain (você) ──→ PE (Principal Engineer) ──→ 20 Agentes
 |-------|--------|-----------|
 | **Captain** | **Você** — a pessoa usando o Claude Code | Dá demandas, aprova planos, toma decisões |
 | **PE** | O Claude Code com as rules do Quarterdeck | Interpreta sua demanda, escolhe quais agentes usar, coordena trabalho em paralelo, sintetiza resultados |
-| **Agentes** | 20 especialistas (arquivos `.md`) | Cada um executa uma tarefa focada e reporta ao PE |
+| **Agentes** | 26 especialistas (arquivos `.md`) | Cada um executa uma tarefa focada e reporta ao PE |
 
 **Regra absoluta:** Agentes nunca agem sozinhos. O PE coordena tudo e apresenta a você. Você decide.
 
@@ -85,9 +85,9 @@ Wave 4 — Validação (2 agentes em paralelo):
 
 ---
 
-## Os 20 Agentes
+## Os 26 Agentes
 
-Organizados em 7 squads (equipes funcionais):
+Organizados em 8 squads (equipes funcionais):
 
 ### Planning & Design — pensam antes de fazer
 
@@ -143,6 +143,25 @@ Organizados em 7 squads (equipes funcionais):
 |--------|-----------|--------|
 | **seo-reviewer** | Audita SEO técnico: Core Web Vitals, meta tags, structured data, crawlability, rendering | Sonnet |
 | **tech-recruiter** | Recrutamento tech: job descriptions, avaliação de candidatos, seniority, entrevistas, compensação | Sonnet |
+
+### Editorial — produção de conteúdo com fontes verificadas
+
+Pipeline editorial profissional completo. Todos operam sob [Sourcing Discipline Protocol](rules/sourcing-discipline.md) — triangulação mínima de 3 fontes, hierarquia primária/secundária/terciária, citação obrigatória com URL e data, nunca inventar.
+
+| Agente | O que faz | Modelo |
+|--------|-----------|--------|
+| **editor-chefe** | Direção editorial: pauta, ângulo, linha do veículo, aprovação de projetos | Opus |
+| **jornalista** | Apuração, investigação, entrevistas, triangulação de fontes, material bruto | Sonnet |
+| **redator** | Redação editorial: lead, pirâmide invertida, narrativa, voz e ritmo | Sonnet |
+| **escritor-tecnico** | Escrita técnica/acadêmica: ABNT, IMRAD, Diátaxis, ADRs, design docs, post-mortems | Sonnet |
+| **fact-checker** | Verificação independente (Rule of Two): metodologia Lupa, 7 etiquetas, triangulação 3+ fontes | Opus |
+| **editor-de-texto** | Edição final: cortes, FENAJ, linguagem jurídica, lead/fechamento | Sonnet |
+
+**Pipeline recomendado:**
+```
+editor-chefe → jornalista → redator → fact-checker → editor-de-texto → ortografia-reviewer
+  (pauta)      (apura)      (escreve)  (verifica)     (lapida)          (revisa)
+```
 
 > Veja [docs/AGENTS.md](docs/AGENTS.md) para o catálogo completo com ferramentas e exemplos de output.
 

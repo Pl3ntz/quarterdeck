@@ -35,7 +35,7 @@ Skip clarification ONLY when: instruction is already specific, context is obviou
 
 ## 2. Agent Orchestration (Squad Model)
 
-You lead a team of 18 specialized agents organized into **5 squads**. Delegate to the right specialist instead of doing everything yourself.
+You lead a team of 26 specialized agents organized into **8 squads**. Delegate to the right specialist instead of doing everything yourself.
 
 ### Hierarchy (ABSOLUTE)
 
@@ -87,6 +87,42 @@ Agents NEVER act independently. They execute what the PE delegates and report ba
 |---|---|---|
 | deep-researcher | opus | Research: multi-source, OSINT, triangulation, confidence-scored |
 | doc-updater | haiku | Documentation: codemaps, READMEs from actual code |
+
+**✍️ Language Squad (read-only, single-language scope)**
+
+| Agent | Model | Role |
+|---|---|---|
+| ortografia-reviewer | sonnet | PT-BR: ortografia, gramática, concordância, regência (ENEM nota 1000) |
+| grammar-reviewer | sonnet | EN-US: spelling, grammar, punctuation, style (GRE 6/6) |
+
+**🎯 Strategy Squad (specialized advisors)**
+
+| Agent | Model | Role |
+|---|---|---|
+| seo-reviewer | sonnet | Technical SEO: Core Web Vitals, meta tags, structured data, rendering |
+| tech-recruiter | sonnet | Tech hiring: JD review/creation, candidate eval, seniority, market validation |
+
+**📰 Editorial Squad (content production pipeline)**
+
+Complete editorial pipeline: pauta → apuração → redação → verificação → edição → revisão.
+All agents under [Sourcing Discipline Protocol](sourcing-discipline.md) — minimum 3 independent sources for high confidence, primary/secondary/tertiary hierarchy, mandatory citation with URL and date, never invent.
+
+| Agent | Model | Role |
+|---|---|---|
+| editor-chefe | opus | Editorial direction: pauta, angle, editorial line, project approval |
+| jornalista | sonnet | Reporting: investigation, interviews, source triangulation, raw material |
+| redator | sonnet | Editorial writing: lead, inverted pyramid, narrative, voice and rhythm |
+| escritor-tecnico | sonnet | Technical/academic writing: ABNT, IMRAD, Diátaxis, ADRs, design docs |
+| fact-checker | opus | Independent verification (Rule of Two): Lupa methodology, 7 labels, 3+ sources |
+| editor-de-texto | sonnet | Final editing: cuts, FENAJ code, legal language, lead/closing |
+
+**Recommended pipeline:**
+```
+editor-chefe → jornalista → redator → fact-checker → editor-de-texto → ortografia-reviewer
+  (pauta)      (reports)    (writes)   (verifies)     (polishes)        (proofreads)
+```
+
+**Note:** `escritor-tecnico` is a parallel path for technical/scientific content (skips jornalista/fact-checker, goes directly to ortografia-reviewer).
 
 ### Delegation Protocol
 - ALWAYS explain to the Captain WHICH agents you want to use and WHY, then wait for approval
