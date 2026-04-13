@@ -1,333 +1,337 @@
 <p align="center">
-  <img src="assets/logo-full.png" alt="Quarterdeck — Agent Orchestration" width="600">
+  <img src="assets/logo-full.png" alt="Quarterdeck — Agent Orchestration for Claude Code" width="600">
 </p>
 
 <p align="center">
-  <strong>A ponte de comando para Claude Code</strong><br>
-  Transforme o Claude em uma equipe completa de engenharia com 26 agentes especializados trabalhando em paralelo.
+  <strong>The command bridge for Claude Code</strong><br>
+  Turn Claude into a full engineering team with 26 specialized agents working in parallel.
 </p>
 
 <p align="center">
-  <a href="#instala%C3%A7%C3%A3o">Instalação</a> &bull;
-  <a href="#os-26-agentes">Agentes</a> &bull;
-  <a href="docs/ARCHITECTURE.md">Arquitetura</a> &bull;
-  <a href="docs/CUSTOMIZATION.md">Customização</a> &bull;
-  <a href="docs/PATTERNS-APPLIED.md">Padrões</a>
+  <a href="#quick-start">Quick Start</a> &bull;
+  <a href="#the-26-agents">Agents</a> &bull;
+  <a href="#how-it-works">How It Works</a> &bull;
+  <a href="docs/ARCHITECTURE.md">Architecture</a> &bull;
+  <a href="docs/CUSTOMIZATION.md">Customization</a>
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
+  <img src="https://img.shields.io/badge/agents-26-brightgreen.svg" alt="26 Agents">
+  <img src="https://img.shields.io/badge/squads-8-orange.svg" alt="8 Squads">
+  <img src="https://img.shields.io/badge/Claude_Code-2.1.32+-purple.svg" alt="Claude Code">
 </p>
 
 ---
 
-## O que é
+## What is Quarterdeck?
 
-**Quarterdeck** é a área de comando de um navio — onde o Captain coordena toda a tripulação. Neste projeto, **você é o Captain**.
+**Quarterdeck** is the command area of a ship — where the Captain coordinates the crew. In this project, **you are the Captain**.
 
-O [Claude Code](https://claude.ai/code) (ferramenta CLI da Anthropic para desenvolvimento com IA) por padrão opera como um único agente genérico. O Quarterdeck transforma ele em uma **equipe de 26 especialistas** — cada um focado em uma área (code review, segurança, testes, deploy, pesquisa, etc.) — que trabalham **em paralelo**, como uma squad real de desenvolvedores.
+[Claude Code](https://claude.ai/code) (Anthropic's CLI for AI-assisted development) operates as a single generic agent by default. Quarterdeck transforms it into a **team of 26 specialists** — each focused on one area (code review, security, testing, deployment, research, etc.) — working **in parallel**, like a real engineering squad.
 
-### Antes vs Depois
+### Before vs After
 
-| Sem Quarterdeck | Com Quarterdeck |
+| Without Quarterdeck | With Quarterdeck |
 |---|---|
-| 1 agente genérico faz tudo | 26 especialistas, cada um no que é bom |
-| Execução sequencial (1 coisa por vez) | Execução paralela (3-5 agentes simultaneamente) |
-| Output livre e imprevisível | Output padronizado (ACHADOS + RESUMO) |
-| Sem memória de erros passados | Agentes lembram e avisam sobre erros recorrentes |
-| Você gerencia tudo manualmente | PE (Principal Engineer) orquestra automaticamente |
+| 1 generic agent does everything | 26 specialists, each doing what they're best at |
+| Sequential execution (one thing at a time) | Parallel execution (3-5 agents simultaneously) |
+| Unpredictable, freeform output | Standardized output (FINDINGS + SUMMARY) |
+| No memory of past mistakes | Agents remember and warn about recurring errors |
+| You manage everything manually | PE (Principal Engineer) orchestrates automatically |
 
 ---
 
-## Como funciona
-
-### Quem é quem
-
-```
-Captain (você) ──→ PE (Principal Engineer) ──→ 26 Agentes
-   decide              coordena                  executam
-```
-
-| Papel | Quem é | O que faz |
-|-------|--------|-----------|
-| **Captain** | **Você** — a pessoa usando o Claude Code | Dá demandas, aprova planos, toma decisões |
-| **PE** | O Claude Code com as rules do Quarterdeck | Interpreta sua demanda, escolhe quais agentes usar, coordena trabalho em paralelo, sintetiza resultados |
-| **Agentes** | 26 especialistas (arquivos `.md`) | Cada um executa uma tarefa focada e reporta ao PE |
-
-**Regra absoluta:** Agentes nunca agem sozinhos. O PE coordena tudo e apresenta a você. Você decide.
-
-### Exemplo prático
-
-Você diz: _"Implementa autenticação JWT no projeto"_
-
-O PE automaticamente decompõe em ondas paralelas:
-
-```
-Wave 1 — Reconhecimento (3 agentes em paralelo):
-  ├── Explore: analisa o código atual de autenticação
-  ├── Explore: verifica testes existentes
-  └── deep-researcher: pesquisa best practices JWT 2026
-
-Wave 2 — Planejamento (1 agente):
-  └── planner: cria plano com fases e riscos
-
-     → PE apresenta o plano a você → Você aprova ✓
-
-Wave 3 — Implementação (1 agente):
-  └── tdd-guide: escreve testes primeiro, depois implementa
-
-     → PE mostra o código a você → Você revisa ✓
-
-Wave 4 — Validação (2 agentes em paralelo):
-  ├── code-reviewer: verifica qualidade do código
-  └── security-reviewer: verifica segurança da autenticação
-
-     → PE sintetiza os resultados e apresenta a você
-```
-
-**Resultado:** O que levaria 4 etapas sequenciais acontece em 4 ondas, com as ondas 1 e 4 rodando 3 e 2 agentes **simultaneamente**.
-
----
-
-## Os 26 Agentes
-
-Organizados em 8 squads (equipes funcionais):
-
-### Planning & Design — pensam antes de fazer
-
-| Agente | O que faz | Modelo |
-|--------|-----------|--------|
-| **architect** | Projeta arquitetura, avalia trade-offs, propõe alternativas | Opus |
-| **planner** | Cria planos de implementação com fases, riscos e dependências | Opus |
-
-### Quality Gate — validam sem modificar (sempre rodam em paralelo)
-
-| Agente | O que faz | Modelo |
-|--------|-----------|--------|
-| **code-reviewer** | Revisa código por qualidade, bugs e padrões | Sonnet |
-| **security-reviewer** | Audita segurança de infraestrutura (SSH, firewall, SSL, banco) | Opus |
-| **ux-reviewer** | Verifica acessibilidade, consistência visual, estados de interação | Sonnet |
-| **staff-engineer** | Avalia impacto em outros projetos e dívida técnica | Opus |
-
-### Implementation — escrevem código
-
-| Agente | O que faz | Modelo |
-|--------|-----------|--------|
-| **tdd-guide** | Implementa com TDD (testes primeiro, cobertura 80%+) | Sonnet |
-| **e2e-runner** | Cria e roda testes end-to-end com Playwright | Sonnet |
-| **build-error-resolver** | Corrige erros de build com mudanças mínimas | Haiku |
-| **refactor-cleaner** | Remove código morto e consolida duplicatas | Sonnet |
-
-### Operations — mantêm o sistema rodando
-
-| Agente | O que faz | Modelo |
-|--------|-----------|--------|
-| **incident-responder** | Diagnostica quando o sistema cai (não executa — só recomenda) | Opus |
-| **devops-specialist** | CI/CD, deploy automatizado, systemd, monitoramento | Sonnet |
-| **performance-optimizer** | Encontra gargalos em CPU, memória, queries, cache | Sonnet |
-| **database-specialist** | Schema PostgreSQL, queries lentas, índices, migrations | Sonnet |
-
-### Intelligence — pesquisam e documentam
-
-| Agente | O que faz | Modelo |
-|--------|-----------|--------|
-| **deep-researcher** | Pesquisa profunda na web com triangulação de fontes | Opus |
-| **doc-updater** | Gera documentação a partir do código real | Haiku |
-
-### Language — revisam ortografia e gramática
-
-| Agente | O que faz | Modelo |
-|--------|-----------|--------|
-| **ortografia-reviewer** | Revisor PT-BR nível ENEM nota 1000 (ortografia, gramática, concordância, regência, crase) | Sonnet |
-| **grammar-reviewer** | Revisor EN-US nível GRE score 6/6 (spelling, grammar, punctuation, style) | Sonnet |
-
-### Strategy — SEO e recrutamento
-
-| Agente | O que faz | Modelo |
-|--------|-----------|--------|
-| **seo-reviewer** | Audita SEO técnico: Core Web Vitals, meta tags, structured data, crawlability, rendering | Haiku |
-| **tech-recruiter** | Recrutamento tech: job descriptions, avaliação de candidatos, seniority, entrevistas, compensação | Sonnet |
-
-### Editorial — produção de conteúdo com fontes verificadas
-
-Pipeline editorial profissional completo. Todos operam sob [Sourcing Discipline Protocol](rules/sourcing-discipline.md) — triangulação mínima de 3 fontes, hierarquia primária/secundária/terciária, citação obrigatória com URL e data, nunca inventar.
-
-| Agente | O que faz | Modelo |
-|--------|-----------|--------|
-| **editor-chefe** | Direção editorial: pauta, ângulo, linha do veículo, aprovação de projetos | Opus |
-| **jornalista** | Apuração, investigação, entrevistas, triangulação de fontes, material bruto | Sonnet |
-| **redator** | Redação editorial: lead, pirâmide invertida, narrativa, voz e ritmo | Sonnet |
-| **escritor-tecnico** | Escrita técnica/acadêmica: ABNT, IMRAD, Diátaxis, ADRs, design docs, post-mortems | Sonnet |
-| **fact-checker** | Verificação independente (Rule of Two): metodologia Lupa, 7 etiquetas, triangulação 3+ fontes | Sonnet |
-| **editor-de-texto** | Edição final: cortes, FENAJ, linguagem jurídica, lead/fechamento | Sonnet |
-
-**Pipeline recomendado:**
-```
-editor-chefe → jornalista → redator → fact-checker → editor-de-texto → ortografia-reviewer
-  (pauta)      (apura)      (escreve)  (verifica)     (lapida)          (revisa)
-```
-
-> Veja [docs/AGENTS.md](docs/AGENTS.md) para o catálogo completo com ferramentas e exemplos de output.
-
----
-
-## Instalação
-
-### Pré-requisitos
-
-- [Claude Code](https://claude.ai/code) instalado (`claude --version` ≥ 2.1.32)
-- Conta na Anthropic com acesso ao Claude Code (plano Pro, Max ou Team)
-
-### Passo a passo
+## Quick Start
 
 ```bash
-# 1. Clone o repositório
+# 1. Clone the repository
 git clone https://github.com/Pl3ntz/quarterdeck.git
 
-# 2. Copie os agentes para o Claude Code
+# 2. Copy agents to Claude Code
 cp quarterdeck/agents/*.md ~/.claude/agents/
 
-# 3. Copie as rules de orquestração
+# 3. Copy orchestration rules
 cp quarterdeck/rules/*.md ~/.claude/rules/
 
-# 4. Pronto! Inicie uma nova sessão do Claude Code
+# 4. Start a new Claude Code session
 claude
 ```
 
-O Claude Code detecta automaticamente os agentes em `~/.claude/agents/` e as rules em `~/.claude/rules/`.
+Claude Code auto-discovers agents in `~/.claude/agents/` and rules in `~/.claude/rules/`.
 
-### Configuração do seu projeto
+### Prerequisites
 
-Crie um `CLAUDE.md` na raiz do seu projeto para dar contexto aos agentes:
+- [Claude Code](https://claude.ai/code) installed (`claude --version` ≥ 2.1.32)
+- Anthropic account with Claude Code access (Pro, Max, or Team plan)
+
+### Project Configuration
+
+Create a `CLAUDE.md` at your project root to give agents context:
 
 ```markdown
-# Meu Projeto
+# My Project
 
 ## Stack
 - Backend: Python 3.12 / FastAPI
 - Frontend: TypeScript / React
 - Database: PostgreSQL 16
 
-## Serviços
-- backend (porta 8000)
+## Services
+- backend (port 8000)
 - scheduler
 ```
 
-> Veja [examples/project-config.md](examples/project-config.md) para um template completo.
+> See [examples/project-config.md](examples/project-config.md) for a full template.
 
 ---
 
-## Como o output funciona
+## How It Works
 
-Todo agente retorna no mesmo formato padronizado:
+```
+Captain (you) ──→ PE (Principal Engineer) ──→ 26 Agents
+   decides            orchestrates              execute
+```
+
+| Role | Who | What they do |
+|------|-----|-------------|
+| **Captain** | **You** — the person using Claude Code | Give requests, approve plans, make decisions |
+| **PE** | Claude Code with Quarterdeck rules | Interprets your request, picks which agents to use, coordinates parallel work, synthesizes results |
+| **Agents** | 26 specialists (`.md` files) | Each executes a focused task and reports back to the PE |
+
+**Absolute rule:** Agents never act on their own. The PE coordinates everything and presents results to you. You decide.
+
+### Example
+
+You say: _"Implement JWT authentication"_
+
+The PE automatically decomposes into parallel waves:
+
+```
+Wave 1 — Reconnaissance (3 agents in parallel):
+  ├── Explore: analyzes current auth code
+  ├── Explore: checks existing tests
+  └── deep-researcher: researches JWT best practices
+
+Wave 2 — Planning (1 agent):
+  └── planner: creates phased plan with risks
+
+     → PE presents the plan → You approve ✓
+
+Wave 3 — Implementation (1 agent):
+  └── tdd-guide: writes tests first, then implements
+
+     → PE shows the code → You review ✓
+
+Wave 4 — Validation (2 agents in parallel):
+  ├── code-reviewer: checks code quality
+  └── security-reviewer: checks auth security
+
+     → PE synthesizes results and presents to you
+```
+
+**Result:** What would take 4 sequential steps runs in 4 waves, with waves 1 and 4 running 3 and 2 agents **simultaneously**.
+
+---
+
+## The 26 Agents
+
+Organized into 8 squads (functional teams):
+
+### Planning & Design — think before building
+
+| Agent | What it does | Model |
+|-------|-------------|-------|
+| [**architect**](agents/architect.md) | Designs architecture, evaluates trade-offs, proposes alternatives | Opus |
+| [**planner**](agents/planner.md) | Creates implementation plans with phases, risks, and dependencies | Opus |
+
+### Quality Gate — validate without modifying (always run in parallel)
+
+| Agent | What it does | Model |
+|-------|-------------|-------|
+| [**code-reviewer**](agents/code-reviewer.md) | Reviews code for quality, bugs, and patterns | Sonnet |
+| [**security-reviewer**](agents/security-reviewer.md) | Audits infrastructure security (SSH, firewall, SSL, databases) | Opus |
+| [**ux-reviewer**](agents/ux-reviewer.md) | Checks accessibility, visual consistency, interaction states | Sonnet |
+| [**staff-engineer**](agents/staff-engineer.md) | Evaluates cross-project impact and tech debt | Opus |
+
+### Implementation — write code
+
+| Agent | What it does | Model |
+|-------|-------------|-------|
+| [**tdd-guide**](agents/tdd-guide.md) | Implements with TDD (tests first, 80%+ coverage) | Sonnet |
+| [**e2e-runner**](agents/e2e-runner.md) | Creates and runs end-to-end tests with Playwright | Sonnet |
+| [**build-error-resolver**](agents/build-error-resolver.md) | Fixes build errors with minimal changes | Haiku |
+| [**refactor-cleaner**](agents/refactor-cleaner.md) | Removes dead code and consolidates duplicates | Sonnet |
+
+### Operations — keep the system running
+
+| Agent | What it does | Model |
+|-------|-------------|-------|
+| [**incident-responder**](agents/incident-responder.md) | Diagnoses outages (doesn't execute — only recommends) | Opus |
+| [**devops-specialist**](agents/devops-specialist.md) | CI/CD, automated deploys, systemd, monitoring | Sonnet |
+| [**performance-optimizer**](agents/performance-optimizer.md) | Finds bottlenecks in CPU, memory, queries, cache | Sonnet |
+| [**database-specialist**](agents/database-specialist.md) | PostgreSQL schema, slow queries, indexes, migrations | Sonnet |
+
+### Intelligence — research and document
+
+| Agent | What it does | Model |
+|-------|-------------|-------|
+| [**deep-researcher**](agents/deep-researcher.md) | Deep web research with source triangulation | Opus |
+| [**doc-updater**](agents/doc-updater.md) | Generates documentation from actual code | Haiku |
+
+### Language — review spelling and grammar
+
+| Agent | What it does | Model |
+|-------|-------------|-------|
+| [**ortografia-reviewer**](agents/ortografia-reviewer.md) | PT-BR reviewer (spelling, grammar, agreement) | Sonnet |
+| [**grammar-reviewer**](agents/grammar-reviewer.md) | EN-US reviewer (spelling, grammar, punctuation, style) | Sonnet |
+
+### Strategy — SEO and recruiting
+
+| Agent | What it does | Model |
+|-------|-------------|-------|
+| [**seo-reviewer**](agents/seo-reviewer.md) | Technical SEO audit: Core Web Vitals, meta tags, structured data | Haiku |
+| [**tech-recruiter**](agents/tech-recruiter.md) | Tech recruiting: job descriptions, candidate evaluation, interviews | Sonnet |
+
+### Editorial — content production with verified sources
+
+Full professional editorial pipeline. All agents operate under the [Sourcing Discipline Protocol](rules/sourcing-discipline.md) — minimum 3-source triangulation, mandatory citations with URL and date.
+
+| Agent | What it does | Model |
+|-------|-------------|-------|
+| [**editor-chefe**](agents/editor-chefe.md) | Editorial direction: story angle, editorial line, project approval | Opus |
+| [**jornalista**](agents/jornalista.md) | Investigation, interviews, source triangulation, raw material | Sonnet |
+| [**redator**](agents/redator.md) | Editorial writing: lead, narrative, voice and rhythm | Sonnet |
+| [**escritor-tecnico**](agents/escritor-tecnico.md) | Technical writing: IMRAD, Diataxis, ADRs, design docs, post-mortems | Sonnet |
+| [**fact-checker**](agents/fact-checker.md) | Independent verification (Rule of Two): 7 labels, 3+ source triangulation | Sonnet |
+| [**editor-de-texto**](agents/editor-de-texto.md) | Final editing: cuts, lead/closing polish, legal language | Sonnet |
+
+**Recommended pipeline:**
+```
+editor-chefe → jornalista → redator → fact-checker → editor-de-texto → ortografia-reviewer
+  (assigns)     (reports)    (writes)   (verifies)     (polishes)        (proofreads)
+```
+
+> See [docs/AGENTS.md](docs/AGENTS.md) for the full catalog with tools and output examples.
+
+---
+
+## Standardized Output
+
+Every agent returns in the same structured format:
 
 ```markdown
-### ACHADOS (ordenados por severidade)
-- **[CRITICAL]** SQL injection — `src/api/users.py:42` — Query usa concatenação de string
+### FINDINGS (ordered by severity)
+- **[CRITICAL]** SQL injection — `src/api/users.py:42` — Query uses string concatenation
 
-### PRÓXIMO PASSO: Corrigir o SQL injection antes do merge.
+### NEXT STEP: Fix the SQL injection before merging.
 
-### RESUMO: O endpoint de usuários tinha risco de SQL injection que poderia
-expor dados sensíveis. Analisei todos os endpoints do módulo de autenticação
-e verifiquei padrões de query. Encontrei 1 vulnerabilidade CRITICAL e 2
-issues MEDIUM — ambos com correção sugerida.
+### SUMMARY: The users endpoint had a SQL injection risk that could
+expose sensitive data. Analyzed all endpoints in the auth module
+and verified query patterns. Found 1 CRITICAL vulnerability and 2
+MEDIUM issues — both with suggested fixes.
 ```
 
-O RESUMO sempre segue a mesma lógica: **impacto no sistema** → **como foi analisado** → **resultado concreto com números**. Você lê e já sabe o que importa.
+The SUMMARY always follows the same logic: **system impact** → **how it was analyzed** → **concrete result with numbers**. You read it and immediately know what matters.
 
 ---
 
-## Workflows prontos
+## Built-in Workflows
 
-O PE sabe automaticamente qual workflow usar baseado na sua demanda:
+The PE automatically knows which workflow to use based on your request:
 
-| Quando você diz... | O que acontece |
+| When you say... | What happens |
 |---|---|
-| "Implementa feature X" | planner → tdd-guide → code-reviewer + security-reviewer (paralelo) |
-| "Corrige o bug do login" | tdd-guide (reproduz + corrige) → code-reviewer |
-| "Refatora o módulo de auth" | architect → refactor-cleaner → code-reviewer |
-| "O sistema caiu!" | incident-responder (diagnóstico) → devops-specialist (deploy fix) |
-| "Review do PR #42" | code-reviewer + security-reviewer + ux-reviewer (paralelo) |
-| "Audita o projeto" | security-reviewer + performance-optimizer + code-reviewer (paralelo) |
+| "Implement feature X" | planner → tdd-guide → code-reviewer + security-reviewer (parallel) |
+| "Fix the login bug" | tdd-guide (reproduce + fix) → code-reviewer |
+| "Refactor the auth module" | architect → refactor-cleaner → code-reviewer |
+| "The system is down!" | incident-responder (diagnosis) → devops-specialist (deploy fix) |
+| "Review PR #42" | code-reviewer + security-reviewer + ux-reviewer (parallel) |
+| "Audit the project" | security-reviewer + performance-optimizer + code-reviewer (parallel) |
 
 ---
 
-## Customização
+## Customization
 
-### Trocar modelo de um agente
+### Change an agent's model
 
-No frontmatter do arquivo `.md`:
-
-```yaml
-model: opus    # Raciocínio profundo ($5/$25 por MTok)
-model: sonnet  # Execução focada ($3/$15 por MTok) — melhor custo/qualidade
-model: haiku   # Tarefas simples ($1/$5 por MTok)
-```
-
-### Adicionar/remover ferramentas
+In the `.md` file frontmatter:
 
 ```yaml
-tools: Read, Grep, Glob, Bash    # Ferramentas disponíveis para o agente
+model: opus    # Deep reasoning ($5/$25 per MTok)
+model: sonnet  # Focused execution ($3/$15 per MTok) — best cost/quality
+model: haiku   # Simple tasks ($1/$5 per MTok)
 ```
 
-### Trocar idioma
+### Add/remove tools
 
-Os agentes vêm configurados para **pt-BR**. Para mudar, edite a regra de idioma no Output Format de cada agente.
+```yaml
+tools: Read, Grep, Glob, Bash    # Tools available to the agent
+```
 
-> Veja [docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md) para o guia completo.
+### Change language
+
+Agents come configured for **pt-BR**. To change, edit the language rule in each agent's Output Format section.
+
+> See [docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md) for the full guide.
 
 ---
 
-## Documentação
+## Documentation
 
-| Documento | O que cobre |
-|-----------|-------------|
-| [docs/AGENTS.md](docs/AGENTS.md) | Catálogo completo dos 26 agentes com ferramentas e output |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Arquitetura do sistema e fluxo de uma demanda |
-| [docs/CRAWLER-PROTOCOL.md](docs/CRAWLER-PROTOCOL.md) | Como funciona a execução paralela por ondas |
-| [docs/OUTPUT-FORMAT.md](docs/OUTPUT-FORMAT.md) | Formato de output com exemplos por agente |
-| [docs/PATTERNS-APPLIED.md](docs/PATTERNS-APPLIED.md) | Padrões e técnicas que fundamentam o projeto |
-| [docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md) | Como adaptar para seu projeto |
+| Document | What it covers |
+|----------|---------------|
+| [docs/AGENTS.md](docs/AGENTS.md) | Full catalog of 26 agents with tools and output |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture and request flow |
+| [docs/CRAWLER-PROTOCOL.md](docs/CRAWLER-PROTOCOL.md) | How parallel wave execution works |
+| [docs/OUTPUT-FORMAT.md](docs/OUTPUT-FORMAT.md) | Output format with per-agent examples |
+| [docs/PATTERNS-APPLIED.md](docs/PATTERNS-APPLIED.md) | Patterns and techniques behind the project |
+| [docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md) | How to adapt for your project |
+| [docs/CONTINUOUS-LEARNING.md](docs/CONTINUOUS-LEARNING.md) | Automatic pattern capture and injection |
 
 ---
 
 ## FAQ
 
-### Preciso usar todos os 26 agentes?
+### Do I need all 26 agents?
 
-Não. Comece com os 4 mais úteis: **code-reviewer**, **planner**, **tdd-guide**, e **deep-researcher**. Adicione outros conforme sentir necessidade.
+No. Start with the 4 most useful: **code-reviewer**, **planner**, **tdd-guide**, and **deep-researcher**. Add others as needed.
 
-### Funciona com qualquer linguagem/framework?
+### Does it work with any language/framework?
 
-Sim. Os agentes são genéricos. Eles leem o código do seu projeto e se adaptam. O `CLAUDE.md` na raiz do projeto ajuda a dar contexto sobre stack, convenções e serviços.
+Yes. Agents are generic. They read your project's code and adapt. A `CLAUDE.md` at the project root helps provide context about your stack, conventions, and services.
 
-### Quanto custa?
+### How much does it cost?
 
-O Quarterdeck em si é gratuito (MIT). O custo é do uso do Claude Code (plano Anthropic). A distribuição de modelos é otimizada: agentes simples usam Haiku ($1/MTok), agentes de execução usam Sonnet ($3/MTok), e só os estratégicos usam Opus ($5/MTok).
+Quarterdeck itself is free (MIT). The cost is from Claude Code usage (Anthropic plan). Model distribution is optimized: simple agents use Haiku ($1/MTok), execution agents use Sonnet ($3/MTok), and only strategic ones use Opus ($5/MTok).
 
-### Posso criar meus próprios agentes?
+### Can I create my own agents?
 
-Sim. Crie um arquivo `.md` em `~/.claude/agents/` seguindo o template em [docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md). O Claude Code detecta automaticamente.
+Yes. Create a `.md` file in `~/.claude/agents/` following the template in [docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md). Claude Code auto-discovers it.
 
-### Funciona no VS Code / JetBrains?
+### Does it work in VS Code / JetBrains?
 
-Sim. O Claude Code tem extensões para VS Code e JetBrains. Os agentes do Quarterdeck funcionam em qualquer interface do Claude Code (CLI, desktop, IDE).
+Yes. Claude Code has extensions for VS Code and JetBrains. Quarterdeck agents work in any Claude Code interface (CLI, desktop app, IDE).
 
 ---
 
-## Contribuindo
+## Contributing
 
-Veja [CONTRIBUTING.md](CONTRIBUTING.md) para o guia completo.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 ```bash
 # Fork → Branch → Commit → PR
-git checkout -b feat/meu-agente
-git commit -m "feat: adiciona agente X"
-git push origin feat/meu-agente
+git checkout -b feat/my-agent
+git commit -m "feat: add agent X"
+git push origin feat/my-agent
 ```
 
 ---
 
-## Licença
+## License
 
-MIT — veja [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
 
 ---
 
-Criado por [@Pl3ntz](https://github.com/Pl3ntz)
+Created by [@Pl3ntz](https://github.com/Pl3ntz)
