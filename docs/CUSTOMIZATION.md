@@ -1,47 +1,47 @@
-# Customização — Como Adaptar para Seu Projeto
+# Customization — How to Adapt for Your Project
 
-## Passo 1: Copie os agentes
+## Step 1: Copy the agents
 
 ```bash
 cp quarterdeck/agents/*.md ~/.claude/agents/
 cp quarterdeck/rules/*.md ~/.claude/rules/
 ```
 
-## Passo 2: Configure o idioma
+## Step 2: Configure the language
 
-Os agentes vêm configurados para **pt-BR**. Para mudar para inglês ou outro idioma, edite a regra de idioma no Output Format de cada agente:
+Agents come configured for **pt-BR**. To switch to English or another language, edit the language rule in each agent's Output Format:
 
 ```markdown
-# De:
+# From:
 - **IDIOMA: Sempre em pt-BR...**
 
-# Para:
-- **IDIOMA: Always in English...**
+# To:
+- **LANGUAGE: Always in English...**
 ```
 
-## Passo 3: Ajuste os modelos
+## Step 3: Adjust the models
 
-No frontmatter de cada agente, ajuste o modelo conforme seu plano:
+In each agent's frontmatter, adjust the model to match your plan:
 
 ```yaml
 ---
-model: sonnet   # Mais barato, bom para a maioria das tarefas
-model: opus     # Mais caro, melhor para raciocínio profundo
-model: haiku    # Mais barato, bom para tarefas simples
+model: sonnet   # Best cost/quality for most tasks
+model: opus     # More expensive, best for deep reasoning
+model: haiku    # Cheapest, good for simple tasks
 ---
 ```
 
-**Recomendação de distribuição:**
-- Opus: agentes estratégicos (architect, planner, security-reviewer)
-- Sonnet: agentes de execução (code-reviewer, tdd-guide, devops-specialist)
-- Haiku: agentes simples (build-error-resolver, doc-updater)
+**Recommended distribution:**
+- Opus: strategic agents (architect, planner, security-reviewer)
+- Sonnet: execution agents (code-reviewer, tdd-guide, devops-specialist)
+- Haiku: simple agents (build-error-resolver, doc-updater)
 
-## Passo 4: Adicione contexto do seu projeto
+## Step 4: Add project context
 
-Crie um `CLAUDE.md` na raiz do seu projeto com:
+Create a `CLAUDE.md` at your project root with:
 
 ```markdown
-# Meu Projeto
+# My Project
 
 ## Stack
 - Backend: Python 3.12 / FastAPI
@@ -49,21 +49,21 @@ Crie um `CLAUDE.md` na raiz do seu projeto com:
 - Database: PostgreSQL 16
 - Cache: Redis
 
-## Serviços
-- backend.service (porta 8000)
+## Services
+- backend.service (port 8000)
 - scheduler.service
 
-## Convenções
-- Testes: pytest
+## Conventions
+- Tests: pytest
 - Linting: ruff
-- Formatação: ruff format
+- Formatting: ruff format
 ```
 
-Os agentes carregam automaticamente o `CLAUDE.md` do projeto e adaptam seu comportamento.
+Agents automatically load the project's `CLAUDE.md` and adapt their behavior.
 
-## Passo 5: Customize agentes individuais
+## Step 5: Customize individual agents
 
-### Adicionar ferramentas
+### Add tools
 
 ```yaml
 ---
@@ -71,88 +71,87 @@ tools: Read, Grep, Glob, Bash, Skill(local-mind:super-search)
 ---
 ```
 
-### Adicionar seções específicas do projeto
+### Add project-specific sections
 
-No final do arquivo do agente, adicione uma seção:
-
-```markdown
-## Diretrizes do Projeto
-
-- Endpoints sempre assíncronos (`async def`)
-- Usar Pydantic v2 para validação
-- Todas as queries via SQLAlchemy async
-```
-
-### Ajustar token budget
-
-No Output Format, altere o limite:
+At the end of the agent file, add a section:
 
 ```markdown
-Regras:
-- Output máximo: 600 tokens   # aumente para agentes que precisam de mais detalhe
+## Project Guidelines
+
+- Endpoints always async (`async def`)
+- Use Pydantic v2 for validation
+- All queries via SQLAlchemy async
 ```
 
-## Passo 6: Adicione ou remova agentes
+### Adjust token budget
 
-### Criar novo agente
+In the Output Format, change the limit:
 
-Crie `~/.claude/agents/meu-agente.md`:
+```markdown
+Rules:
+- Maximum output: 600 tokens   # increase for agents that need more detail
+```
+
+## Step 6: Add or remove agents
+
+### Create a new agent
+
+Create `~/.claude/agents/my-agent.md`:
 
 ```yaml
 ---
-name: meu-agente
-description: Especialista em [domínio]. Usar quando [trigger].
+name: my-agent
+description: Specialist in [domain]. Use when [trigger].
 tools: Read, Grep, Glob
 model: sonnet
 ---
 
-[Descrição do papel em 1-2 frases]
+[Role description in 1-2 sentences]
 
 ## Ground Truth First
 
-1. **Leia antes de analisar** — [instrução específica]
-2. **Busque padrões** — [instrução específica]
-3. **Pergunte quando tiver dúvida** — [instrução específica]
+1. **Read before analyzing** — [specific instruction]
+2. **Look for patterns** — [specific instruction]
+3. **Ask when in doubt** — [specific instruction]
 
-## [Seções específicas do domínio]
+## [Domain-specific sections]
 
 ## Output Format (MANDATORY)
 
 Structure your response EXACTLY as follows:
 
-### ACHADOS (max 5, ordenados por severidade)
-- **[CRITICAL|HIGH|MEDIUM|LOW]** [título] — [localização] — [descrição + correção]
+### FINDINGS (max 5, ordered by severity)
+- **[CRITICAL|HIGH|MEDIUM|LOW]** [title] — [location] — [description + fix]
 
-### PRÓXIMO PASSO: [1-2 frases]
+### NEXT STEP: [1-2 sentences]
 
-### RESUMO:
-Impacto no sistema/negócio.
-Como foi analisado/abordado.
-O que foi encontrado, com números concretos.
+### SUMMARY:
+System/business impact.
+How it was analyzed/approached.
+What was found, with concrete numbers.
 
-Regras:
-- Output máximo: 400 tokens
-- Sem preâmbulo, sem filler
-- **IDIOMA: Sempre em pt-BR...**
+Rules:
+- Maximum output: 400 tokens
+- No preamble, no filler
 ```
 
-### Remover agente
+### Remove an agent
 
-Simplesmente delete o arquivo `.md` correspondente de `~/.claude/agents/`.
+Simply delete the corresponding `.md` file from `~/.claude/agents/`.
 
-## Passo 7: Configure a PE rule
+## Step 7: Configure the PE rule
 
-A rule `principal-engineer.md` é o coração do sistema. Ajuste:
+The `principal-engineer-always-on.md` rule is the heart of the system. Adjust:
 
-- **Seção 6 (Routing Table)**: adicione/remova rotas para seus agentes
-- **Seção 8 (Workflow Chains)**: defina cadeias de trabalho para seus workflows
-- **Seção 15 (Crawler Protocol)**: ajuste as routing tables paralelas
-- **Seção 16 (PE Synthesis)**: ajuste o formato de síntese
+- **Section 6 (Routing Table)**: add/remove routes for your agents
+- **Section 8 (Workflow Chains)**: define work chains for your workflows
+- **Section 15 (Crawler Protocol)**: adjust the parallel routing tables
+- **Section 16 (PE Synthesis)**: adjust the synthesis format
 
-## Dicas
+## Tips
 
-1. **Comece com poucos agentes** — Não precisa usar todos os 26 desde o início
-2. **Agentes mais úteis para começar**: code-reviewer, planner, tdd-guide, deep-researcher
-3. **Adicione conforme necessidade** — Quando sentir falta de um especialista, adicione
-4. **Teste o output** — Rode um agente e valide se o formato do RESUMO está claro
-5. **Itere** — Ajuste prompts baseado nos resultados que você observa
+1. **Start with few agents** — You don't need all 26 from the start
+2. **Most useful agents to begin with**: code-reviewer, planner, tdd-guide, deep-researcher
+3. **Add as needed** — When you miss a specialist, add one
+4. **Test the output** — Run an agent and validate whether the SUMMARY format is clear
+5. **Iterate** — Adjust prompts based on the results you observe

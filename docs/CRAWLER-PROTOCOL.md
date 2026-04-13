@@ -1,92 +1,92 @@
-# Crawler Protocol — Paralelismo por Waves
+# Crawler Protocol — Wave-Based Parallelism
 
-## Princípio
+## Principle
 
-**Paralelo é o padrão. Sequencial é a exceção.**
+**Parallel is the default. Sequential is the exception.**
 
-Só vá sequencial quando há dependência real de dados (o output do agente A é input do agente B).
+Only go sequential when there's a real data dependency (agent A's output is agent B's input).
 
 ## Wave Execution Model
 
-Em vez de cadeias sequenciais, o PE agrupa trabalho em **ondas (waves)**. Dentro de cada wave, todos os agentes rodam em paralelo. Entre waves, sequencial.
+Instead of sequential chains, the PE groups work into **waves**. Within each wave, all agents run in parallel. Between waves, sequential.
 
 ```
-Wave 1 (PARALELO — reconhecimento):
-  ├── Explore: estrutura do codebase + patterns existentes
-  ├── Explore: cobertura de testes + dependências
-  └── deep-researcher: pesquisa externa (se necessário)
+Wave 1 (PARALLEL — reconnaissance):
+  ├── Explore: codebase structure + existing patterns
+  ├── Explore: test coverage + dependencies
+  └── deep-researcher: external research (if needed)
 
-Wave 2 (SEQUENCIAL — planejamento):
-  └── planner ou architect: plano baseado nos resultados da Wave 1
+Wave 2 (SEQUENTIAL — planning):
+  └── planner or architect: plan based on Wave 1 results
 
-Wave 3 (PARALELO — implementação):
-  ├── tdd-guide: testes + implementação (zona A)
-  └── devops-specialist: mudanças CI/CD (zona B)
+Wave 3 (PARALLEL — implementation):
+  ├── tdd-guide: tests + implementation (zone A)
+  └── devops-specialist: CI/CD changes (zone B)
 
-Wave 4 (PARALELO — validação):
-  ├── code-reviewer: qualidade de código
-  ├── security-reviewer: auditoria de segurança
-  └── ux-reviewer: revisão de UI (se aplicável)
+Wave 4 (PARALLEL — validation):
+  ├── code-reviewer: code quality
+  ├── security-reviewer: security audit
+  └── ux-reviewer: UI review (if applicable)
 ```
 
-## Zone Assignment — Prevenção de Conflitos
+## Zone Assignment — Conflict Prevention
 
-**Antes de spawnar agentes paralelos que ESCREVEM código, o PE deve:**
+**Before spawning parallel agents that WRITE code, the PE must:**
 
-1. **Mapear file zones** — listar quais arquivos cada agente vai tocar
-2. **Verificar overlap** — dois agentes não podem modificar o mesmo arquivo na mesma wave
-3. **Atribuir zones no prompt** — dizer explicitamente a cada agente quais arquivos ele pode modificar
+1. **Map file zones** — list which files each agent will touch
+2. **Verify no overlap** — two agents cannot modify the same file in the same wave
+3. **Assign zones in the prompt** — explicitly tell each agent which files it owns
 
 ```
-Exemplo de zone assignment no prompt do agente:
-"Sua zona: src/api/**, tests/api/**. Não modifique arquivos fora da sua zona."
+Example zone assignment in agent prompt:
+"Your zone: src/api/**, tests/api/**. Do NOT modify files outside your zone."
 ```
 
-**Agentes read-only (code-reviewer, security-reviewer, etc.) não precisam de zones** — podem ler os mesmos arquivos em paralelo sem conflito.
+**Read-only agents (code-reviewer, security-reviewer, etc.) don't need zones** — they can read the same files in parallel without conflict.
 
-### Quando usar `isolation: worktree`
+### When to use `isolation: worktree`
 
-Se o overlap de arquivos é **inevitável**, use `isolation: worktree` no frontmatter do agente. Cada agente recebe uma cópia isolada do repositório via git worktree.
+If file overlap is **unavoidable**, use `isolation: worktree` in the agent frontmatter. Each agent gets an isolated copy of the repository via git worktree.
 
 ## Routing Tables
 
-### Sempre Paralelo (sem dependências)
+### Always Parallel (no dependencies)
 
-| Trigger | Agentes (PARALELO) |
+| Trigger | Agents (PARALLEL) |
 |---|---|
-| Review de código/PR | code-reviewer + security-reviewer + (ux-reviewer se UI) |
-| Avaliar arquitetura | architect + staff-engineer |
-| Audit de projeto | security-reviewer + performance-optimizer + code-reviewer |
-| Investigar issue | Explore (codebase) + deep-researcher (web) |
-| Validar implementação | code-reviewer + security-reviewer + tdd-guide (rodar testes) |
-| Análise multi-projeto | 1 agente por projeto, todos paralelo |
+| Code/PR review | code-reviewer + security-reviewer + (ux-reviewer if UI) |
+| Evaluate architecture | architect + staff-engineer |
+| Project audit | security-reviewer + performance-optimizer + code-reviewer |
+| Investigate issue | Explore (codebase) + deep-researcher (web) |
+| Validate implementation | code-reviewer + security-reviewer + tdd-guide (run tests) |
+| Multi-project analysis | 1 agent per project, all parallel |
 
-### Wave-Based (paralelo dentro de waves, sequencial entre)
+### Wave-Based (parallel within waves, sequential between)
 
-| Trigger | Wave 1 (paralelo) | Wave 2 (sequencial) | Wave 3 (paralelo) |
+| Trigger | Wave 1 (parallel) | Wave 2 (sequential) | Wave 3 (parallel) |
 |---|---|---|---|
-| Nova feature | Explore + deep-researcher | planner | tdd-guide + code-reviewer + security-reviewer |
-| Novo endpoint API | Explore + deep-researcher | planner | tdd-guide + code-reviewer + security-reviewer |
-| Refactor | Explore (estrutura) + Explore (testes) | architect | refactor-cleaner + code-reviewer |
-| Fix de bug (complexo) | Explore (código) + Explore (testes) | tdd-guide | code-reviewer |
-| Mudança UI | Explore + deep-researcher | planner | tdd-guide + ux-reviewer + code-reviewer |
+| New feature | Explore + deep-researcher | planner | tdd-guide + code-reviewer + security-reviewer |
+| New API endpoint | Explore + deep-researcher | planner | tdd-guide + code-reviewer + security-reviewer |
+| Refactor | Explore (structure) + Explore (tests) | architect | refactor-cleaner + code-reviewer |
+| Complex bug fix | Explore (code) + Explore (tests) | tdd-guide | code-reviewer |
+| UI change | Explore + deep-researcher | planner | tdd-guide + ux-reviewer + code-reviewer |
 
-## Regras de Execução
+## Execution Rules
 
-1. **3-5 agentes max por wave** — mais gera overhead de coordenação
-2. **Agentes read-only sempre paralelizam** — sem risco de conflito
-3. **Agentes write precisam de zone assignment** — PE verifica overlap antes
-4. **Agente que falha não bloqueia os outros** — PE trata via Chain Failure Recovery
-5. **PE é o único sintetizador** — agentes nunca veem output uns dos outros
-6. **Background agents para trabalho non-blocking** — use `run_in_background: true`
+1. **3-5 agents max per wave** — more creates coordination overhead
+2. **Read-only agents always parallelize** — no conflict risk
+3. **Write agents need zone assignment** — PE verifies overlap first
+4. **Failed agent doesn't block others** — PE handles via Chain Failure Recovery
+5. **PE is the only synthesizer** — agents never see each other's output
+6. **Background agents for non-blocking work** — use `run_in_background: true`
 
 ## Fan-Out / Fan-In Pattern
 
 ```
-1. PE decompõe o request do Captain em N sub-tarefas independentes
-2. PE spawna N agentes em paralelo (fan-out)
-   - Cada agente recebe: descrição da tarefa + zone assignment + output contract
-3. PE coleta todos os resultados
-4. PE sintetiza em resposta unificada (fan-in)
-5. PE apresenta análise coerente ao Captain
+1. PE decomposes the Captain's request into N independent sub-tasks
+2. PE spawns N agents in parallel (fan-out)
+   - Each agent gets: task description + zone assignment + output contract
+3. PE collects all results
+4. PE synthesizes into unified response (fan-in)
+5. PE presents coherent analysis to the Captain
 ```
