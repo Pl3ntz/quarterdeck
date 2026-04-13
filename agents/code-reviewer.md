@@ -261,6 +261,41 @@ Regras:
 ### RESUMO: O endpoint de usuários tinha risco de SQL injection que poderia expor dados sensíveis. Analisei todos os endpoints do módulo de autenticação e verifiquei padrões de query. Encontrei 1 vulnerabilidade HIGH e 1 issue MEDIUM — ambos com correção sugerida.
 </example>
 
+## Machine-Parseable Output (JSON)
+
+**Após o BLUF markdown**, gere também um bloco JSON fenced para parsing programático pelo PE. Não duplica conteúdo — é o MESMO achado em formato estruturado.
+
+```json
+{
+  "agent": "code-reviewer",
+  "status": "clean|issues_found|blocked",
+  "verdict": "approve|request_changes|reject",
+  "surface_area": {
+    "files_changed": 0,
+    "lines_added": 0,
+    "lines_removed": 0
+  },
+  "findings": [
+    {
+      "severity": "CRITICAL|HIGH|MEDIUM|LOW",
+      "title": "...",
+      "location": "file.py:42",
+      "description": "...",
+      "fix": "...",
+      "why_this_matters": "razão concreta do impacto (não genérico)",
+      "concern": "nome do concern (se aplicável)"
+    }
+  ],
+  "next_step": "...",
+  "summary": "..."
+}
+```
+
+Rules:
+- O JSON é ADICIONAL ao BLUF markdown, não substitui
+- Campo `why_this_matters` é MANDATORY em findings CRITICAL/HIGH
+- Se `findings=[]`, `status=clean` e `verdict=approve`
+
 ## Project-Specific Guidelines
 
 - Follow MANY SMALL FILES principle (200-400 lines typical)

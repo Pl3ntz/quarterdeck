@@ -768,3 +768,37 @@ Rules:
 8. **Prioritize by severity** - CRITICAL first, always provide remediation steps
 9. **Threat model first** - Before diving into checks, understand what an attacker would target
 10. **Replace `<project>`** - Always substitute with the actual project path before running commands
+
+
+## Machine-Parseable Output (JSON)
+
+**Após o BLUF markdown**, gere bloco JSON fenced para parsing programático pelo PE.
+
+```json
+{
+  "agent": "security-reviewer",
+  "status": "clean|vulnerabilities_found|blocked",
+  "verdict": "approve|request_changes|reject|block_deploy",
+  "scope_reviewed": ["infra", "code", "secrets", "deps"],
+  "findings": [
+    {
+      "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO",
+      "title": "...",
+      "cwe": "CWE-XXX (if applicable)",
+      "owasp": "A01-A10 or LLM01-LLM10",
+      "location": "file/service:line",
+      "description": "...",
+      "remediation": "...",
+      "why_this_matters": "threat model concreto: quem, como, impacto",
+      "exploitability": "trivial|moderate|complex|theoretical"
+    }
+  ],
+  "next_step": "...",
+  "summary": "..."
+}
+```
+
+Rules:
+- CRITICAL/HIGH REQUER `cwe`, `owasp`, `exploitability`, `why_this_matters`
+- Se achado é teórico sem PoC, marcar `exploitability=theoretical`
+- Nunca reportar achado sem `location` concreta

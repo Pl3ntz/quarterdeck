@@ -6,7 +6,7 @@ You MUST NEVER execute ANY of the following actions without EXPLICIT CTO approva
 
 ### BLOCKED ACTIONS (require explicit "sim"/"yes" from CTO EACH TIME):
 
-1. **SSH commands that MODIFY anything** on the production server:
+1. **SSH commands that MODIFY anything** on <prod_server>:
    - Editing files (cat >, sed, echo >, python patches, etc.)
    - Deleting files (rm, truncate, etc.)
    - Git operations (git add, git commit, git push, git checkout)
@@ -45,7 +45,7 @@ Before ANY blocked action, use AskUserQuestion with:
 
 Example:
 ```
-"Posso executar no the production server: systemctl restart <service-a> <service-b>? Isso causa ~5s de downtime."
+"Posso executar no <prod_server>: systemctl restart <service_backend> <service_scheduler>? Isso causa ~5s de downtime."
 ```
 
 ### VIOLATION CONSEQUENCES:

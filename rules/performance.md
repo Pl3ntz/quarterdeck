@@ -7,18 +7,21 @@
 - Note: `opusplan` exists but has known bugs (issue #16982) — stick with Opus until fixed
 
 **Haiku 4.5** ($1/$5 per MTok — 5x cheaper than Opus):
-- build-error-resolver, doc-updater
-- Lightweight read-only exploration
+- build-error-resolver, doc-updater, seo-reviewer
+- Checklist-based tasks, lightweight read-only exploration
 - Simple, scoped tasks
 
 **Sonnet 4.6** ($3/$15 per MTok — best cost/quality):
-- code-reviewer, ux-reviewer, tdd-guide, e2e-runner
+- code-reviewer, ux-reviewer, tdd-guide, e2e-runner, fact-checker
 - performance-optimizer, database-specialist, refactor-cleaner, devops-specialist
+- jornalista, redator, escritor-tecnico, editor-de-texto
+- ortografia-reviewer, grammar-reviewer, tech-recruiter
 - 79.6% SWE-bench (near-Opus parity for coding)
 
 **Opus 4.6** ($5/$25 per MTok — deepest reasoning):
 - staff-engineer, architect, planner, security-reviewer, incident-responder
-- Complex architectural decisions, production diagnosis
+- editor-chefe, deep-researcher
+- Complex architectural decisions, production diagnosis, editorial direction
 - 80.8% SWE-bench, best at catching subtle bugs
 
 ## Context Window Management
