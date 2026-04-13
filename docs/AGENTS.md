@@ -1,6 +1,6 @@
-# Catálogo de Agentes
+# Agent Catalog
 
-Referência rápida de todos os 26 agentes, organizados por squad.
+Quick reference for all 26 agents, organized by squad.
 
 ---
 
@@ -8,164 +8,164 @@ Referência rápida de todos os 26 agentes, organizados por squad.
 
 ### architect
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Opus |
-| **Tipo** | Read-only (análise) |
-| **Ferramentas** | Read, Grep, Glob, Skill(local-mind:super-search) |
-| **Quando usar** | Decisões de arquitetura, design de sistema, avaliação de trade-offs |
+| **Model** | Opus |
+| **Type** | Read-only (analysis) |
+| **Tools** | Read, Grep, Glob, Skill(local-mind:super-search) |
+| **When to use** | Architecture decisions, system design, trade-off evaluation |
 
-**O que faz:** Analisa a arquitetura atual e propõe decisões de design com alternativas e trade-offs. Sempre apresenta múltiplas opções — nunca uma solução única.
+**What it does:** Analyzes current architecture and proposes design decisions with alternatives and trade-offs. Always presents multiple options — never a single solution.
 
-**Output:** Decisão de design + tabela de alternativas (prós/contras) + trade-offs + RESUMO
+**Output:** Design decision + alternatives table (pros/cons) + trade-offs + SUMMARY
 
 ---
 
 ### planner
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Opus |
-| **Tipo** | Read-only (análise) |
-| **Ferramentas** | Read, Grep, Glob, Skill(local-mind:super-search) |
-| **Quando usar** | Features complexas que precisam de plano faseado com riscos e dependências |
+| **Model** | Opus |
+| **Type** | Read-only (analysis) |
+| **Tools** | Read, Grep, Glob, Skill(local-mind:super-search) |
+| **When to use** | Complex features that need a phased plan with risks and dependencies |
 
-**O que faz:** Cria planos de implementação detalhados com fases, passos, riscos e mitigações. Cada passo referencia file paths específicos.
+**What it does:** Creates detailed implementation plans with phases, steps, risks, and mitigations. Each step references specific file paths.
 
-**Output:** Plano em fases + riscos + RESUMO
+**Output:** Phased plan + risks + SUMMARY
 
 ---
 
 ## Quality Gate Squad
 
-> Todos os agentes deste squad são **read-only** e **sempre rodam em paralelo**.
+> All agents in this squad are **read-only** and **always run in parallel**.
 
 ### code-reviewer
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Sonnet |
-| **Tipo** | Read-only |
-| **Ferramentas** | Read, Grep, Glob, Bash, Skill(local-mind:super-search) |
-| **Quando usar** | Após escrever ou modificar código — valida qualidade, segurança e manutenabilidade |
+| **Model** | Sonnet |
+| **Type** | Read-only |
+| **Tools** | Read, Grep, Glob, Bash, Skill(local-mind:super-search) |
+| **When to use** | After writing or modifying code — validates quality, security, and maintainability |
 
-**O que faz:** Revisa código por prioridade: CRITICAL (segurança, perda de dados) > HIGH (lógica, error handling) > MEDIUM (qualidade, performance) > LOW (estilo, naming). Verifica patterns Python/FastAPI e TypeScript.
+**What it does:** Revisa código por prioridade: CRITICAL (segurança, perda de dados) > HIGH (lógica, error handling) > MEDIUM (qualidade, performance) > LOW (estilo, naming). Verifica patterns Python/FastAPI e TypeScript.
 
-**Modos especiais (BMAD cherry-picks):**
+**Special modes (BMAD cherry-picks):**
 - **Blind Review** (`--blind`): Recebe APENAS o diff, sem contexto do projeto. Quebra anchoring bias — encontra problemas que o contexto "normaliza". Usado como camada adicional, não substituta.
 - **Surface Area Stats**: Métricas quantitativas no início do output (arquivos alterados, módulos, linhas de lógica, boundary crossings, novas interfaces públicas).
 - **Concern-based grouping**: Agrupa achados por intenção da mudança (concern), não por arquivo. Ajuda o Captain a entender a mudança como um todo.
 
-**Output:** Surface Area Stats + Achados ordenados por severidade + Por Concern + RESUMO
+**Output:** Surface Area Stats + Findings ordered by severity + By Concern + SUMMARY
 
 ---
 
 ### security-reviewer
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Opus |
-| **Tipo** | Read-only |
-| **Ferramentas** | Read, Bash, Grep, Glob, Skill(local-mind:super-search) |
-| **Quando usar** | Auditoria de infraestrutura, hardening, secrets, firewall, SSL, systemd |
+| **Model** | Opus |
+| **Type** | Read-only |
+| **Tools** | Read, Bash, Grep, Glob, Skill(local-mind:super-search) |
+| **When to use** | Infrastructure audit, hardening, secrets, firewall, SSL, systemd |
 
-**O que faz:** Audita segurança de infraestrutura (SSH, firewall, systemd, PostgreSQL, Redis, Nginx, SSL). Diferente do code-reviewer — foca em infra, não em patterns de código.
+**What it does:** Audita segurança de infraestrutura (SSH, firewall, systemd, PostgreSQL, Redis, Nginx, SSL). Diferente do code-reviewer — foca em infra, não em patterns de código.
 
-**Output:** Tabela de ameaças por área + achados + RESUMO
+**Output:** Threat table by area + findings + SUMMARY
 
 ---
 
 ### ux-reviewer
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Sonnet |
-| **Tipo** | Read-only |
-| **Ferramentas** | Read, Grep, Glob, Bash, Skill(local-mind:super-search) |
-| **Quando usar** | Após mudanças de UI — acessibilidade (WCAG 2.2 AA), consistência, estados de interação |
+| **Model** | Sonnet |
+| **Type** | Read-only |
+| **Tools** | Read, Grep, Glob, Bash, Skill(local-mind:super-search) |
+| **When to use** | After UI changes — accessibility (WCAG 2.2 AA), consistency, interaction states |
 
-**O que faz:** Revisa frontend por acessibilidade, contraste, navegação por teclado, touch targets, design consistency, estados de interação (hover, focus, disabled, loading, error, empty).
+**What it does:** Revisa frontend por acessibilidade, contraste, navegação por teclado, touch targets, design consistency, estados de interação (hover, focus, disabled, loading, error, empty).
 
-**Output:** Achados ordenados por impacto no usuário + RESUMO
+**Output:** Findings ordered by user impact + SUMMARY
 
 ---
 
 ### staff-engineer
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Opus |
-| **Tipo** | Read-only |
-| **Ferramentas** | Read, Grep, Glob, Bash, Skill(local-mind:super-search) |
-| **Quando usar** | Mudanças que afetam múltiplos projetos ou infraestrutura compartilhada |
+| **Model** | Opus |
+| **Type** | Read-only |
+| **Tools** | Read, Grep, Glob, Bash, Skill(local-mind:super-search) |
+| **When to use** | Changes that affect multiple projects or shared infrastructure |
 
-**O que faz:** Avalia impacto organizacional (L4): cross-system dependencies, propagação de padrões, dívida técnica com impacto no negócio.
+**What it does:** Avalia impacto organizacional (L4): cross-system dependencies, propagação de padrões, dívida técnica com impacto no negócio.
 
-**Output:** Impacto cross-system + propagação de padrão + dívida técnica + RESUMO
+**Output:** Cross-system impact + pattern propagation + tech debt + SUMMARY
 
 ---
 
 ## Implementation Squad
 
-> Todos os agentes deste squad **escrevem código** e precisam de **zone assignment** do PE.
+> All agents in this squad **write code** and need **zone assignment** from the PE.
 
 ### tdd-guide
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Sonnet |
-| **Tipo** | Write (escrita de código) |
-| **Ferramentas** | Read, Write, Edit, Bash, Grep, Glob |
-| **Quando usar** | Novas features, bug fixes, refactoring — sempre com testes primeiro |
+| **Model** | Sonnet |
+| **Type** | Write (code writing) |
+| **Tools** | Read, Write, Edit, Bash, Grep, Glob |
+| **When to use** | New features, bug fixes, refactoring — always with tests first |
 
-**O que faz:** Implementa usando TDD (Red-Green-Refactor). Escreve testes primeiro, depois implementação mínima para passar. Garante cobertura 80%+.
+**What it does:** Implementa usando TDD (Red-Green-Refactor). Escreve testes primeiro, depois implementação mínima para passar. Garante cobertura 80%+.
 
-**Output:** Testes escritos + cobertura + RESUMO
+**Output:** Tests written + coverage + SUMMARY
 
 ---
 
 ### e2e-runner
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Sonnet |
-| **Tipo** | Write |
-| **Ferramentas** | Read, Write, Edit, Bash, Grep, Glob |
-| **Quando usar** | Testes de fluxos críticos de usuário com Playwright |
+| **Model** | Sonnet |
+| **Type** | Write |
+| **Tools** | Read, Write, Edit, Bash, Grep, Glob |
+| **When to use** | Critical user flow tests with Playwright |
 
-**O que faz:** Cria e executa testes E2E com Playwright. Gerencia testes instáveis (flaky), captura screenshots/vídeos, e usa Page Object Model.
+**What it does:** Cria e executa testes E2E com Playwright. Gerencia testes instáveis (flaky), captura screenshots/vídeos, e usa Page Object Model.
 
-**Output:** Resultados (passou/falhou/instável) + falhas + RESUMO
+**Output:** Results (passed/failed/flaky) + failures + SUMMARY
 
 ---
 
 ### build-error-resolver
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Haiku |
-| **Tipo** | Write |
-| **Ferramentas** | Read, Write, Edit, Bash, Grep, Glob |
-| **Quando usar** | Build falhou, type errors, serviço não inicia |
+| **Model** | Haiku |
+| **Type** | Write |
+| **Tools** | Read, Write, Edit, Bash, Grep, Glob |
+| **When to use** | Build failed, type errors, service won't start |
 
-**O que faz:** Corrige erros de build com minimal diff. Não refatora, não otimiza, não redesenha — apenas corrige o erro e verifica que o build passa.
+**What it does:** Corrige erros de build com minimal diff. Não refatora, não otimiza, não redesenha — apenas corrige o erro e verifica que o build passa.
 
-**Output:** Erros corrigidos + pendentes + RESUMO
+**Output:** Errors fixed + pending + SUMMARY
 
 ---
 
 ### refactor-cleaner
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Sonnet |
-| **Tipo** | Write |
-| **Ferramentas** | Read, Write, Edit, Bash, Grep, Glob |
-| **Quando usar** | Remoção de dead code, cleanup, consolidação de duplicatas |
+| **Model** | Sonnet |
+| **Type** | Write |
+| **Tools** | Read, Write, Edit, Bash, Grep, Glob |
+| **When to use** | Dead code removal, cleanup, duplicate consolidation |
 
-**O que faz:** Identifica e remove código morto, dependências não utilizadas, e duplicatas. Usa ferramentas de análise (knip, vulture) e verifica todas as referências antes de remover.
+**What it does:** Identifica e remove código morto, dependências não utilizadas, e duplicatas. Usa ferramentas de análise (knip, vulture) e verifica todas as referências antes de remover.
 
-**Output:** Itens removidos + impacto + RESUMO
+**Output:** Items removed + impact + SUMMARY
 
 ---
 
@@ -173,61 +173,61 @@ Referência rápida de todos os 26 agentes, organizados por squad.
 
 ### incident-responder
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Opus |
-| **Tipo** | Read-only (diagnóstico) |
-| **Ferramentas** | Read, Bash, Grep, Glob, Skill(local-mind:super-search) |
-| **Quando usar** | Serviço caiu, erros aumentando, usuários reportando problemas |
+| **Model** | Opus |
+| **Type** | Read-only (diagnosis) |
+| **Tools** | Read, Bash, Grep, Glob, Skill(local-mind:super-search) |
+| **When to use** | Service down, errors increasing, users reporting issues |
 
-**O que faz:** Segue workflow de 5 fases: Triage (2min) > Diagnose (5-10min) > Remediate (opções) > Verify > Document. Nunca executa correções — apenas diagnostica e recomenda.
+**What it does:** Segue workflow de 5 fases: Triage (2min) > Diagnose (5-10min) > Remediate (opções) > Verify > Document. Nunca executa correções — apenas diagnostica e recomenda.
 
-**Output:** Serviços afetados + causa raiz + opções (rápida vs completa) + RESUMO
+**Output:** Affected services + root cause + options (quick vs complete) + SUMMARY
 
 ---
 
 ### devops-specialist
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Sonnet |
-| **Tipo** | Write |
-| **Ferramentas** | Read, Write, Edit, Bash, Grep, Glob |
-| **Quando usar** | CI/CD, deploy, systemd, monitoring, Nginx, SSL |
+| **Model** | Sonnet |
+| **Type** | Write |
+| **Tools** | Read, Write, Edit, Bash, Grep, Glob |
+| **When to use** | CI/CD, deploy, systemd, monitoring, Nginx, SSL |
 
-**O que faz:** Analisa e melhora pipelines CI/CD, automatiza deploys, configura serviços systemd, e gerencia infraestrutura (Nginx, SSL). Sempre apresenta antes de executar.
+**What it does:** Analisa e melhora pipelines CI/CD, automatiza deploys, configura serviços systemd, e gerencia infraestrutura (Nginx, SSL). Sempre apresenta antes de executar.
 
-**Output:** Achados + mudanças propostas + RESUMO
+**Output:** Findings + proposed changes + SUMMARY
 
 ---
 
 ### performance-optimizer
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Sonnet |
-| **Tipo** | Read-only |
-| **Ferramentas** | Read, Bash, Grep, Glob, Skill(local-mind:super-search) |
-| **Quando usar** | Serviço lento, recursos limitados, antes de decisões de scaling |
+| **Model** | Sonnet |
+| **Type** | Read-only |
+| **Tools** | Read, Bash, Grep, Glob, Skill(local-mind:super-search) |
+| **When to use** | Slow service, limited resources, before scaling decisions |
 
-**O que faz:** Mede métricas de sistema (CPU, memória, disco), analisa queries PostgreSQL lentas, Redis, Nginx tuning, e patterns async Python/FastAPI. Sempre com valores medidos, nunca suposições.
+**What it does:** Mede métricas de sistema (CPU, memória, disco), analisa queries PostgreSQL lentas, Redis, Nginx tuning, e patterns async Python/FastAPI. Sempre com valores medidos, nunca suposições.
 
-**Output:** Métricas + gargalos + RESUMO
+**Output:** Metrics + bottlenecks + SUMMARY
 
 ---
 
 ### database-specialist
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Sonnet |
-| **Tipo** | Read-only |
-| **Ferramentas** | Read, Bash, Grep, Glob, Skill(local-mind:super-search) |
-| **Quando usar** | Design de schema, queries lentas, indexação, migrations, saúde do banco |
+| **Model** | Sonnet |
+| **Type** | Read-only |
+| **Tools** | Read, Bash, Grep, Glob, Skill(local-mind:super-search) |
+| **When to use** | Schema design, slow queries, indexing, migrations, database health |
 
-**O que faz:** Analisa saúde do PostgreSQL, identifica queries lentas via EXPLAIN ANALYZE, recomenda indexes, valida segurança de migrations, e monitora bloat/vacuum.
+**What it does:** Analisa saúde do PostgreSQL, identifica queries lentas via EXPLAIN ANALYZE, recomenda indexes, valida segurança de migrations, e monitora bloat/vacuum.
 
-**Output:** Achados com evidência de EXPLAIN ANALYZE + RESUMO
+**Output:** Findings with EXPLAIN ANALYZE evidence + SUMMARY
 
 ---
 
@@ -235,50 +235,50 @@ Referência rápida de todos os 26 agentes, organizados por squad.
 
 ### deep-researcher
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Opus |
-| **Tipo** | Read-only (pesquisa web) |
-| **Ferramentas** | WebSearch, WebFetch, Bash, Read, Grep, Glob, Skill(local-mind:super-search) |
-| **Quando usar** | Pesquisa profunda multi-fonte, comparações, OSINT, triangulação |
+| **Model** | Opus |
+| **Type** | Read-only (web research) |
+| **Tools** | WebSearch, WebFetch, Bash, Read, Grep, Glob, Skill(local-mind:super-search) |
+| **When to use** | Deep multi-source research, comparisons, OSINT, triangulation |
 
-**O que faz:** Pesquisa em 6 fases: Plan > Search > Distill > Evaluate > Iterate > Synthesize. Usa 7 estratégias de reformulação de queries. Toda afirmação precisa de 3+ fontes para confiança HIGH.
+**What it does:** Researches in 6 phases: Plan > Search > Distill > Evaluate > Iterate > Synthesize. Uses 7 query reformulation strategies. Every claim needs 3+ sources for HIGH confidence.
 
-**Output:** Achados com nível de confiança + contradições + lacunas + RESUMO
+**Output:** Findings with confidence level + contradictions + gaps + SUMMARY
 
 ---
 
 ### doc-updater
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Haiku |
-| **Tipo** | Write |
-| **Ferramentas** | Read, Write, Edit, Bash, Grep, Glob |
-| **Quando usar** | Atualizar codemaps, READMEs, documentação |
+| **Model** | Haiku |
+| **Type** | Write |
+| **Tools** | Read, Write, Edit, Bash, Grep, Glob |
+| **When to use** | Update codemaps, READMEs, documentation |
 
-**O que faz:** Gera e atualiza documentação baseada no código real. Nunca documenta de memória — sempre lê o codebase atual primeiro.
+**What it does:** Generates and updates documentation based on actual code. Never documents from memory — always reads the current codebase first.
 
-**Output:** Alterações realizadas + RESUMO
+**Output:** Changes made + SUMMARY
 
 ---
 
 ## Language Squad
 
-> Agentes de revisão linguística. **Read-only**, escopo restrito ao idioma — nunca tocam em código, variáveis, ou texto de outro idioma.
+> Language review agents. **Read-only**, scope restricted to their language — never touch code, variables, or text in another language.
 
 ### ortografia-reviewer
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Sonnet |
-| **Tipo** | Read-only |
-| **Ferramentas** | Read, Grep, Glob, Bash |
-| **Quando usar** | Revisar qualquer texto PT-BR — docs, strings, comments, agent outputs, READMEs |
+| **Model** | Sonnet |
+| **Type** | Read-only |
+| **Tools** | Read, Grep, Glob, Bash |
+| **When to use** | Review any PT-BR text — docs, strings, comments, agent outputs, READMEs |
 
-**O que faz:** Revisor de português brasileiro de nível ENEM nota 1000. Cobre 11 eixos da gramática normativa:
+**What it does:** Brazilian Portuguese reviewer at ENEM perfect score level. Covers 11 axes of normative grammar:
 
-| Eixo | Exemplos do que detecta |
+| Axis | What it detects |
 |------|------------------------|
 | **Ortografia** | "necesário" → "necessário", uso de S/SS/Ç/SC/X/Z, G/J, CH/X |
 | **Acentuação** | Proparoxítonas sem acento, hiatos, acentos diferenciais (pôr/por, têm/tem) |
@@ -292,29 +292,29 @@ Referência rápida de todos os 26 agentes, organizados por squad.
 | **Vícios de linguagem** | "subir para cima", "elo de ligação", "surpresa inesperada" (pleonasmos) |
 | **Confusões clássicas** | mas/mais, mal/mau, há/a, onde/aonde, a fim/afim |
 
-**Escopo absoluto:**
+**Absolute scope:**
 - SOMENTE texto PT-BR — ignora completamente texto em outros idiomas
 - NUNCA altera nomes de variáveis, funções ou identificadores de código
 - NUNCA altera termos técnicos em inglês (ex: "SQL injection", "deploy")
 
-**Output:** Achados com `arquivo:linha` + Padrões recorrentes + RESUMO
+**Output:** Findings with `file:line` + Recurring patterns + SUMMARY
 
-**Testado contra:** 60+ erros propositais em 10 categorias. Cobertura: ~95%. Falsos positivos: 0.
+**Tested against:** 60+ erros propositais em 10 categorias. Coverage: ~95%. False positives: 0.
 
 ---
 
 ### grammar-reviewer
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Sonnet |
-| **Tipo** | Read-only |
-| **Ferramentas** | Read, Grep, Glob, Bash |
-| **Quando usar** | Revisar qualquer texto em inglês — docs, strings, comments, agent outputs, READMEs |
+| **Model** | Sonnet |
+| **Type** | Read-only |
+| **Tools** | Read, Grep, Glob, Bash |
+| **When to use** | Review any English text — docs, strings, comments, agent outputs, READMEs |
 
-**O que faz:** Revisor de inglês americano de nível GRE Analytical Writing score 6/6 (nota máxima). Cobre 10 eixos:
+**What it does:** American English reviewer at GRE Analytical Writing score 6/6 (perfect score) level. Covers 10 axes:
 
-| Eixo | Exemplos do que detecta |
+| Axis | What it detects |
 |------|------------------------|
 | **Spelling** | "occured" → "occurred", "definately" → "definitely" (40+ palavras mais erradas) |
 | **Homophones** | "it's/its", "their/there/they're", "affect/effect" (22+ pares) |
@@ -327,14 +327,14 @@ Referência rápida de todos os 26 agentes, organizados por squad.
 | **Word usage** | "could of" → "could have", "irregardless" → "regardless", redundancies |
 | **Style** | Wordy expressions ("due to the fact that" → "because"), formal register |
 
-**Escopo absoluto:**
+**Absolute scope:**
 - SOMENTE texto em inglês — ignora completamente texto em outros idiomas
 - NUNCA altera nomes de variáveis, funções ou identificadores de código
 - Enforce American English spelling (nunca British)
 
-**Output:** Findings com `file:line` + Recurring patterns + SUMMARY
+**Output:** Findings with `file:line` + Recurring patterns + SUMMARY
 
-**Testado contra:** 80+ erros propositais em 11 categorias. Cobertura: ~98%. Falsos positivos: 0.
+**Tested against:** 80+ erros propositais em 11 categorias. Coverage: ~98%. False positives: 0.
 
 ---
 
@@ -342,16 +342,16 @@ Referência rápida de todos os 26 agentes, organizados por squad.
 
 ### seo-reviewer
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Haiku |
-| **Tipo** | Read-only |
-| **Ferramentas** | Read, Grep, Glob, Bash |
-| **Quando usar** | Após mudanças de UI, novas páginas, antes de deploy — auditar SEO técnico |
+| **Model** | Haiku |
+| **Type** | Read-only |
+| **Tools** | Read, Grep, Glob, Bash |
+| **When to use** | After UI changes, new pages, before deploy — audit technical SEO |
 
-**O que faz:** Auditor SEO técnico que revisa código e conteúdo web para otimização de motores de busca. Cobre 8 áreas:
+**What it does:** Technical SEO auditor that reviews code and web content for search engine optimization. Covers 8 areas:
 
-| Área | O que verifica |
+| Area | What it checks |
 |------|---------------|
 | **Core Web Vitals** | LCP ≤2.5s, INP ≤200ms, CLS ≤0.1 — hero image lazy (BAD), blocking JS/CSS, missing dimensions |
 | **Crawlability** | robots.txt (bloqueando CSS/JS?), XML sitemap (existe?), canonical URLs, hreflang |
@@ -368,22 +368,22 @@ Referência rápida de todos os 26 agentes, organizados por squad.
 - 20 erros SEO comuns ranqueados por severidade (CRITICAL→LOW)
 - SEO & acessibilidade overlap
 
-**Output:** Surface Area (pages, stack, rendering) + Findings + Quick Wins + RESUMO
+**Output:** Surface Area (pages, stack, rendering) + Findings + Quick Wins + SUMMARY
 
-**Testado contra:** ~20 erros propositais em 9 categorias. Cobertura: ~85%. Falsos positivos: 0.
+**Tested against:** ~20 erros propositais em 9 categorias. Coverage: ~85%. False positives: 0.
 
 ---
 
 ### tech-recruiter
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Sonnet |
-| **Tipo** | Read-only (análise) |
-| **Ferramentas** | Read, Grep, Glob, Bash |
-| **Quando usar** | Contratar devs — JDs, avaliação de candidatos, design de entrevistas, processos seletivos |
+| **Model** | Sonnet |
+| **Type** | Read-only (analysis) |
+| **Tools** | Read, Grep, Glob, Bash |
+| **When to use** | Hire devs — JDs, candidate evaluation, interview design, hiring processes |
 
-**O que faz:** Especialista em recrutamento tech com 4 modos de operação:
+**What it does:** Tech recruitment specialist with 4 operation modes:
 
 **Modo 1 — Revisão de Job Description:**
 - Avalia estrutura, requisitos (max 6 must-haves), linguagem inclusiva, bias de gênero/idade
@@ -442,7 +442,7 @@ Entrega:
 - Análise competitiva: a oferta atrai talento ou perde para concorrentes?
 - Recomendações de ajuste com justificativa
 
-**Dados de referência:**
+**Reference data:**
 - Benchmarks salariais por região (US, EU, BR, LATAM)
 - Funnel rates (191 applications/hire, 82% offer acceptance)
 - Sourcing effectiveness (referrals = 11x inbound, internal = 32x)
@@ -454,33 +454,33 @@ Entrega:
 
 **Output:** Varia por modo — sempre com alternativas concretas (nunca só crítica)
 
-**Testado contra:** JD com 17 erros + candidato com 35 red flags. Cobertura: ~98%. Falsos positivos: 0.
+**Tested against:** JD com 17 erros + candidato com 35 red flags. Coverage: ~98%. False positives: 0.
 
 ---
 
 ## Editorial Squad
 
-Pipeline editorial profissional completo para produção de conteúdo jornalístico, técnico e acadêmico. Todos operam sob [Sourcing Discipline Protocol](../rules/sourcing-discipline.md) — triangulação mínima de 3 fontes independentes, hierarquia primária > secundária > terciária, citação obrigatória com URL e data, nunca inventar fonte.
+Full professional editorial pipeline for journalistic, technical, and academic content production. All agents operate under [Sourcing Discipline Protocol](../rules/sourcing-discipline.md) — minimum 3-source triangulation, primary > secondary > tertiary hierarchy, mandatory citation with URL and date, never fabricate sources.
 
-**Pipeline recomendado:**
+**Recommended pipeline:**
 
 ```
 editor-chefe → jornalista → redator → fact-checker → editor-de-texto → ortografia-reviewer
   (pauta)      (apura)      (escreve)  (verifica)     (lapida)          (revisa)
 ```
 
-**Caminho paralelo técnico:** `escritor-tecnico` → `ortografia-reviewer` (pula jornalista/fact-checker para conteúdo técnico/acadêmico).
+**Technical parallel path:** `escritor-tecnico` → `ortografia-reviewer` (pula jornalista/fact-checker para conteúdo técnico/acadêmico).
 
 ### editor-chefe
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Opus |
-| **Tipo** | Read-only (direção) |
-| **Ferramentas** | Read, Grep, Glob, WebSearch, WebFetch |
-| **Quando usar** | Início de projeto editorial: definir pauta, ângulo, linha editorial, aprovar escopo |
+| **Model** | Opus |
+| **Type** | Read-only (direction) |
+| **Tools** | Read, Grep, Glob, WebSearch, WebFetch |
+| **When to use** | Start of editorial project: define story angle, editorial line, approve scope |
 
-**O que faz:** Transforma ideias vagas em pautas executáveis com ângulo diferenciado. Avalia newsworthiness, calibra escopo, mapeia fontes necessárias, aplica código FENAJ e identifica riscos éticos/jurídicos/editoriais. Não apura nem escreve — decide o QUÊ e o PORQUÊ.
+**What it does:** Transforma ideias vagas em pautas executáveis com ângulo diferenciado. Avalia newsworthiness, calibra escopo, mapeia fontes necessárias, aplica código FENAJ e identifica riscos éticos/jurídicos/editoriais. Não apura nem escreve — decide o QUÊ e o PORQUÊ.
 
 **Output:** Pauta estruturada (tipo, pergunta-central, ângulo, newsworthiness, tese provisória, fontes necessárias, riscos, escopo, linha editorial, referências, próximos passos).
 
@@ -488,14 +488,14 @@ editor-chefe → jornalista → redator → fact-checker → editor-de-texto →
 
 ### jornalista
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Sonnet |
-| **Tipo** | Write (apuração) |
-| **Ferramentas** | Read, Write, Grep, Glob, WebSearch, WebFetch, Bash |
-| **Quando usar** | Apurar pauta aprovada pelo editor-chefe — investigação, entrevistas, triangulação |
+| **Model** | Sonnet |
+| **Type** | Write (investigation) |
+| **Tools** | Read, Write, Grep, Glob, WebSearch, WebFetch, Bash |
+| **When to use** | Investigate story approved by editor-chefe — investigation, interviews, triangulation |
 
-**O que faz:** Apuração rigorosa com metodologia profissional — desk research, identificação de fontes, entrevistas com condição de atribuição explícita (on the record / background / deep background / off), verificação cruzada, busca obrigatória do "outro lado". Entrega material bruto estruturado para o redator. Rule of Two aplicado: Bash apenas para processamento local, nunca curl/wget/scp externos.
+**What it does:** Apuração rigorosa com metodologia profissional — desk research, identificação de fontes, entrevistas com condição de atribuição explícita (on the record / background / deep background / off), verificação cruzada, busca obrigatória do "outro lado". Entrega material bruto estruturado para o redator. Rule of Two aplicado: Bash apenas para processamento local, nunca curl/wget/scp externos.
 
 **Output:** Material apurado (fatos confirmados com fontes trianguladas, citações literais, documentos, outro lado, cronologia, pontos sensíveis, lacunas, recomendação de ângulo).
 
@@ -503,14 +503,14 @@ editor-chefe → jornalista → redator → fact-checker → editor-de-texto →
 
 ### redator
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Sonnet |
-| **Tipo** | Write |
-| **Ferramentas** | Read, Write, Edit, Grep, Glob, WebSearch, WebFetch |
-| **Quando usar** | Transformar material apurado em texto editorial publicável |
+| **Model** | Sonnet |
+| **Type** | Write |
+| **Tools** | Read, Write, Edit, Grep, Glob, WebSearch, WebFetch |
+| **When to use** | Transform investigated material into publishable editorial text |
 
-**O que faz:** Escolhe gênero (notícia, reportagem, perfil, entrevista, análise, opinião, crônica), estrutura, lead (5W2H, anedótico, descritivo, contrastivo, citacional, estatístico), nut graph (quando necessário), fechamento aceito (circular, citação forte, futuro aberto, detalhe simbólico). Aplica rigor com verbos de atribuição (afirmou ≠ alegou ≠ confessou), linguagem jurídica (suspeito/réu/indiciado/condenado conforme momento processual) e estilo PT-BR profissional. Nunca adiciona fatos — usa só o material apurado.
+**What it does:** Escolhe gênero (notícia, reportagem, perfil, entrevista, análise, opinião, crônica), estrutura, lead (5W2H, anedótico, descritivo, contrastivo, citacional, estatístico), nut graph (quando necessário), fechamento aceito (circular, citação forte, futuro aberto, detalhe simbólico). Aplica rigor com verbos de atribuição (afirmou ≠ alegou ≠ confessou), linguagem jurídica (suspeito/réu/indiciado/condenado conforme momento processual) e estilo PT-BR profissional. Nunca adiciona fatos — usa só o material apurado.
 
 **Output:** Texto editorial pronto conforme gênero escolhido + justificativa de lead + fontes citadas + lacunas identificadas.
 
@@ -518,14 +518,14 @@ editor-chefe → jornalista → redator → fact-checker → editor-de-texto →
 
 ### escritor-tecnico
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Sonnet |
-| **Tipo** | Write |
-| **Ferramentas** | Read, Write, Edit, Grep, Glob, WebSearch, WebFetch |
-| **Quando usar** | Escrita técnica/científica: artigos acadêmicos, documentação, ADRs, design docs, post-mortems, apresentações |
+| **Model** | Sonnet |
+| **Type** | Write |
+| **Tools** | Read, Write, Edit, Grep, Glob, WebSearch, WebFetch |
+| **When to use** | Technical/scientific writing: academic articles, documentation, ADRs, design docs, post-mortems, presentations |
 
-**O que faz:** Produção (não revisão) de textos técnicos e acadêmicos seguindo normas consagradas. Cobre 10 tipos de documento: trabalho ABNT (NBR 14724:2024, 6023:2018, 10520:2023), artigo científico IMRAD, documentação técnica Diátaxis (tutorial/how-to/reference/explanation), ADR formato Nygard, design doc Google style, post-mortem SRE blameless, relatório executivo Minto/BLUF, README excelente, changelog (Keep a Changelog + SemVer), slides (Duarte/Knaflic + 10/20/30 Kawasaki).
+**What it does:** Produção (não revisão) de textos técnicos e acadêmicos seguindo normas consagradas. Cobre 10 tipos de documento: trabalho ABNT (NBR 14724:2024, 6023:2018, 10520:2023), artigo científico IMRAD, documentação técnica Diátaxis (tutorial/how-to/reference/explanation), ADR formato Nygard, design doc Google style, post-mortem SRE blameless, relatório executivo Minto/BLUF, README excelente, changelog (Keep a Changelog + SemVer), slides (Duarte/Knaflic + 10/20/30 Kawasaki).
 
 **Output:** Documento pronto no formato canônico apropriado + fontes citadas + lacunas.
 
@@ -533,14 +533,14 @@ editor-chefe → jornalista → redator → fact-checker → editor-de-texto →
 
 ### fact-checker
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Sonnet |
-| **Tipo** | Read-only (verificação independente) |
-| **Ferramentas** | Read, Grep, Glob, WebSearch, WebFetch, Bash |
-| **Quando usar** | Verificar alegações factuais em textos produzidos — **Rule of Two aplicado ao jornalismo** |
+| **Model** | Sonnet |
+| **Type** | Read-only (independent verification) |
+| **Tools** | Read, Grep, Glob, WebSearch, WebFetch, Bash |
+| **When to use** | Verify factual claims in produced texts — **Rule of Two applied to journalism** |
 
-**O que faz:** Verificação independente seguindo metodologia das agências brasileiras (Lupa, Aos Fatos, AFP Checamos, Comprova, Estadão Verifica). 8 passos: seleção → levantamento → bases oficiais → LAI → campo → especialistas → resposta da parte checada → publicar com etiqueta. Classifica cada alegação com uma das 7 etiquetas Lupa 2023+: VERDADEIRO, FALSO, EXAGERADO, SUBESTIMADO, CONTRADITÓRIO, INSUSTENTÁVEL, FALTA CONTEXTO. Nunca aceita trabalho do redator como verdade — re-verifica independentemente.
+**What it does:** Verificação independente seguindo metodologia das agências brasileiras (Lupa, Aos Fatos, AFP Checamos, Comprova, Estadão Verifica). 8 passos: seleção → levantamento → bases oficiais → LAI → campo → especialistas → resposta da parte checada → publicar com etiqueta. Classifica cada alegação com uma das 7 etiquetas Lupa 2023+: VERDADEIRO, FALSO, EXAGERADO, SUBESTIMADO, CONTRADITÓRIO, INSUSTENTÁVEL, FALTA CONTEXTO. Nunca aceita trabalho do redator como verdade — re-verifica independentemente.
 
 **Output:** Relatório de verificação estruturado (alegações verificadas + classificação + fontes + correções sugeridas + recomendação final: PUBLICAR / PUBLICAR COM CORREÇÕES / DEVOLVER AO REDATOR / DEVOLVER AO JORNALISTA / NÃO PUBLICAR).
 
@@ -548,13 +548,13 @@ editor-chefe → jornalista → redator → fact-checker → editor-de-texto →
 
 ### editor-de-texto
 
-| Campo | Valor |
+| Field | Value |
 |-------|-------|
-| **Modelo** | Sonnet |
-| **Tipo** | Write (edição) |
-| **Ferramentas** | Read, Write, Edit, Grep, Glob, WebSearch, WebFetch |
-| **Quando usar** | Edição final de textos editoriais — corta, afia, reorganiza, aplica FENAJ |
+| **Model** | Sonnet |
+| **Type** | Write (editing) |
+| **Tools** | Read, Write, Edit, Grep, Glob, WebSearch, WebFetch |
+| **When to use** | Final editing of editorial texts — cuts, sharpens, reorganizes, applies FENAJ |
 
-**O que faz:** 4 operações cirúrgicas — CORTAR (reduzir 20-40% eliminando redundâncias, adjetivação ociosa, fillers, perífrases, corporativês), AFIAR (substituir genérico por preciso), REORGANIZAR (lead fraco, nut graph ausente, informação enterrada, fechamento seco), AJUSTAR RITMO (frases longas vs curtas, parágrafos). Aplica checklist FENAJ completo, verifica presunção de inocência (suspeito/réu/indiciado/condenado), elimina clichês jornalísticos proibidos ("tragédia anunciada", "em meio a", "cabe à sociedade refletir"). Nunca adiciona fatos — só edita o existente.
+**What it does:** 4 operações cirúrgicas — CORTAR (reduzir 20-40% eliminando redundâncias, adjetivação ociosa, fillers, perífrases, corporativês), AFIAR (substituir genérico por preciso), REORGANIZAR (lead fraco, nut graph ausente, informação enterrada, fechamento seco), AJUSTAR RITMO (frases longas vs curtas, parágrafos). Aplica checklist FENAJ completo, verifica presunção de inocência (suspeito/réu/indiciado/condenado), elimina clichês jornalísticos proibidos ("tragédia anunciada", "em meio a", "cabe à sociedade refletir"). Nunca adiciona fatos — só edita o existente.
 
 **Output:** Texto editado final + diff de edição (cortes, correções de atribuição, correções jurídicas, clichês removidos) + métricas de redução + checklist FENAJ + problemas não-resolvíveis que exigem devolução.

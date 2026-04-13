@@ -1,152 +1,152 @@
-# Padrões Aplicados
+# Patterns Applied
 
-Este documento explica os padrões e técnicas que fundamentam o Quarterdeck. Cada padrão foi pesquisado, validado com múltiplas fontes, e testado em produção.
-
----
-
-## 1. Comunicação Estruturada (Inspirado no Golden Circle)
-
-**Origem:** Simon Sinek — "Start with Why"
-
-**Conceito:** Comunicar na ordem impacto → abordagem → resultado. Em vez de começar pelo "o quê" (encontrei 3 bugs), começar pelo "por quê" (o sistema tinha risco de perda de dados).
-
-**Como aplicamos:** Cada agente termina com um `### RESUMO` que flui naturalmente nessa ordem:
-1. Qual o impacto no sistema/negócio
-2. Como foi analisado/abordado
-3. O que foi encontrado/entregue com números concretos
-
-**Por que funciona:** O Captain entende a importância antes do detalhe técnico. Pode parar de ler a qualquer momento e já tem o contexto necessário para decidir.
+This document explains the patterns and techniques behind Quarterdeck. Each pattern was researched, validated with multiple sources, and tested in production.
 
 ---
 
-## 2. Squad Model (Inspirado em Squads Spotify)
+## 1. Structured Communication (Inspired by the Golden Circle)
 
-**Origem:** Modelo organizacional do Spotify adaptado para agentes de IA
+**Origin:** Simon Sinek — "Start with Why"
 
-**Conceito:** Em vez de uma hierarquia rígida (Tier 1/2/3), organizar por **função** em squads autônomos:
-- **Planning & Design** — pensa antes de fazer
-- **Quality Gate** — valida sem modificar (read-only, sempre em paralelo)
-- **Implementation** — escreve código (com zone assignment)
-- **Operations** — mantém o sistema rodando
-- **Intelligence** — pesquisa e documenta
+**Concept:** Communicate in the order impact → approach → result. Instead of starting with the "what" (found 3 bugs), start with the "why" (the system had a data loss risk).
 
-**Por que funciona:** Cada squad tem regras diferentes. Quality Gate sempre roda em paralelo porque é read-only. Implementation precisa de zonas de arquivo para evitar conflitos. Essa separação é impossível com uma hierarquia genérica.
+**How we apply it:** Every agent ends with a `### SUMMARY` that flows naturally in this order:
+1. What's the impact on the system/business
+2. How it was analyzed/approached
+3. What was found/delivered with concrete numbers
 
----
-
-## 3. Crawler Protocol (Inspirado em Web Crawlers)
-
-**Origem:** Padrão fan-out/fan-in de web crawlers + wave execution de computação paralela
-
-**Conceito:** Em vez de executar agentes um após o outro (A → B → C → D), agrupar em ondas paralelas:
-- Wave 1: reconhecimento (múltiplos agentes exploram simultaneamente)
-- Wave 2: planejamento (sequencial, baseado nos resultados da Wave 1)
-- Wave 3: validação (múltiplos revisores em paralelo)
-
-**Como prevenimos conflitos:** Zone assignment — cada agente que escreve código recebe uma zona exclusiva de arquivos. Dois agentes nunca editam o mesmo arquivo na mesma wave.
-
-**Por que funciona:** Reduz tempo em 40-60% para tasks multi-agente. 3 revisores em paralelo terminam no tempo de 1, não de 3.
+**Why it works:** The Captain understands the importance before the technical detail. They can stop reading at any point and already have enough context to decide.
 
 ---
 
-## 4. Ground Truth Protocol (Inspirado em "Read Before Write")
+## 2. Squad Model (Inspired by Spotify Squads)
 
-**Origem:** Anthropic — "Effective Context Engineering for AI Agents" (2025)
+**Origin:** Spotify's organizational model adapted for AI agents
 
-**Conceito:** Todo agente deve ler o código/configs existentes ANTES de analisar ou recomendar qualquer coisa. Agentes que assumem o estado do código alucinam.
+**Concept:** Instead of a rigid hierarchy (Tier 1/2/3), organize by **function** in autonomous squads:
+- **Planning & Design** — think before building
+- **Quality Gate** — validate without modifying (read-only, always parallel)
+- **Implementation** — write code (with zone assignment)
+- **Operations** — keep the system running
+- **Intelligence** — research and document
 
-**Regras:**
-1. Leia antes de agir
-2. Busque padrões existentes no projeto
-3. Pergunte quando tiver dúvida — verifique antes de afirmar
-4. Explique o porquê de cada recomendação
-
-**Por que funciona:** Elimina recomendações baseadas em suposições. O agente adapta suas sugestões ao que o projeto JÁ faz, em vez de propor padrões teóricos.
-
----
-
-## 5. Active Debate Protocol (Inspirado em Red Team/Blue Team)
-
-**Origem:** Prática militar de red teaming + abordagem adversarial de machine learning
-
-**Conceito:** Agentes estratégicos não são executores passivos — são **advisors que desafiam decisões**:
-- Buscam memória de sessões anteriores para contexto histórico
-- Desafiam decisões quando identificam conflitos com o passado
-- Apresentam alternativas com trade-offs claros
-- Flagram padrões que causaram problemas antes
-
-**Por que funciona:** Previne repetição de erros. Se um padrão causou bug antes, o agente avisa antes de repetir. Decisões são debatidas, não rubber-stamped.
+**Why it works:** Each squad has different rules. Quality Gate always runs in parallel because it's read-only. Implementation needs file zones to avoid conflicts. This separation is impossible with a generic hierarchy.
 
 ---
 
-## 6. Instruções Positivas (Inspirado na "Pink Elephant Theory")
+## 3. Crawler Protocol (Inspired by Web Crawlers)
 
-**Origem:** Ironic Process Theory (Daniel Wegner) + pesquisa 16x Engineer (2025)
+**Origin:** Fan-out/fan-in pattern from web crawlers + wave execution from parallel computing
 
-**Conceito:** Dizer ao modelo o que NÃO fazer ("NEVER guess") pode paradoxalmente aumentar a chance do comportamento indesejado. A alternativa: instruções positivas ("Sempre verifique antes de afirmar").
+**Concept:** Instead of executing agents one after another (A → B → C → D), group into parallel waves:
+- Wave 1: reconnaissance (multiple agents explore simultaneously)
+- Wave 2: planning (sequential, based on Wave 1 results)
+- Wave 3: validation (multiple reviewers in parallel)
 
-**Como aplicamos:** Todos os agents usam formulação positiva:
-- Em vez de "NEVER assume" → "Sempre verifique"
-- Em vez de "DO NOT guess" → "Pergunte quando tiver dúvida"
-- Em vez de "NEVER execute without approval" → "Apresente achados e aguarde aprovação"
+**How we prevent conflicts:** Zone assignment — each agent that writes code receives an exclusive file zone. Two agents never edit the same file in the same wave.
 
-**Por que funciona:** LLMs respondem melhor a instruções claras sobre o que FAZER do que a proibições sobre o que NÃO fazer. Reduz ambiguidade e melhora consistência.
-
----
-
-## 7. Context Engineering (Inspirado na Anthropic 2025)
-
-**Origem:** Anthropic — "Context Engineering" (2025, renomeação de "Prompt Engineering")
-
-**Conceito:** Não é sobre escrever prompts mais longos — é sobre cada token contribuir para o comportamento desejado. Signal-to-noise ratio alto.
-
-**Como aplicamos:**
-- Agents têm token budget definido (200-800 tokens dependendo do tipo)
-- Seções são ordenadas: Role → Ground Truth → Instruções → Output Format
-- Ferramentas são o mínimo necessário (não herda tudo)
-- Exemplos concretos (`<example>`) para consistência de output
-
-**Por que funciona:** Agentes com prompts enxutos e focados produzem outputs mais consistentes e consomem menos tokens.
+**Why it works:** Reduces time by 40-60% for multi-agent tasks. 3 reviewers in parallel finish in the time of 1, not 3.
 
 ---
 
-## 8. Aprendizado Contínuo
+## 4. Ground Truth Protocol (Inspired by "Read Before Write")
 
-**Origem:** Self-Improvement Protocol + Auto-Learning Protocol
+**Origin:** Anthropic — "Effective Context Engineering for AI Agents" (2025)
 
-**Conceito:** O sistema aprende com seus próprios erros e acertos:
-- **Tips:** Padrões de sucesso extraídos de sessões e salvos em memória
-- **Error Memory:** Erros detectados automaticamente via hooks, resoluções logadas, índice consultado antes de retentativas
-- **Debate Protocol:** Agentes consultam memória de sessões anteriores antes de recomendar
+**Concept:** Every agent must read existing code/configs BEFORE analyzing or recommending anything. Agents that assume code state hallucinate.
 
-**Por que funciona:** Em vez de repetir os mesmos erros, o sistema acumula conhecimento ao longo do tempo. Um erro corrigido uma vez é lembrado para sempre.
+**Rules:**
+1. Read before acting
+2. Look for existing patterns in the project
+3. Ask when in doubt — verify before asserting
+4. Explain the reasoning behind each recommendation
+
+**Why it works:** Eliminates recommendations based on assumptions. The agent adapts its suggestions to what the project ALREADY does, instead of proposing theoretical patterns.
+
+---
+
+## 5. Active Debate Protocol (Inspired by Red Team/Blue Team)
+
+**Origin:** Military red teaming practice + adversarial machine learning approach
+
+**Concept:** Strategic agents are not passive executors — they are **advisors that challenge decisions**:
+- Search memory from previous sessions for historical context
+- Challenge decisions when they identify conflicts with the past
+- Present alternatives with clear trade-offs
+- Flag patterns that caused problems before
+
+**Why it works:** Prevents error repetition. If a pattern caused a bug before, the agent warns before repeating. Decisions are debated, not rubber-stamped.
+
+---
+
+## 6. Positive Instructions (Inspired by the "Pink Elephant Theory")
+
+**Origin:** Ironic Process Theory (Daniel Wegner) + 16x Engineer research (2025)
+
+**Concept:** Telling the model what NOT to do ("NEVER guess") can paradoxically increase the chance of the undesired behavior occurring. The alternative: positive instructions ("Always verify before asserting").
+
+**How we apply it:** All agents use positive formulation:
+- Instead of "NEVER assume" → "Always verify"
+- Instead of "DO NOT guess" → "Ask when in doubt"
+- Instead of "NEVER execute without approval" → "Present findings and wait for approval"
+
+**Why it works:** LLMs respond better to clear instructions about what TO DO than to prohibitions about what NOT to do. Reduces ambiguity and improves consistency.
+
+---
+
+## 7. Context Engineering (Inspired by Anthropic 2025)
+
+**Origin:** Anthropic — "Context Engineering" (2025, renamed from "Prompt Engineering")
+
+**Concept:** It's not about writing longer prompts — it's about every token contributing to the desired behavior. High signal-to-noise ratio.
+
+**How we apply it:**
+- Agents have defined token budgets (200-800 tokens depending on type)
+- Sections are ordered: Role → Ground Truth → Instructions → Output Format
+- Tools are the minimum necessary (no blanket inheritance)
+- Concrete examples (`<example>`) for output consistency
+
+**Why it works:** Agents with lean, focused prompts produce more consistent outputs and consume fewer tokens.
+
+---
+
+## 8. Continuous Learning
+
+**Origin:** Self-Improvement Protocol + Auto-Learning Protocol
+
+**Concept:** The system learns from its own mistakes and successes:
+- **Tips:** Success patterns extracted from sessions and saved to memory
+- **Error Memory:** Errors detected automatically via hooks, resolutions logged, index consulted before retries
+- **Debate Protocol:** Agents consult memory from previous sessions before recommending
+
+**Why it works:** Instead of repeating the same mistakes, the system accumulates knowledge over time. An error corrected once is remembered forever.
 
 ---
 
 ## 9. Maker-Checker (Evaluator-Optimizer)
 
-**Origem:** Padrão bancário de dual-control adaptado para agentes
+**Origin:** Banking dual-control pattern adapted for agents
 
-**Conceito:** Para mudanças de código, o agente que faz (maker) é diferente do que valida (checker):
+**Concept:** For code changes, the agent that builds (maker) is different from the one that validates (checker):
 ```
 tdd-guide (maker) → code-reviewer (checker) → PASS/FAIL
 ```
 
-Se o checker reprova, feedback específico volta ao maker para retry (max 2x). Se falha após 2 retentativas, escala ao Captain.
+If the checker rejects, specific feedback goes back to the maker for retry (max 2x). If it fails after 2 retries, it escalates to the Captain.
 
-**Por que funciona:** Previne que bugs passem despercebidos. O maker foca em implementar, o checker foca em encontrar problemas. Perspectivas diferentes encontram problemas que uma perspectiva única perderia.
+**Why it works:** Prevents bugs from slipping through. The maker focuses on implementing; the checker focuses on finding problems. Different perspectives find problems that a single perspective would miss.
 
 ---
 
-## 10. Hierarquia Explícita (Captain > PE > Agentes)
+## 10. Explicit Hierarchy (Captain > PE > Agents)
 
-**Origem:** Cadeia de comando militar adaptada para orquestração de IA
+**Origin:** Military chain of command adapted for AI orchestration
 
-**Conceito:** Três camadas com responsabilidades claras:
-- **Captain:** Decide. Aprova planos, direciona trabalho, escolhe alternativas.
-- **PE:** Orquestra. Decompõe demandas, spawna agentes, sintetiza resultados, debate.
-- **Agentes:** Executam. Trabalham no escopo atribuído, reportam ao PE.
+**Concept:** Three layers with clear responsibilities:
+- **Captain:** Decides. Approves plans, directs work, chooses alternatives.
+- **PE:** Orchestrates. Decomposes requests, spawns agents, synthesizes results, debates.
+- **Agents:** Execute. Work within assigned scope, report to PE.
 
-**Regra absoluta:** Agentes nunca agem independentemente. Nunca override PE ou Captain. O PE é o único que sintetiza resultados de múltiplos agentes.
+**Absolute rule:** Agents never act independently. Never override PE or Captain. The PE is the only one that synthesizes results from multiple agents.
 
-**Por que funciona:** Elimina ambiguidade sobre quem decide o quê. O Captain nunca é surpreendido por uma ação não autorizada.
+**Why it works:** Eliminates ambiguity about who decides what. The Captain is never surprised by an unauthorized action.
