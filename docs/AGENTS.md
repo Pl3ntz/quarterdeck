@@ -49,12 +49,12 @@ Quick reference for all 26 agents, organized by squad.
 | **Tools** | Read, Grep, Glob, Bash, Skill(local-mind:super-search) |
 | **When to use** | After writing or modifying code — validates quality, security, and maintainability |
 
-**What it does:** Revisa código por prioridade: CRITICAL (segurança, perda de dados) > HIGH (lógica, error handling) > MEDIUM (qualidade, performance) > LOW (estilo, naming). Verifica patterns Python/FastAPI e TypeScript.
+**What it does:** Reviews code by priority: CRITICAL (security, data loss) > HIGH (logic, error handling) > MEDIUM (quality, performance) > LOW (style, naming). Checks Python/FastAPI and TypeScript patterns.
 
 **Special modes (BMAD cherry-picks):**
-- **Blind Review** (`--blind`): Recebe APENAS o diff, sem contexto do projeto. Quebra anchoring bias — encontra problemas que o contexto "normaliza". Usado como camada adicional, não substituta.
-- **Surface Area Stats**: Métricas quantitativas no início do output (arquivos alterados, módulos, linhas de lógica, boundary crossings, novas interfaces públicas).
-- **Concern-based grouping**: Agrupa achados por intenção da mudança (concern), não por arquivo. Ajuda o Captain a entender a mudança como um todo.
+- **Blind Review** (`--blind`): Receives ONLY the diff, without project context. Breaks anchoring bias — finds problems that context "normalizes". Used as an additional layer, not a substitute.
+- **Surface Area Stats**: Quantitative metrics at the beginning of output (files changed, modules, lines of logic, boundary crossings, new public interfaces).
+- **Concern-based grouping**: Groups findings by change intent (concern), not by file. Helps the Captain understand the change as a whole.
 
 **Output:** Surface Area Stats + Findings ordered by severity + By Concern + SUMMARY
 
@@ -69,7 +69,7 @@ Quick reference for all 26 agents, organized by squad.
 | **Tools** | Read, Bash, Grep, Glob, Skill(local-mind:super-search) |
 | **When to use** | Infrastructure audit, hardening, secrets, firewall, SSL, systemd |
 
-**What it does:** Audita segurança de infraestrutura (SSH, firewall, systemd, PostgreSQL, Redis, Nginx, SSL). Diferente do code-reviewer — foca em infra, não em patterns de código.
+**What it does:** Audits infrastructure security (SSH, firewall, systemd, PostgreSQL, Redis, Nginx, SSL). Different from code-reviewer — focuses on infra, not code patterns.
 
 **Output:** Threat table by area + findings + SUMMARY
 
@@ -84,7 +84,7 @@ Quick reference for all 26 agents, organized by squad.
 | **Tools** | Read, Grep, Glob, Bash, Skill(local-mind:super-search) |
 | **When to use** | After UI changes — accessibility (WCAG 2.2 AA), consistency, interaction states |
 
-**What it does:** Revisa frontend por acessibilidade, contraste, navegação por teclado, touch targets, design consistency, estados de interação (hover, focus, disabled, loading, error, empty).
+**What it does:** Reviews frontend for accessibility, contrast, keyboard navigation, touch targets, design consistency, interaction states (hover, focus, disabled, loading, error, empty).
 
 **Output:** Findings ordered by user impact + SUMMARY
 
@@ -99,7 +99,7 @@ Quick reference for all 26 agents, organized by squad.
 | **Tools** | Read, Grep, Glob, Bash, Skill(local-mind:super-search) |
 | **When to use** | Changes that affect multiple projects or shared infrastructure |
 
-**What it does:** Avalia impacto organizacional (L4): cross-system dependencies, propagação de padrões, dívida técnica com impacto no negócio.
+**What it does:** Evaluates organizational impact (L4): cross-system dependencies, pattern propagation, tech debt with business impact.
 
 **Output:** Cross-system impact + pattern propagation + tech debt + SUMMARY
 
@@ -118,7 +118,7 @@ Quick reference for all 26 agents, organized by squad.
 | **Tools** | Read, Write, Edit, Bash, Grep, Glob |
 | **When to use** | New features, bug fixes, refactoring — always with tests first |
 
-**What it does:** Implementa usando TDD (Red-Green-Refactor). Escreve testes primeiro, depois implementação mínima para passar. Garante cobertura 80%+.
+**What it does:** Implements using TDD (Red-Green-Refactor). Writes tests first, then minimal implementation to pass. Ensures 80%+ coverage.
 
 **Output:** Tests written + coverage + SUMMARY
 
@@ -133,7 +133,7 @@ Quick reference for all 26 agents, organized by squad.
 | **Tools** | Read, Write, Edit, Bash, Grep, Glob |
 | **When to use** | Critical user flow tests with Playwright |
 
-**What it does:** Cria e executa testes E2E com Playwright. Gerencia testes instáveis (flaky), captura screenshots/vídeos, e usa Page Object Model.
+**What it does:** Creates and runs E2E tests with Playwright. Manages flaky tests, captures screenshots/videos, and uses Page Object Model.
 
 **Output:** Results (passed/failed/flaky) + failures + SUMMARY
 
@@ -148,7 +148,7 @@ Quick reference for all 26 agents, organized by squad.
 | **Tools** | Read, Write, Edit, Bash, Grep, Glob |
 | **When to use** | Build failed, type errors, service won't start |
 
-**What it does:** Corrige erros de build com minimal diff. Não refatora, não otimiza, não redesenha — apenas corrige o erro e verifica que o build passa.
+**What it does:** Fixes build errors with minimal diff. Doesn't refactor, optimize, or redesign — only fixes the error and verifies the build passes.
 
 **Output:** Errors fixed + pending + SUMMARY
 
@@ -163,7 +163,7 @@ Quick reference for all 26 agents, organized by squad.
 | **Tools** | Read, Write, Edit, Bash, Grep, Glob |
 | **When to use** | Dead code removal, cleanup, duplicate consolidation |
 
-**What it does:** Identifica e remove código morto, dependências não utilizadas, e duplicatas. Usa ferramentas de análise (knip, vulture) e verifica todas as referências antes de remover.
+**What it does:** Identifies and removes dead code, unused dependencies, and duplicates. Uses analysis tools (knip, vulture) and verifies all references before removing.
 
 **Output:** Items removed + impact + SUMMARY
 
@@ -180,7 +180,7 @@ Quick reference for all 26 agents, organized by squad.
 | **Tools** | Read, Bash, Grep, Glob, Skill(local-mind:super-search) |
 | **When to use** | Service down, errors increasing, users reporting issues |
 
-**What it does:** Segue workflow de 5 fases: Triage (2min) > Diagnose (5-10min) > Remediate (opções) > Verify > Document. Nunca executa correções — apenas diagnostica e recomenda.
+**What it does:** Follows a 5-phase workflow: Triage (2min) > Diagnose (5-10min) > Remediate (options) > Verify > Document. Never executes fixes — only diagnoses and recommends.
 
 **Output:** Affected services + root cause + options (quick vs complete) + SUMMARY
 
@@ -195,7 +195,7 @@ Quick reference for all 26 agents, organized by squad.
 | **Tools** | Read, Write, Edit, Bash, Grep, Glob |
 | **When to use** | CI/CD, deploy, systemd, monitoring, Nginx, SSL |
 
-**What it does:** Analisa e melhora pipelines CI/CD, automatiza deploys, configura serviços systemd, e gerencia infraestrutura (Nginx, SSL). Sempre apresenta antes de executar.
+**What it does:** Analyzes and improves CI/CD pipelines, automates deploys, configures systemd services, and manages infrastructure (Nginx, SSL). Always presents before executing.
 
 **Output:** Findings + proposed changes + SUMMARY
 
@@ -210,7 +210,7 @@ Quick reference for all 26 agents, organized by squad.
 | **Tools** | Read, Bash, Grep, Glob, Skill(local-mind:super-search) |
 | **When to use** | Slow service, limited resources, before scaling decisions |
 
-**What it does:** Mede métricas de sistema (CPU, memória, disco), analisa queries PostgreSQL lentas, Redis, Nginx tuning, e patterns async Python/FastAPI. Sempre com valores medidos, nunca suposições.
+**What it does:** Measures system metrics (CPU, memory, disk), analyzes slow PostgreSQL queries, Redis, Nginx tuning, and async Python/FastAPI patterns. Always with measured values, never assumptions.
 
 **Output:** Metrics + bottlenecks + SUMMARY
 
@@ -225,7 +225,7 @@ Quick reference for all 26 agents, organized by squad.
 | **Tools** | Read, Bash, Grep, Glob, Skill(local-mind:super-search) |
 | **When to use** | Schema design, slow queries, indexing, migrations, database health |
 
-**What it does:** Analisa saúde do PostgreSQL, identifica queries lentas via EXPLAIN ANALYZE, recomenda indexes, valida segurança de migrations, e monitora bloat/vacuum.
+**What it does:** Analyzes PostgreSQL health, identifies slow queries via EXPLAIN ANALYZE, recommends indexes, validates migration safety, and monitors bloat/vacuum.
 
 **Output:** Findings with EXPLAIN ANALYZE evidence + SUMMARY
 
@@ -280,22 +280,22 @@ Quick reference for all 26 agents, organized by squad.
 
 | Axis | What it detects |
 |------|------------------------|
-| **Ortografia** | "necesário" → "necessário", uso de S/SS/Ç/SC/X/Z, G/J, CH/X |
-| **Acentuação** | Proparoxítonas sem acento, hiatos, acentos diferenciais (pôr/por, têm/tem) |
-| **Acordo Ortográfico 2009** | "idéia" → "ideia", "vôo" → "voo", regras de hífen com prefixos |
-| **Concordância verbal** | "Fazem dois anos" → "Faz dois anos" (haver/fazer impessoais) |
-| **Concordância nominal** | "menas" (não existe), "meio nervosa" (invariável como advérbio) |
-| **Regência** | "Assisti o jogo" → "Assisti ao jogo", "Prefiro X do que Y" → "Prefiro X a Y" |
-| **Crase** | Obrigatória (à noite, às 10h), proibida (antes de verbos, masculinos) |
-| **Colocação pronominal** | "Me disseram" → "Disseram-me", próclise/mesóclise/ênclise |
-| **Pontuação** | Vírgula entre sujeito e verbo (proibida), vocativo sem vírgula, adjunto deslocado |
-| **Vícios de linguagem** | "subir para cima", "elo de ligação", "surpresa inesperada" (pleonasmos) |
-| **Confusões clássicas** | mas/mais, mal/mau, há/a, onde/aonde, a fim/afim |
+| **Spelling** | "necesário" → "necessário", S/SS/Ç/SC/X/Z, G/J, CH/X usage |
+| **Accents** | Missing proparoxytone accents, hiatuses, differential accents (pôr/por, têm/tem) |
+| **2009 Spelling Reform** | "idéia" → "ideia", "vôo" → "voo", prefix hyphen rules |
+| **Verb agreement** | "Fazem dois anos" → "Faz dois anos" (impersonal haver/fazer) |
+| **Noun agreement** | "menas" (doesn't exist), "meio nervosa" (invariable as adverb) |
+| **Regency** | "Assisti o jogo" → "Assisti ao jogo", "Prefiro X do que Y" → "Prefiro X a Y" |
+| **Crase** | Mandatory (à noite, às 10h), forbidden (before verbs, masculine nouns) |
+| **Pronoun placement** | "Me disseram" → "Disseram-me", proclisis/mesoclisis/enclisis |
+| **Punctuation** | Comma between subject and verb (forbidden), vocative without comma |
+| **Language vices** | "subir para cima", "elo de ligação", "surpresa inesperada" (pleonasms) |
+| **Classic confusions** | mas/mais, mal/mau, há/a, onde/aonde, a fim/afim |
 
 **Absolute scope:**
-- SOMENTE texto PT-BR — ignora completamente texto em outros idiomas
-- NUNCA altera nomes de variáveis, funções ou identificadores de código
-- NUNCA altera termos técnicos em inglês (ex: "SQL injection", "deploy")
+- ONLY PT-BR text — completely ignores text in other languages
+- NEVER changes variable names, functions, or code identifiers
+- NEVER changes technical terms in English (e.g., "SQL injection", "deploy")
 
 **Output:** Findings with `file:line` + Recurring patterns + SUMMARY
 
@@ -316,7 +316,7 @@ Quick reference for all 26 agents, organized by squad.
 
 | Axis | What it detects |
 |------|------------------------|
-| **Spelling** | "occured" → "occurred", "definately" → "definitely" (40+ palavras mais erradas) |
+| **Spelling** | "occured" → "occurred", "definately" → "definitely" (40+ most misspelled words) |
 | **Homophones** | "it's/its", "their/there/they're", "affect/effect" (22+ pares) |
 | **British vs American** | "colour" → "color", "travelling" → "traveling" — enforce AmE |
 | **Subject-verb agreement** | "Everyone have" → "Everyone has", collective nouns, inverted sentences |
@@ -328,9 +328,9 @@ Quick reference for all 26 agents, organized by squad.
 | **Style** | Wordy expressions ("due to the fact that" → "because"), formal register |
 
 **Absolute scope:**
-- SOMENTE texto em inglês — ignora completamente texto em outros idiomas
-- NUNCA altera nomes de variáveis, funções ou identificadores de código
-- Enforce American English spelling (nunca British)
+- ONLY English text — completely ignores text in other languages
+- NEVER changes variable names, functions, or code identifiers
+- Enforces American English spelling (never British)
 
 **Output:** Findings with `file:line` + Recurring patterns + SUMMARY
 
@@ -358,15 +358,15 @@ Quick reference for all 26 agents, organized by squad.
 | **Indexability** | noindex acidental, redirect chains, soft 404s, status codes |
 | **Meta tags** | Title (50-60 chars, keyword first), description (150-160 chars), viewport, canonical |
 | **Structured data** | JSON-LD: Organization, WebSite, BreadcrumbList, Article, Product, FAQ — valida Rich Results |
-| **Rendering** | SSR/SSG para SEO-critical pages, CSR flagado como HIGH, hash routing, JS-only nav |
+| **Rendering** | SSR/SSG for SEO-critical pages, CSR flagged as HIGH, hash routing, JS-only nav |
 | **Images** | Alt text, width/height (CLS), lazy loading, format (AVIF/WebP), srcset, fetchpriority |
 | **Content** | Heading hierarchy (1x H1, sem skip), internal linking, semantic HTML, keyword stuffing |
 
 **Extras:**
-- Detecta framework automaticamente (Next.js, React, Astro) e aplica regras framework-specific
+- Auto-detects framework (Next.js, React, Astro) and applies framework-specific rules
 - Social meta tags (Open Graph, Twitter Card)
-- 20 erros SEO comuns ranqueados por severidade (CRITICAL→LOW)
-- SEO & acessibilidade overlap
+- 20 common SEO errors ranked by severity (CRITICAL→LOW)
+- SEO & accessibility overlap
 
 **Output:** Surface Area (pages, stack, rendering) + Findings + Quick Wins + SUMMARY
 
@@ -385,74 +385,74 @@ Quick reference for all 26 agents, organized by squad.
 
 **What it does:** Tech recruitment specialist with 4 operation modes:
 
-**Modo 1 — Revisão de Job Description:**
-- Avalia estrutura, requisitos (max 6 must-haves), linguagem inclusiva, bias de gênero/idade
-- Score 1-10 com justificativa
-- Reescreve a JD se score < 7
-- Detecta: títulos "Ninja/Rockstar", salários ocultos, requisitos impossíveis (ex: "10+ anos de React")
+**Mode 1 — Job Description Review:**
+- Evaluates structure, requirements (max 6 must-haves), inclusive language, gender/age bias
+- Score 1-10 with justification
+- Rewrites the JD if score < 7
+- Detects: "Ninja/Rockstar" titles, hidden salaries, impossible requirements (e.g., "10+ years of React")
 
-**Modo 2 — Avaliação de Candidato:**
-- Analisa perfil LinkedIn (tenure, crescimento, recomendações, headline)
-- Analisa GitHub (consistência, qualidade, READMEs, commit messages, contribuições OS)
-- Analisa currículo (red flags: buzzwords sem contexto, "expert in 25+ languages")
-- Avalia código (SQL injection, secrets hardcoded, bare except, god functions)
-- Determina seniority: Junior / Mid / Senior / Staff com justificativa concreta
-- **Growth potential**: avalia se o candidato pode crescer para o nível desejado e em qual prazo
-- **Alternative fit**: se não é adequado para esta vaga, sugere qual vaga/nível seria ideal
-- Recomendação: ADVANCE / HOLD / PASS — cada uma com next steps concretos
+**Mode 2 — Candidate Evaluation:**
+- Analyzes LinkedIn profile (tenure, growth, recommendations, headline)
+- Analyzes GitHub (consistency, quality, READMEs, commit messages, OS contributions)
+- Analyzes resume (red flags: buzzwords without context, "expert in 25+ languages")
+- Evaluates code (SQL injection, hardcoded secrets, bare except, god functions)
+- Determines seniority: Junior / Mid / Senior / Staff with concrete justification
+- **Growth potential**: evaluates whether the candidate can grow to the desired level and timeline
+- **Alternative fit**: if not suitable for this role, suggests which role/level would be ideal
+- Recommendation: ADVANCE / HOLD / PASS — each with concrete next steps
 
-**Modo 3 — Design de Entrevista:**
-- Pipeline por nível (Junior→Staff) com assessment types adequados
-- Perguntas técnicas por stack (Python/FastAPI, TypeScript/React, DevOps, Go)
-- Perguntas comportamentais (STAR method, 7 categorias essenciais)
-- System design (URL shortener→payment system por nível)
-- Rubric de scoring padronizada
+**Mode 3 — Interview Design:**
+- Pipeline by level (Junior→Staff) with appropriate assessment types
+- Technical questions by stack (Python/FastAPI, TypeScript/React, DevOps, Go)
+- Behavioral questions (STAR method, 7 essential categories)
+- System design (URL shortener→payment system by level)
+- Standardized scoring rubric
 
-**Modo 4 — Auditoria de Processo:**
-- Funil de conversão (benchmarks 2026)
-- Métricas: time-to-hire, cost-per-hire, offer acceptance rate
-- Bias detection no processo (affinidade, confirmação, halo/horn)
-- D&I: blind screening, painéis diversos, structured interviews
+**Mode 4 — Process Audit:**
+- Conversion funnel (2026 benchmarks)
+- Metrics: time-to-hire, cost-per-hire, offer acceptance rate
+- Bias detection in process (affinity, confirmation, halo/horn)
+- D&I: blind screening, diverse panels, structured interviews
 
-**Modo 5 — Profile Assessment / "Qual meu nível?" (NOVO):**
+**Mode 5 — Profile Assessment / "What's my level?" (NEW):**
 
-Avaliação de seniority usando o framework de 5 eixos (baseado em engineeringladders.com + calibração FAANG):
+Seniority assessment using the 5-axis framework (based on engineeringladders.com + FAANG calibration):
 
-| Eixo | O que mede | Score 1 (Junior) → Score 5 (Principal) |
+| Axis | What it measures | Score 1 (Junior) → Score 5 (Principal) |
 |------|-----------|----------------------------------------|
-| **Technology** | Profundidade técnica | Adopts → Specializes → Evangelizes → Masters → Creates |
-| **System** | Design de sistemas | Enhances → Designs → Owns → Evolves → Leads |
-| **People** | Mentoring e liderança | Learns → Supports → Mentors → Coordinates → Manages |
-| **Process** | Maturidade de processos | Follows → Enforces → Challenges → Adjusts → Defines |
-| **Influence** | Escopo de impacto | Subsystem → Team → Multiple Teams → Company → Community |
+| **Technology** | Technical depth | Adopts → Specializes → Evangelizes → Masters → Creates |
+| **System** | System design | Enhances → Designs → Owns → Evolves → Leads |
+| **People** | Mentoring and leadership | Learns → Supports → Mentors → Coordinates → Manages |
+| **Process** | Process maturity | Follows → Enforces → Challenges → Adjusts → Defines |
+| **Influence** | Impact scope | Subsystem → Team → Multiple Teams → Company → Community |
 
-Entrega:
-- **Scorecard 5 eixos** com evidência para cada score
-- **Nível calibrado** (Junior/Mid/Senior/Staff/Principal) + equivalência FAANG (L3-L8)
-- **Profile shape** (I/T/Pi/M-shaped) com análise
-- **Skills gap analysis** com tempo estimado de fechamento e estratégia
-- **Growth roadmap** personalizado (quick wins + médio prazo + riscos de plateau)
-- **Market positioning** com pesquisa de mercado (WebSearch) — salário esperado, fit de empresas
-- **IC vs Management** — recomendação baseada nos sinais observados
-- **Title calibration** — se o título atual não condiz com o nível real
+Delivers:
+- **5-axis scorecard** with evidence for each score
+- **Calibrated level** (Junior/Mid/Senior/Staff/Principal) + FAANG equivalence (L3-L8)
+- **Profile shape** (I/T/Pi/M-shaped) with analysis
+- **Skills gap analysis** with estimated closure time and strategy
+- **Growth roadmap** personalized (quick wins + medium term + plateau risks)
+- **Market positioning** with market research (WebSearch) — expected salary, company fit
+- **IC vs Management** — recommendation based on observed signals
+- **Title calibration** — if current title doesn't match actual level
 
-**Modo 6 — Salary/Offer Review (NOVO):**
-- Posicionamento no mercado (P25/P50/P75) com fontes datadas
-- Breakdown de total compensation (base + equity + bonus + benefits)
-- Análise competitiva: a oferta atrai talento ou perde para concorrentes?
-- Recomendações de ajuste com justificativa
+**Mode 6 — Salary/Offer Review (NEW):**
+- Market positioning (P25/P50/P75) with dated sources
+- Total compensation breakdown (base + equity + bonus + benefits)
+- Competitive analysis: does the offer attract talent or lose to competitors?
+- Adjustment recommendations with justification
 
 **Reference data:**
-- Benchmarks salariais por região (US, EU, BR, LATAM)
+- Salary benchmarks by region (US, EU, BR, LATAM)
 - Funnel rates (191 applications/hire, 82% offer acceptance)
 - Sourcing effectiveness (referrals = 11x inbound, internal = 32x)
-- Onboarding 30/60/90 dias
+- Onboarding 30/60/90 days
 - Career ladder mapping: FAANG (L3-L8), Stripe (L1-L5), Radford (P1-P6)
-- Timeline médio entre níveis: Junior→Mid (1-2a), Mid→Senior (2-4a), Senior→Staff (3-5a)
+- Average timeline between levels: Junior→Mid (1-2y), Mid→Senior (2-4y), Senior→Staff (3-5y)
 
 **Ferramentas:** Read, Grep, Glob, Bash, **WebSearch, WebFetch** (validação de mercado em tempo real)
 
-**Output:** Varia por modo — sempre com alternativas concretas (nunca só crítica)
+**Output:** Varies by mode — always with concrete alternatives (never just criticism)
 
 **Tested against:** JD com 17 erros + candidato com 35 red flags. Coverage: ~98%. False positives: 0.
 
@@ -469,7 +469,7 @@ editor-chefe → jornalista → redator → fact-checker → editor-de-texto →
   (pauta)      (apura)      (escreve)  (verifica)     (lapida)          (revisa)
 ```
 
-**Technical parallel path:** `escritor-tecnico` → `ortografia-reviewer` (pula jornalista/fact-checker para conteúdo técnico/acadêmico).
+**Technical parallel path:** `escritor-tecnico` → `ortografia-reviewer` (skips jornalista/fact-checker for technical/academic content).
 
 ### editor-chefe
 
@@ -480,9 +480,9 @@ editor-chefe → jornalista → redator → fact-checker → editor-de-texto →
 | **Tools** | Read, Grep, Glob, WebSearch, WebFetch |
 | **When to use** | Start of editorial project: define story angle, editorial line, approve scope |
 
-**What it does:** Transforma ideias vagas em pautas executáveis com ângulo diferenciado. Avalia newsworthiness, calibra escopo, mapeia fontes necessárias, aplica código FENAJ e identifica riscos éticos/jurídicos/editoriais. Não apura nem escreve — decide o QUÊ e o PORQUÊ.
+**What it does:** Transforms vague ideas into actionable story assignments with a differentiated angle. Evaluates newsworthiness, calibrates scope, maps required sources, applies FENAJ code and identifies ethical/legal/editorial risks. Doesn't investigate or write — decides the WHAT and the WHY.
 
-**Output:** Pauta estruturada (tipo, pergunta-central, ângulo, newsworthiness, tese provisória, fontes necessárias, riscos, escopo, linha editorial, referências, próximos passos).
+**Output:** Structured story assignment (type, central question, angle, newsworthiness, provisional thesis, required sources, risks, scope, editorial line, references, next steps).
 
 ---
 
@@ -495,9 +495,9 @@ editor-chefe → jornalista → redator → fact-checker → editor-de-texto →
 | **Tools** | Read, Write, Grep, Glob, WebSearch, WebFetch, Bash |
 | **When to use** | Investigate story approved by editor-chefe — investigation, interviews, triangulation |
 
-**What it does:** Apuração rigorosa com metodologia profissional — desk research, identificação de fontes, entrevistas com condição de atribuição explícita (on the record / background / deep background / off), verificação cruzada, busca obrigatória do "outro lado". Entrega material bruto estruturado para o redator. Rule of Two aplicado: Bash apenas para processamento local, nunca curl/wget/scp externos.
+**What it does:** Rigorous investigation with professional methodology — desk research, source identification, interviews with explicit attribution conditions (on the record / background / deep background / off), cross-verification, mandatory search for the "other side". Delivers structured raw material to the redator. Rule of Two applied: Bash only for local processing, never external curl/wget/scp.
 
-**Output:** Material apurado (fatos confirmados com fontes trianguladas, citações literais, documentos, outro lado, cronologia, pontos sensíveis, lacunas, recomendação de ângulo).
+**Output:** Investigated material (confirmed facts with triangulated sources, verbatim quotes, documents, other side, timeline, sensitive points, gaps, angle recommendation).
 
 ---
 
@@ -510,9 +510,9 @@ editor-chefe → jornalista → redator → fact-checker → editor-de-texto →
 | **Tools** | Read, Write, Edit, Grep, Glob, WebSearch, WebFetch |
 | **When to use** | Transform investigated material into publishable editorial text |
 
-**What it does:** Escolhe gênero (notícia, reportagem, perfil, entrevista, análise, opinião, crônica), estrutura, lead (5W2H, anedótico, descritivo, contrastivo, citacional, estatístico), nut graph (quando necessário), fechamento aceito (circular, citação forte, futuro aberto, detalhe simbólico). Aplica rigor com verbos de atribuição (afirmou ≠ alegou ≠ confessou), linguagem jurídica (suspeito/réu/indiciado/condenado conforme momento processual) e estilo PT-BR profissional. Nunca adiciona fatos — usa só o material apurado.
+**What it does:** Chooses genre (news, feature, profile, interview, analysis, opinion, chronicle), structure, lead (5W2H, anecdotal, descriptive, contrastive, quotation, statistical), nut graph (when needed), accepted closing (circular, strong quote, open future, symbolic detail). Applies rigor with attribution verbs (stated ≠ alleged ≠ confessed), legal language (suspect/defendant/indicted/convicted per procedural stage) and professional PT-BR style. Never adds facts — uses only the investigated material.
 
-**Output:** Texto editorial pronto conforme gênero escolhido + justificativa de lead + fontes citadas + lacunas identificadas.
+**Output:** Ready editorial text per chosen genre + lead justification + cited sources + identified gaps.
 
 ---
 
@@ -525,9 +525,9 @@ editor-chefe → jornalista → redator → fact-checker → editor-de-texto →
 | **Tools** | Read, Write, Edit, Grep, Glob, WebSearch, WebFetch |
 | **When to use** | Technical/scientific writing: academic articles, documentation, ADRs, design docs, post-mortems, presentations |
 
-**What it does:** Produção (não revisão) de textos técnicos e acadêmicos seguindo normas consagradas. Cobre 10 tipos de documento: trabalho ABNT (NBR 14724:2024, 6023:2018, 10520:2023), artigo científico IMRAD, documentação técnica Diátaxis (tutorial/how-to/reference/explanation), ADR formato Nygard, design doc Google style, post-mortem SRE blameless, relatório executivo Minto/BLUF, README excelente, changelog (Keep a Changelog + SemVer), slides (Duarte/Knaflic + 10/20/30 Kawasaki).
+**What it does:** Production (not review) of technical and academic texts following established standards. Covers 10 document types: ABNT paper (NBR 14724:2024, 6023:2018, 10520:2023), IMRAD scientific article, Diataxis technical documentation (tutorial/how-to/reference/explanation), Nygard-format ADR, Google-style design doc, blameless SRE post-mortem, Minto/BLUF executive report, excellent README, changelog (Keep a Changelog + SemVer), slides (Duarte/Knaflic + 10/20/30 Kawasaki).
 
-**Output:** Documento pronto no formato canônico apropriado + fontes citadas + lacunas.
+**Output:** Ready document in the appropriate canonical format + cited sources + gaps.
 
 ---
 
@@ -540,9 +540,9 @@ editor-chefe → jornalista → redator → fact-checker → editor-de-texto →
 | **Tools** | Read, Grep, Glob, WebSearch, WebFetch, Bash |
 | **When to use** | Verify factual claims in produced texts — **Rule of Two applied to journalism** |
 
-**What it does:** Verificação independente seguindo metodologia das agências brasileiras (Lupa, Aos Fatos, AFP Checamos, Comprova, Estadão Verifica). 8 passos: seleção → levantamento → bases oficiais → LAI → campo → especialistas → resposta da parte checada → publicar com etiqueta. Classifica cada alegação com uma das 7 etiquetas Lupa 2023+: VERDADEIRO, FALSO, EXAGERADO, SUBESTIMADO, CONTRADITÓRIO, INSUSTENTÁVEL, FALTA CONTEXTO. Nunca aceita trabalho do redator como verdade — re-verifica independentemente.
+**What it does:** Independent verification following Brazilian fact-checking agency methodology (Lupa, Aos Fatos, AFP Checamos, Comprova, Estadao Verifica). 8 steps: selection → survey → official databases → FOI → field → experts → checked party response → publish with label. Classifies each claim with one of 7 Lupa 2023+ labels: TRUE, FALSE, EXAGGERATED, UNDERESTIMATED, CONTRADICTORY, UNSUSTAINABLE, LACKS CONTEXT. Never accepts the redator's work as truth — re-verifies independently.
 
-**Output:** Relatório de verificação estruturado (alegações verificadas + classificação + fontes + correções sugeridas + recomendação final: PUBLICAR / PUBLICAR COM CORREÇÕES / DEVOLVER AO REDATOR / DEVOLVER AO JORNALISTA / NÃO PUBLICAR).
+**Output:** Structured verification report (verified claims + classification + sources + suggested corrections + final recommendation: PUBLISH / PUBLISH WITH CORRECTIONS / RETURN TO REDATOR / RETURN TO JORNALISTA / DO NOT PUBLISH).
 
 ---
 
@@ -555,6 +555,6 @@ editor-chefe → jornalista → redator → fact-checker → editor-de-texto →
 | **Tools** | Read, Write, Edit, Grep, Glob, WebSearch, WebFetch |
 | **When to use** | Final editing of editorial texts — cuts, sharpens, reorganizes, applies FENAJ |
 
-**What it does:** 4 operações cirúrgicas — CORTAR (reduzir 20-40% eliminando redundâncias, adjetivação ociosa, fillers, perífrases, corporativês), AFIAR (substituir genérico por preciso), REORGANIZAR (lead fraco, nut graph ausente, informação enterrada, fechamento seco), AJUSTAR RITMO (frases longas vs curtas, parágrafos). Aplica checklist FENAJ completo, verifica presunção de inocência (suspeito/réu/indiciado/condenado), elimina clichês jornalísticos proibidos ("tragédia anunciada", "em meio a", "cabe à sociedade refletir"). Nunca adiciona fatos — só edita o existente.
+**What it does:** 4 surgical operations — CUT (reduce 20-40% by eliminating redundancies, idle adjectives, fillers, periphrases, corporate jargon), SHARPEN (replace generic with precise), REORGANIZE (weak lead, missing nut graph, buried information, dry closing), ADJUST RHYTHM (long vs short sentences, paragraphs). Applies full FENAJ checklist, verifies presumption of innocence (suspect/defendant/indicted/convicted), eliminates forbidden journalistic cliches. Never adds facts — only edits the existing text.
 
-**Output:** Texto editado final + diff de edição (cortes, correções de atribuição, correções jurídicas, clichês removidos) + métricas de redução + checklist FENAJ + problemas não-resolvíveis que exigem devolução.
+**Output:** Final edited text + edit diff (cuts, attribution corrections, legal corrections, removed cliches) + reduction metrics + FENAJ checklist + unresolvable issues requiring return.
