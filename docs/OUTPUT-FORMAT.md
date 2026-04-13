@@ -8,7 +8,7 @@ Isso permite ao Captain entender a importância antes do detalhe técnico — e 
 
 ## Formato Padrão
 
-Todos os 16 agentes usam esta estrutura:
+Todos os 26 agentes usam esta estrutura:
 
 ```markdown
 ### ACHADOS (max 5, ordenados por severidade)

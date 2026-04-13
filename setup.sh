@@ -18,7 +18,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 echo ""
 echo "╔══════════════════════════════════════════════╗"
 echo "║  Quarterdeck — Setup                         ║"
-echo "║  16 agents, 5 squads, 9 hooks                ║"
+echo "║  26 agents, 8 squads, 14 hooks               ║"
 echo "╚══════════════════════════════════════════════╝"
 echo ""
 

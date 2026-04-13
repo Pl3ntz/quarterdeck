@@ -141,7 +141,7 @@ Organizados em 8 squads (equipes funcionais):
 
 | Agente | O que faz | Modelo |
 |--------|-----------|--------|
-| **seo-reviewer** | Audita SEO técnico: Core Web Vitals, meta tags, structured data, crawlability, rendering | Sonnet |
+| **seo-reviewer** | Audita SEO técnico: Core Web Vitals, meta tags, structured data, crawlability, rendering | Haiku |
 | **tech-recruiter** | Recrutamento tech: job descriptions, avaliação de candidatos, seniority, entrevistas, compensação | Sonnet |
 
 ### Editorial — produção de conteúdo com fontes verificadas
@@ -154,7 +154,7 @@ Pipeline editorial profissional completo. Todos operam sob [Sourcing Discipline 
 | **jornalista** | Apuração, investigação, entrevistas, triangulação de fontes, material bruto | Sonnet |
 | **redator** | Redação editorial: lead, pirâmide invertida, narrativa, voz e ritmo | Sonnet |
 | **escritor-tecnico** | Escrita técnica/acadêmica: ABNT, IMRAD, Diátaxis, ADRs, design docs, post-mortems | Sonnet |
-| **fact-checker** | Verificação independente (Rule of Two): metodologia Lupa, 7 etiquetas, triangulação 3+ fontes | Opus |
+| **fact-checker** | Verificação independente (Rule of Two): metodologia Lupa, 7 etiquetas, triangulação 3+ fontes | Sonnet |
 | **editor-de-texto** | Edição final: cortes, FENAJ, linguagem jurídica, lead/fechamento | Sonnet |
 
 **Pipeline recomendado:**
@@ -278,7 +278,7 @@ Os agentes vêm configurados para **pt-BR**. Para mudar, edite a regra de idioma
 
 | Documento | O que cobre |
 |-----------|-------------|
-| [docs/AGENTS.md](docs/AGENTS.md) | Catálogo completo dos 16 agentes com ferramentas e output |
+| [docs/AGENTS.md](docs/AGENTS.md) | Catálogo completo dos 26 agentes com ferramentas e output |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Arquitetura do sistema e fluxo de uma demanda |
 | [docs/CRAWLER-PROTOCOL.md](docs/CRAWLER-PROTOCOL.md) | Como funciona a execução paralela por ondas |
 | [docs/OUTPUT-FORMAT.md](docs/OUTPUT-FORMAT.md) | Formato de output com exemplos por agente |
@@ -289,7 +289,7 @@ Os agentes vêm configurados para **pt-BR**. Para mudar, edite a regra de idioma
 
 ## FAQ
 
-### Preciso usar todos os 16 agentes?
+### Preciso usar todos os 26 agentes?
 
 Não. Comece com os 4 mais úteis: **code-reviewer**, **planner**, **tdd-guide**, e **deep-researcher**. Adicione outros conforme sentir necessidade.
 

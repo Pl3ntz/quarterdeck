@@ -344,7 +344,7 @@ Referência rápida de todos os 26 agentes, organizados por squad.
 
 | Campo | Valor |
 |-------|-------|
-| **Modelo** | Sonnet |
+| **Modelo** | Haiku |
 | **Tipo** | Read-only |
 | **Ferramentas** | Read, Grep, Glob, Bash |
 | **Quando usar** | Após mudanças de UI, novas páginas, antes de deploy — auditar SEO técnico |
@@ -535,7 +535,7 @@ editor-chefe → jornalista → redator → fact-checker → editor-de-texto →
 
 | Campo | Valor |
 |-------|-------|
-| **Modelo** | Opus |
+| **Modelo** | Sonnet |
 | **Tipo** | Read-only (verificação independente) |
 | **Ferramentas** | Read, Grep, Glob, WebSearch, WebFetch, Bash |
 | **Quando usar** | Verificar alegações factuais em textos produzidos — **Rule of Two aplicado ao jornalismo** |

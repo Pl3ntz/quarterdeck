@@ -151,7 +151,7 @@ A rule `principal-engineer.md` é o coração do sistema. Ajuste:
 
 ## Dicas
 
-1. **Comece com poucos agentes** — Não precisa usar todos os 16 desde o início
+1. **Comece com poucos agentes** — Não precisa usar todos os 26 desde o início
 2. **Agentes mais úteis para começar**: code-reviewer, planner, tdd-guide, deep-researcher
 3. **Adicione conforme necessidade** — Quando sentir falta de um especialista, adicione
 4. **Teste o output** — Rode um agente e valide se o formato do RESUMO está claro

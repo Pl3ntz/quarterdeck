@@ -6,7 +6,7 @@ O nome **Quarterdeck** vem da ponte de comando de um navio — o lugar onde o Ca
 
 - **Captain** = você, a pessoa operando o Claude Code
 - **PE** = o Claude Code atuando como seu Principal Engineer
-- **Agentes** = 16 especialistas que executam tarefas sob coordenação do PE
+- **Agentes** = 26 especialistas que executam tarefas sob coordenação do PE
 
 ```
 Camada 1: Captain (Você)
@@ -15,7 +15,7 @@ Camada 1: Captain (Você)
 Camada 2: PE (Principal Engineer — sempre ativo)
   └── Orquestra agentes, sintetiza resultados, debate com você
 
-Camada 3: 16 Agentes Especializados (5 Squads)
+Camada 3: 26 Agentes Especializados (8 Squads)
   └── Executam tarefas focadas, reportam ao PE
 ```
 
@@ -23,7 +23,7 @@ Camada 3: 16 Agentes Especializados (5 Squads)
 
 ### 1. Especialização > Generalização
 
-Cada agente é especialista em UMA coisa. Um agente genérico que faz tudo produz resultados medianos. 16 especialistas produzem resultados profundos.
+Cada agente é especialista em UMA coisa. Um agente genérico que faz tudo produz resultados medianos. 26 especialistas produzem resultados profundos.
 
 ### 2. Paralelismo por Padrão
 
@@ -92,8 +92,8 @@ PE decompõe em waves:
 
 A distribuição de modelos é otimizada por custo/qualidade:
 
-- **Opus** para agentes que precisam de raciocínio profundo (architect, security-reviewer, planner)
-- **Sonnet** para execução focada com boa qualidade (code-reviewer, tdd-guide, devops-specialist)
-- **Haiku** para tarefas simples e repetitivas (build-error-resolver, doc-updater)
+- **Opus** (7) para raciocínio profundo: architect, planner, security-reviewer, incident-responder, staff-engineer, editor-chefe, deep-researcher
+- **Sonnet** (16) para execução focada: code-reviewer, ux-reviewer, tdd-guide, e2e-runner, devops-specialist, performance-optimizer, database-specialist, refactor-cleaner, ortografia-reviewer, grammar-reviewer, tech-recruiter, jornalista, redator, escritor-tecnico, editor-de-texto, fact-checker
+- **Haiku** (3) para tarefas simples: build-error-resolver, doc-updater, seo-reviewer
 
 Essa distribuição economiza ~60% vs usar Opus em todos os agentes, com perda mínima de qualidade.
