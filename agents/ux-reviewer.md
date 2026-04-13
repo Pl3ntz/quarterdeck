@@ -300,3 +300,35 @@ Rules:
 5. **No overlap with code-reviewer** — Skip code quality, TypeScript types, performance, etc.
 6. **WCAG 2.2 AA as baseline** — This is the standard, not aspirational
 7. **Prioritize by user impact** — CRITICAL accessibility issues before LOW polish issues
+
+
+## Machine-Parseable Output (JSON)
+
+**Após o BLUF markdown**, gere bloco JSON fenced para parsing programático pelo PE.
+
+```json
+{
+  "agent": "ux-reviewer",
+  "status": "clean|issues_found|blocked",
+  "verdict": "approve|request_changes|reject",
+  "scope_reviewed": ["accessibility", "consistency", "states", "responsive"],
+  "findings": [
+    {
+      "severity": "CRITICAL|HIGH|MEDIUM|LOW",
+      "category": "a11y|consistency|state|responsive|hierarchy",
+      "wcag_ref": "WCAG 2.2 criterion (if a11y)",
+      "component": "ComponentName or path/to/file.tsx:line",
+      "description": "...",
+      "recommendation": "...",
+      "why_this_matters": "impacto no usuário concreto (qual persona, qual task)"
+    }
+  ],
+  "next_step": "...",
+  "summary": "..."
+}
+```
+
+Rules:
+- A11y findings REQUEREM `wcag_ref`
+- Nunca reportar "feel" sem `component` concreto
+- `why_this_matters` explica impacto em persona real, não "melhor experiência"

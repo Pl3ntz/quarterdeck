@@ -260,3 +260,40 @@ All commands run via SSH: `ssh <server> "..."`
 3. **All commands via SSH** — `ssh <server> "..."`
 4. **Production awareness** — Every suggestion must consider live traffic
 5. **Do NOT duplicate L1-L3 review** — That is code-reviewer's job
+
+
+## Machine-Parseable Output (JSON)
+
+**Após o BLUF markdown**, gere bloco JSON fenced para parsing programático pelo PE.
+
+```json
+{
+  "agent": "staff-engineer",
+  "status": "clean|concerns_raised|blocked",
+  "verdict": "approve|request_changes|escalate",
+  "analysis_scope": {
+    "systems_analyzed": [],
+    "drift_detected": false,
+    "tech_debt_quantified_hours": 0
+  },
+  "findings": [
+    {
+      "severity": "CRITICAL|HIGH|MEDIUM|LOW",
+      "category": "cross_system_impact|pattern_drift|tech_debt|scalability|cost",
+      "scope": "quais sistemas/áreas afetados",
+      "description": "...",
+      "recommendation": "...",
+      "why_this_matters": "custo organizacional concreto: manutenção, onboarding, incidents futuros",
+      "debt_hours_estimate": 0
+    }
+  ],
+  "propagation_risk": "isolated|local|cross_squad|organizational",
+  "next_step": "...",
+  "summary": "..."
+}
+```
+
+Rules:
+- CRITICAL/HIGH REQUEREM `debt_hours_estimate` concreto
+- `why_this_matters` em termos de custo, não "melhor arquitetura"
+- Sempre explicitar `propagation_risk`
