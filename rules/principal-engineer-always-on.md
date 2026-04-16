@@ -78,7 +78,7 @@ Seguem os protocolos existentes:
 | SPECIFY → CTO confirma | **Sim** |
 | PLAN → CTO aprova | **Sim** |
 | TASKS → IMPLEMENT | Auto-advance se CTO já aprovou o PLAN |
-| IMPLEMENT → RESUMO | Não (PE faz automaticamente) |
+| IMPLEMENT → entrega | Não (PE faz automaticamente, recap nativo cobre o final) |
 
 ## 2. Agent Orchestration (Squad Model)
 
@@ -330,7 +330,7 @@ Before analyzing a request from scratch, check these tables for a match. If foun
 > Quick routing:
 > - Section 7 (Agent Handoff) → when transitioning between agents in a chain
 > - Section 8 (Workflow Chains) → new-feature, fix-bug, refactor, incident chains
-> - Section 10 (Request-Completion) → CTO-REQUEST tracking, RESUMO protocol
+> - Section 10 (Request-Completion) → CTO-REQUEST tracking
 > - Section 11 (Chain Failure Recovery) → when an agent fails or produces inadequate output
 > - Section 12 (Maker-Checker) → quality gate loops with acceptance criteria
 > - Section 13 (Tip Extraction) → session-end self-improvement
@@ -361,7 +361,7 @@ constraints: [production gate, SSH-only, Bun not npm, etc.]
 Rules:
 - NEVER spawn an agent without context preamble
 - If unsure of current state, run read-only commands BEFORE spawning
-- For remote projects (remote project), include `ssh <prod_server>` in path
+- For remote projects, include `ssh your-server` in path
 - For local projects, include local path and stack
 
 ### Part 1.5: Agent Memory Recall (Shared Agent Memory)
@@ -517,9 +517,9 @@ When presenting multi-agent results to the CTO, the PE MUST use this format:
 
 ```markdown
 ## Resultados dos Agentes
-| Agente | Resultado | Resumo |
-|--------|-----------|--------|
-| [agente] | [resultado] | [resumo em 1 frase] |
+| Agente | Resultado | Achado-chave |
+|--------|-----------|--------------|
+| [agente] | [resultado] | [1 frase] |
 
 ## Itens de Ação (merged por severidade)
 1. [CRITICAL] [item] — [agente fonte] — [arquivo/localização]
@@ -528,13 +528,12 @@ When presenting multi-agent results to the CTO, the PE MUST use this format:
 ## Contradições (se houver)
 - [Agente A] diz [X] vs [Agente B] diz [Y]
 - **Avaliação:** [qual está correto e por quê]
-
-### RESUMO: [2-3 frases fluidas: impacto da análise → abordagem usada (agentes, paralelo/sequencial) → resultados concretos com números]
 ```
 
 Rules:
 - Sempre merge findings por severidade, não por agente
 - Sempre exponha contradições explicitamente
 - Síntese em no máximo 300 tokens
-- O usuário deve conseguir tomar decisão lendo apenas o RESUMO
+- O CTO deve conseguir tomar decisão lendo apenas a tabela + itens de ação
+- **NÃO escreva trailing summaries (RESUMO/SUMMARY)** — o recap nativo do Claude Code 2.0 cobre o final
 - **IDIOMA: Sempre em pt-BR com ortografia correta. Inglês SOMENTE para termos técnicos (ex: "SQL injection", "rate limiting"), seguidos de descrição clara em português. Isso vale para o PE e TODOS os agentes.**
