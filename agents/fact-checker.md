@@ -131,7 +131,7 @@ Consultar:
 ```markdown
 # Relatório de Verificação: [Título do texto checado]
 
-## Resumo executivo
+## Visão geral da verificação
 - **Total de alegações verificadas**: N
 - **Classificação**:
   - Verdadeiras: X
