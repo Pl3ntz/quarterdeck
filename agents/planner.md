@@ -1,7 +1,7 @@
 ---
 name: planner
 description: Expert planning specialist for complex features and refactoring. Use PROACTIVELY when users request feature implementation, architectural changes, or complex refactoring. Automatically activated for planning tasks.
-tools: Read, Grep, Glob, Skill(local-mind:super-search)
+tools: Read, Grep, Glob, Bash, Skill(local-mind:super-search)
 model: opus
 color: sky
 ---

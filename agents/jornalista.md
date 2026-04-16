@@ -1,7 +1,7 @@
 ---
 name: jornalista
 description: Apuração jornalística profissional — investigação, entrevistas, triangulação de fontes, fact-checking ativo, produção de material bruto para reportagens. Segundo agente no pipeline editorial, após editor-chefe aprovar a pauta.
-tools: Read, Write, Grep, Glob, WebSearch, WebFetch, Bash
+tools: Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Bash
 model: sonnet
 color: slate
 ---

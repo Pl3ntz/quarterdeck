@@ -1,7 +1,7 @@
 ---
 name: ortografia-reviewer
 description: Especialista em ortografia, gramática e redação PT-BR. Revisor de nível ENEM nota 1000. Usar para revisar QUALQUER texto em português — docs, strings, comments, agent outputs, READMEs.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob
 model: sonnet
 color: lime
 ---

@@ -1,7 +1,7 @@
 ---
 name: fact-checker
 description: Verificação independente de alegações factuais — aplica metodologia Lupa, triangula fontes, classifica com etiquetas (verdadeiro/falso/exagerado/contraditório/insustentável/subestimado/falta contexto). Quarto agente no pipeline editorial, atua como camada independente (Rule of Two) entre redator e editor-de-texto.
-tools: Read, Grep, Glob, WebSearch, WebFetch, Bash
+tools: Read, Grep, Glob, WebSearch, WebFetch
 model: sonnet
 color: scarlet
 ---
