@@ -12,7 +12,7 @@ Quick reference for all 26 agents, organized by squad.
 |-------|-------|
 | **Model** | Opus |
 | **Type** | Read-only (analysis) |
-| **Tools** | Read, Grep, Glob, Skill(local-mind:super-search) |
+| **Tools** | Read, Grep, Glob, Bash, Skill(local-mind:super-search) |
 | **When to use** | Architecture decisions, system design, trade-off evaluation |
 
 **What it does:** Analyzes current architecture and proposes design decisions with alternatives and trade-offs. Always presents multiple options — never a single solution.
@@ -27,7 +27,7 @@ Quick reference for all 26 agents, organized by squad.
 |-------|-------|
 | **Model** | Opus |
 | **Type** | Read-only (analysis) |
-| **Tools** | Read, Grep, Glob, Skill(local-mind:super-search) |
+| **Tools** | Read, Grep, Glob, Bash, Skill(local-mind:super-search) |
 | **When to use** | Complex features that need a phased plan with risks and dependencies |
 
 **What it does:** Creates detailed implementation plans with phases, steps, risks, and mitigations. Each step references specific file paths.
@@ -82,11 +82,26 @@ Quick reference for all 26 agents, organized by squad.
 | **Model** | Sonnet |
 | **Type** | Read-only |
 | **Tools** | Read, Grep, Glob, Bash, Skill(local-mind:super-search) |
-| **When to use** | After UI changes — accessibility (WCAG 2.2 AA), consistency, interaction states |
+| **When to use** | After UI changes — accessibility (WCAG 2.2 AA + selective AAA), consistency, interaction states, modern web platform |
 
-**What it does:** Reviews frontend for accessibility, contrast, keyboard navigation, touch targets, design consistency, interaction states (hover, focus, disabled, loading, error, empty).
+**What it does:** Framework-agnostic frontend reviewer covering 12 areas:
 
-**Output:** Findings ordered by user impact + SUMMARY
+| Area | What it checks |
+|------|----------------|
+| **WCAG 2.2 AA** | Complete coverage including 2.4.11 Focus Not Obscured, 2.5.7 Dragging, 2.5.8 Target Size (24x24 + spacing), 3.2.6 Consistent Help, 3.3.7 Redundant Entry, 3.3.8 Accessible Auth |
+| **Selective AAA** | 2.4.13 Focus Appearance, 1.4.6 Contrast Enhanced (7:1), 2.4.12 Focus Not Obscured Enhanced, 3.3.9 Accessible Auth Enhanced |
+| **Media queries** | prefers-reduced-motion, prefers-color-scheme, prefers-contrast, forced-colors |
+| **Color & vision** | Beyond contrast — CVD (8% of men), dark mode pitfalls (halation, naive inversion), forced-colors mode |
+| **Motion safety** | Vestibular triggers (parallax, scrolljacking), animation duration limits, autoplay controls |
+| **Component patterns** | Toast (aria-live), carousel, combobox (ARIA 1.2), date picker, infinite scroll, data tables, tooltip, native `<dialog>`, popover |
+| **Loading states** | Skeleton (aria-busy), spinner (role=status), optimistic UI |
+| **Cognitive (COGA)** | Progress indicators, error recovery, auto-save, search, consistent layout |
+| **Mobile UX** | Safe areas (notch/Dynamic Island), dynamic viewport units (svh/lvh/dvh), gesture conflicts |
+| **Internationalization** | RTL via CSS logical properties, lang/dir attributes, text expansion buffer |
+| **Modern platform** | View Transitions API, scroll-driven animations, `:has()`, container queries |
+| **Interaction states** | Default, hover, focus, active, disabled, loading, error, empty |
+
+**Output:** Findings ordered by user impact + WCAG ref + JSON machine-parseable + SUMMARY
 
 ---
 
@@ -273,7 +288,7 @@ Quick reference for all 26 agents, organized by squad.
 |-------|-------|
 | **Model** | Sonnet |
 | **Type** | Read-only |
-| **Tools** | Read, Grep, Glob, Bash |
+| **Tools** | Read, Grep, Glob |
 | **When to use** | Review any PT-BR text — docs, strings, comments, agent outputs, READMEs |
 
 **What it does:** Brazilian Portuguese reviewer at ENEM perfect score level. Covers 11 axes of normative grammar:
@@ -309,7 +324,7 @@ Quick reference for all 26 agents, organized by squad.
 |-------|-------|
 | **Model** | Sonnet |
 | **Type** | Read-only |
-| **Tools** | Read, Grep, Glob, Bash |
+| **Tools** | Read, Grep, Glob |
 | **When to use** | Review any English text — docs, strings, comments, agent outputs, READMEs |
 
 **What it does:** American English reviewer at GRE Analytical Writing score 6/6 (perfect score) level. Covers 10 axes:
@@ -344,33 +359,35 @@ Quick reference for all 26 agents, organized by squad.
 
 | Field | Value |
 |-------|-------|
-| **Model** | Haiku |
+| **Model** | Sonnet |
 | **Type** | Read-only |
 | **Tools** | Read, Grep, Glob, Bash |
-| **When to use** | After UI changes, new pages, before deploy — audit technical SEO |
+| **When to use** | After UI changes, new pages, before deploy — audit technical SEO + AI search readiness |
 
-**What it does:** Technical SEO auditor that reviews code and web content for search engine optimization. Covers 8 areas:
+**What it does:** Framework-agnostic SEO auditor covering 13 areas (expanded for 2025-2026):
 
 | Area | What it checks |
 |------|---------------|
-| **Core Web Vitals** | LCP ≤2.5s, INP ≤200ms, CLS ≤0.1 — hero image lazy (BAD), blocking JS/CSS, missing dimensions |
-| **Crawlability** | robots.txt (bloqueando CSS/JS?), XML sitemap (existe?), canonical URLs, hreflang |
-| **Indexability** | noindex acidental, redirect chains, soft 404s, status codes |
-| **Meta tags** | Title (50-60 chars, keyword first), description (150-160 chars), viewport, canonical |
-| **Structured data** | JSON-LD: Organization, WebSite, BreadcrumbList, Article, Product, FAQ — valida Rich Results |
-| **Rendering** | SSR/SSG for SEO-critical pages, CSR flagged as HIGH, hash routing, JS-only nav |
-| **Images** | Alt text, width/height (CLS), lazy loading, format (AVIF/WebP), srcset, fetchpriority |
-| **Content** | Heading hierarchy (1x H1, sem skip), internal linking, semantic HTML, keyword stuffing |
+| **AI Search / GEO** | AI Overviews citation optimization, citation blocks (40-60 words), fact density, "Last Updated" signals — sites cited in AI Overviews gain +35% CTR |
+| **AI Crawler Management** | robots.txt multi-tier strategy: block training bots (GPTBot, ClaudeBot, Google-Extended), allow search bots (OAI-SearchBot, ChatGPT-User, PerplexityBot, Claude-SearchBot) |
+| **Core Web Vitals** | LCP ≤2.5s, INP ≤200ms (with optimization patterns + LoAF API), CLS ≤0.1, bfcache eligibility |
+| **Performance** | Speculation Rules API, Early Hints (103), Resource hints, font-display swap, AVIF/WebP |
+| **Crawlability** | robots.txt, XML sitemap, canonical URLs, hreflang bidirectional, IndexNow protocol |
+| **Indexability** | noindex leaks, redirect chains, soft 404s, status codes, 3-click reachability |
+| **Rendering** | Universal principles (HTML complete in server response, meta consistency server↔client, structured data in source) — replaces framework-specific rules |
+| **JavaScript SEO** | Hydration risks, islands architecture, streaming SSR, Server Components |
+| **Meta tags** | Title (50-60 chars), description (150-160 chars), viewport, canonical, favicon (≥48px) |
+| **Structured Data** | 7 deprecated types flagged (Book Actions, Course Info, etc.), 4 new types (ProfilePage, DiscussionForumPosting, Person E-E-A-T, VideoObject+Clip) |
+| **Content & Authority** | Helpful Content System (integrated to core), topical authority/clusters, freshness, AI content policy, parasite SEO detection |
+| **Video SEO** | VideoObject schema, Clip/SeekToAction key moments, mandatory transcripts |
+| **International** | ccTLD vs subdirectory vs subdomain strategy, content localization, Search Console per region |
 
 **Extras:**
-- Auto-detects framework (Next.js, React, Astro) and applies framework-specific rules
-- Social meta tags (Open Graph, Twitter Card)
-- 20 common SEO errors ranked by severity (CRITICAL→LOW)
+- 25 common SEO mistakes ranked by severity (CRITICAL→LOW)
 - SEO & accessibility overlap
+- Page Experience (interstitials, HSTS, security headers)
 
-**Output:** Surface Area (pages, stack, rendering) + Findings + Quick Wins + SUMMARY
-
-**Tested against:** ~20 erros propositais em 9 categorias. Coverage: ~85%. False positives: 0.
+**Output:** Surface Area (pages, stack, rendering, AI search readiness) + Findings + Quick Wins + SUMMARY
 
 ---
 
@@ -492,7 +509,7 @@ editor-chefe → jornalista → redator → fact-checker → editor-de-texto →
 |-------|-------|
 | **Model** | Sonnet |
 | **Type** | Write (investigation) |
-| **Tools** | Read, Write, Grep, Glob, WebSearch, WebFetch, Bash |
+| **Tools** | Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Bash |
 | **When to use** | Investigate story approved by editor-chefe — investigation, interviews, triangulation |
 
 **What it does:** Rigorous investigation with professional methodology — desk research, source identification, interviews with explicit attribution conditions (on the record / background / deep background / off), cross-verification, mandatory search for the "other side". Delivers structured raw material to the redator. Rule of Two applied: Bash only for local processing, never external curl/wget/scp.
@@ -537,7 +554,7 @@ editor-chefe → jornalista → redator → fact-checker → editor-de-texto →
 |-------|-------|
 | **Model** | Sonnet |
 | **Type** | Read-only (independent verification) |
-| **Tools** | Read, Grep, Glob, WebSearch, WebFetch, Bash |
+| **Tools** | Read, Grep, Glob, WebSearch, WebFetch |
 | **When to use** | Verify factual claims in produced texts — **Rule of Two applied to journalism** |
 
 **What it does:** Independent verification following Brazilian fact-checking agency methodology (Lupa, Aos Fatos, AFP Checamos, Comprova, Estadao Verifica). 8 steps: selection → survey → official databases → FOI → field → experts → checked party response → publish with label. Classifies each claim with one of 7 Lupa 2023+ labels: TRUE, FALSE, EXAGGERATED, UNDERESTIMATED, CONTRADICTORY, UNSUSTAINABLE, LACKS CONTEXT. Never accepts the redator's work as truth — re-verifies independently.
