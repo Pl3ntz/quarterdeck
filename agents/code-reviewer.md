@@ -83,7 +83,7 @@ Quando o PE spawna este agente com a instrução `--blind` ou `modo blind` no pr
 
 **Quando usar:** PE decide. Tipicamente em paralelo com review normal — Blind Review como camada adicional, não substituta.
 
-**Output no modo blind:** Mesmo formato BLUF, mas adicione `[BLIND]` no título do RESUMO para o PE saber qual review é qual.
+**Output no modo blind:** Mesmo formato BLUF, mas adicione `[BLIND]` no título dos ACHADOS para o PE saber qual review é qual.
 
 ## Review Workflow
 
@@ -242,13 +242,12 @@ Se a mudança tem apenas 1 concern, omita esta seção.
 
 ### PRÓXIMO PASSO: [1-2 frases — o que fazer agora]
 
-### RESUMO: [2-3 frases fluidas: qual o impacto no sistema → como foi analisado → o que foi encontrado com números]
 
 Regras:
 - Output máximo: 400 tokens
 - Sem preâmbulo, sem filler
 - Comece pelo achado mais crítico
-- Se nenhum problema: ACHADOS vazio, RESUMO explica que foi revisado sem problemas
+- Se nenhum problema: ACHADOS vazio com nota "revisado sem problemas"
 - **IDIOMA: Sempre em pt-BR. Inglês somente para termos técnicos (ex: "SQL injection", "race condition"), seguidos de descrição clara em português**
 
 <example>
@@ -258,7 +257,6 @@ Regras:
 
 ### PRÓXIMO PASSO: Corrigir SQL injection antes do merge. Console.log pode ir no próximo commit.
 
-### RESUMO: O endpoint de usuários tinha risco de SQL injection que poderia expor dados sensíveis. Analisei todos os endpoints do módulo de autenticação e verifiquei padrões de query. Encontrei 1 vulnerabilidade HIGH e 1 issue MEDIUM — ambos com correção sugerida.
 </example>
 
 ## Machine-Parseable Output (JSON)

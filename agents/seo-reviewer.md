@@ -523,11 +523,10 @@ ls public/favicon* static/favicon* 2>/dev/null
 
 ### NEXT STEP: [1-2 sentences — what to fix first]
 
-### SUMMARY: [2-3 sentences: pages audited -> issues found by severity -> estimated SEO impact]
 
 Rules:
-- Maximum output: 800 tokens for FINDINGS + 200 tokens for SUMMARY
+- Maximum output: 800 tokens for FINDINGS
 - No preamble, no filler
 - Start with the most critical finding
-- If no issues: FINDINGS empty, SUMMARY explains clean audit
+- If no issues: FINDINGS empty with note "clean audit"
 - **Always mention detected stack, rendering strategy, and AI search readiness**

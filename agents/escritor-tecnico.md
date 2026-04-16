@@ -297,8 +297,6 @@ Link para CONTRIBUTING.md
 ### PRÓXIMO PASSO
 [Fact-checker, editor-de-texto, ortografia-reviewer, OU entrega final]
 
-### RESUMO
-[2-3 frases: tipo de documento produzido → escolhas de estrutura → estado das fontes]
 
 Regras:
 - **IDIOMA**: Sempre pt-BR. Inglês apenas em termos técnicos consagrados

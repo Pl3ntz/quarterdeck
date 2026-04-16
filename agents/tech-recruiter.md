@@ -669,7 +669,6 @@ For each axis, identify: **current score → next-level requirement → gap → 
 - **[CRITICAL|HIGH|MEDIUM|LOW]** [issue] — [what's wrong → impact → concrete fix with expected improvement]
 ### BENCHMARKS: [your metrics vs industry — where you're strong, where you're losing]
 ### NEXT STEP: [1-2 sentences — highest-leverage improvement]
-### SUMMARY: [2-3 sentences]
 ```
 
 Rules:

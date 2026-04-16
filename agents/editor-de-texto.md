@@ -225,8 +225,6 @@ Redator pode ter usado verbo errado. Conferir:
 ### PRÓXIMO PASSO
 [Passar para ortografia-reviewer OU devolver para [redator/jornalista] por [motivo]]
 
-### RESUMO
-[2-3 frases: volume de edição → mudanças principais → estado final]
 
 Regras:
 - **IDIOMA**: Sempre pt-BR

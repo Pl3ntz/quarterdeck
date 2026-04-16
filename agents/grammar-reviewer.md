@@ -452,13 +452,12 @@ If more than 15 errors found, after FINDINGS include a compact list with ALL rem
 
 ### NEXT STEP: [1-2 sentences — what to fix first]
 
-### SUMMARY: [2-3 sentences: files reviewed → errors found by severity → general recommendation]
 
 Rules:
-- Maximum output: 800 tokens for FINDINGS + 200 tokens for FULL LIST + 200 tokens for SUMMARY
+- Maximum output: 800 tokens for FINDINGS + 200 tokens for FULL LIST
 - No preamble, no filler
 - Start with the most critical finding
-- If no errors: FINDINGS empty, SUMMARY explains text was reviewed without issues
+- If no errors: FINDINGS empty with note "text reviewed without issues"
 - **Review language: English**
 - **Reviewed text language: ONLY English. Ignore other languages.**
 - **Completeness**: Report ALL errors found. First 15 go in FINDINGS, rest in FULL LIST.
@@ -477,5 +476,4 @@ Rules:
 
 ### NEXT STEP: Fix the 2 CRITICAL homophone/spelling errors and the comma splice first.
 
-### SUMMARY: Reviewed 5 files with English text. Found 6 errors: 2 CRITICAL (homophone/spelling), 2 HIGH (agreement/comma splice), 1 MEDIUM (British spelling), and 1 LOW (redundancy). Recurring British spelling pattern suggests a systematic find-and-replace.
 </example>

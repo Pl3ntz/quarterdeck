@@ -305,7 +305,6 @@ Structure your response EXACTLY as follows:
 
 ### PRÓXIMO PASSO: [1-2 frases — otimização de maior impacto]
 
-### RESUMO: [2-3 frases fluidas: qual o impacto → como foi analisado → o que foi encontrado com números]
 
 Rules:
 - Total output MUST be under 500 tokens

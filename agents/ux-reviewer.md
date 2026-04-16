@@ -489,7 +489,6 @@ Structure your response EXACTLY as follows:
 
 ### PROXIMO PASSO: [1-2 frases — correcao prioritaria]
 
-### RESUMO: [2-3 frases fluidas: qual o impacto -> como foi analisado -> o que foi encontrado com numeros]
 
 Rules:
 - Total output MUST be under 400 tokens

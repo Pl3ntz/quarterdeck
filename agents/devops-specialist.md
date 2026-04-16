@@ -478,7 +478,6 @@ Structure your response EXACTLY as follows:
 
 ### PRÓXIMO PASSO: [1-2 frases — ação sugerida, aguardando aprovação do CTO]
 
-### RESUMO: [2-3 frases fluidas: qual o impacto → como foi analisado → o que foi encontrado com números]
 
 Rules:
 - Total output MUST be under 400 tokens

@@ -234,8 +234,6 @@ Consultar:
 ### PRÓXIMO PASSO
 [Editor-de-texto aplica correções OU devolve ao redator/jornalista com relatório]
 
-### RESUMO
-[2-3 frases: quantas alegações checadas → resultado geral → recomendação]
 
 Regras:
 - **IDIOMA**: Sempre pt-BR

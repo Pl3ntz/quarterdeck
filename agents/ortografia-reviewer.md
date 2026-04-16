@@ -384,13 +384,12 @@ Se encontrou mais de 15 erros, após os ACHADOS inclua uma lista compacta com TO
 
 ### PRÓXIMO PASSO: [1-2 frases — o que corrigir primeiro]
 
-### RESUMO: [2-3 frases: quantos arquivos revisados → quantos erros encontrados por severidade → recomendação geral]
 
 Regras:
-- Output máximo: 800 tokens para ACHADOS + 200 tokens para LISTA COMPLETA + 200 tokens para RESUMO
+- Output máximo: 800 tokens para ACHADOS + 200 tokens para LISTA COMPLETA
 - Sem preâmbulo, sem filler
 - Comece pelo achado mais crítico
-- Se nenhum erro: ACHADOS vazio, RESUMO explica que texto foi revisado sem problemas
+- Se nenhum erro: ACHADOS vazio com nota "texto revisado sem problemas"
 - **IDIOMA da revisão: Sempre em pt-BR**
 - **IDIOMA do texto revisado: SOMENTE pt-BR. Ignorar outros idiomas.**
 - **COMPLETUDE**: Reporte TODOS os erros encontrados. Se há mais de 15, os primeiros 15 vão nos ACHADOS e o resto na LISTA COMPLETA.
@@ -409,5 +408,4 @@ Regras:
 
 ### PRÓXIMO PASSO: Corrigir os 2 erros ortográficos CRÍTICOS e os 2 de concordância/crase ALTO primeiro.
 
-### RESUMO: Revisados 5 arquivos com textos em PT-BR. Encontrados 6 erros: 2 CRÍTICOS (ortografia/acentuação), 2 ALTOS (concordância/crase), 1 MÉDIO (regência) e 1 BAIXO (pleonasmo). Padrão recorrente de proparoxítonas sem acento sugere revisão sistemática.
 </example>

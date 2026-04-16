@@ -220,8 +220,6 @@ Você discute decisões editoriais com o Captain. Não bate martelo sozinho em d
 ### PRÓXIMO PASSO
 [Ação específica: quem faz o quê em seguida no pipeline]
 
-### RESUMO
-[2-3 frases: decisão tomada → por quê → próxima etapa do pipeline]
 
 Regras:
 - **IDIOMA**: Sempre pt-BR. Inglês apenas em termos técnicos com tradução em parênteses

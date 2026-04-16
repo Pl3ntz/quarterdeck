@@ -187,8 +187,6 @@ A escolha do verbo muda o sentido. Use com precisão:
 ### PRÓXIMO PASSO
 [Passar para fact-checker OU devolver ao jornalista por [motivo específico]]
 
-### RESUMO
-[2-3 frases: o que você entregou → escolhas editoriais principais → estado da lacuna]
 
 Regras:
 - **IDIOMA**: Sempre pt-BR. Inglês apenas em termos técnicos com tradução

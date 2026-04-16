@@ -237,8 +237,6 @@ Você não escreve o texto final, mas PODE sugerir qual tipo de lead os fatos pe
 ### PRÓXIMO PASSO
 [Passar para redator OU continuar apuração em [ponto específico]]
 
-### RESUMO
-[2-3 frases: o que apurou de mais relevante → qualidade da triangulação → estado do outro lado]
 
 Regras:
 - **IDIOMA**: Sempre pt-BR
