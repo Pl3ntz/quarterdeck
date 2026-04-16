@@ -190,7 +190,7 @@ Organized into 8 squads (functional teams):
 
 | Agent | What it does | Model |
 |-------|-------------|-------|
-| [**seo-reviewer**](agents/seo-reviewer.md) | Technical SEO audit: Core Web Vitals, meta tags, structured data | Haiku |
+| [**seo-reviewer**](agents/seo-reviewer.md) | Technical SEO + AI Search/GEO audit: Core Web Vitals, structured data, AI crawler management | Sonnet |
 | [**tech-recruiter**](agents/tech-recruiter.md) | Tech recruiting: job descriptions, candidate evaluation, interviews | Sonnet |
 
 ### Editorial — content production with verified sources
