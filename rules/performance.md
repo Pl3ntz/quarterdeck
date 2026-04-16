@@ -2,12 +2,15 @@
 
 ## Model Selection Strategy
 
-**Main Session (PE): Opus 4.6 (CURRENT)**
+**Main Session (PE): Opus 4.7 (CURRENT)**
+- Released 2026-04-16, successor to Opus 4.6
 - Best overall quality for orchestration, planning, and execution
-- Note: `opusplan` exists but has known bugs (issue #16982) — stick with Opus until fixed
+- New `xhigh` effort level (between high and max) for additional reasoning control
+- Adaptive thinking is the only supported thinking mode (display defaults to "omitted")
+- Vision: 3x resolution capacity (up to 2,576px on long edge)
 
 **Haiku 4.5** ($1/$5 per MTok — 5x cheaper than Opus):
-- build-error-resolver, doc-updater, seo-reviewer
+- build-error-resolver, doc-updater
 - Checklist-based tasks, lightweight read-only exploration
 - Simple, scoped tasks
 
@@ -15,14 +18,15 @@
 - code-reviewer, ux-reviewer, tdd-guide, e2e-runner, fact-checker
 - performance-optimizer, database-specialist, refactor-cleaner, devops-specialist
 - jornalista, redator, escritor-tecnico, editor-de-texto
-- ortografia-reviewer, grammar-reviewer, tech-recruiter
+- ortografia-reviewer, grammar-reviewer, tech-recruiter, seo-reviewer
 - 79.6% SWE-bench (near-Opus parity for coding)
 
-**Opus 4.6** ($5/$25 per MTok — deepest reasoning):
+**Opus 4.7** ($5/$25 per MTok — deepest reasoning):
 - staff-engineer, architect, planner, security-reviewer, incident-responder
 - editor-chefe, deep-researcher
 - Complex architectural decisions, production diagnosis, editorial direction
-- 80.8% SWE-bench, best at catching subtle bugs
+- Improved coding, finance/legal benchmarks (GDPval-AA), multi-step reasoning
+- Best at catching subtle bugs
 
 ## Context Window Management
 
