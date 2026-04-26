@@ -17,6 +17,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
+  <a href="NOTICE.md"><img src="https://img.shields.io/badge/notice-third--party-yellow.svg" alt="Third-Party Notice"></a>
   <img src="https://img.shields.io/badge/agents-26-brightgreen.svg" alt="26 Agents">
   <img src="https://img.shields.io/badge/squads-8-orange.svg" alt="8 Squads">
   <img src="https://img.shields.io/badge/Claude_Code-2.1.32+-purple.svg" alt="Claude Code">
@@ -216,6 +217,37 @@ editor-chefe → jornalista → redator → fact-checker → editor-de-texto →
 
 ---
 
+## Companion Skills & Scripts
+
+Beyond the 26 agents, Quarterdeck ships with one skill and four utility scripts vendored from [borghei/Claude-Skills](https://github.com/borghei/Claude-Skills) (see [NOTICE.md](NOTICE.md) for license attribution).
+
+### Skill
+
+| Skill | Purpose |
+|---|---|
+| [**skill-security-auditor**](skills/skill-security-auditor/) | Pre-install gate for untrusted skills/plugins. Detects `eval`/`exec`/`subprocess`, network exfiltration, credential harvesting, prompt injection. Use before installing any third-party skill. |
+
+### Utility Scripts
+
+Installed under `~/.claude/scripts/borghei/` and `~/.claude/scripts/improvement/`:
+
+| Script | Purpose |
+|---|---|
+| `borghei/claudemd_optimizer.py` | Analyze a `CLAUDE.md` file: token estimate, completeness score, structural recommendations. |
+| `borghei/context_analyzer.py` | Estimate context window usage across a project. Identifies the heaviest files to read with `offset/limit`. |
+| `improvement/rule_promoter.py` | Promote validated patterns from `MEMORY.md` to permanent rules. **Hardened**: sanitizer rejects prompt-injection markers, shell tokens, non-https URLs. Default writes to a candidate review file; direct rule writes require interactive TTY confirmation. |
+| `improvement/memory_health_checker.py` | Audit memory for stale, duplicate, or promotable entries. Reports the Improvement Maturity Level. |
+
+### Conceptual Frameworks (PE Rule Sections 17-19)
+
+Three orchestration patterns documented in the [PE rule](rules/principal-engineer-always-on.md):
+
+- **Improvement Maturity Levels** (0-5): self-assessment scale for any continuous-learning behavior.
+- **Promotion Criteria Matrix**: explicit thresholds (recurrence, consistency, impact, stability, clarity) before any pattern graduates to a permanent rule.
+- **Skill Chain Pattern**: pure pipelines without PE judgment between steps — for repeatable automation where consistency matters more than discretion.
+
+---
+
 ## Standardized Output
 
 Every agent returns in the same structured format:
@@ -331,6 +363,8 @@ git push origin feat/my-agent
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+Quarterdeck also bundles components vendored from third parties under their original licenses (MIT and MIT + Commons Clause). See [NOTICE.md](NOTICE.md) for the full license map and modifications log. The Commons Clause does not restrict personal use, modification, or non-commercial redistribution — only commercial resale of the vendored components.
 
 ---
 

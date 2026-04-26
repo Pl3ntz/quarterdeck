@@ -18,7 +18,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 echo ""
 echo "╔══════════════════════════════════════════════╗"
 echo "║  Quarterdeck — Setup                         ║"
-echo "║  26 agents, 8 squads, 14 hooks               ║"
+echo "║  26 agents, 8 squads, 14 hooks, 1 skill      ║"
 echo "╚══════════════════════════════════════════════╝"
 echo ""
 
@@ -64,12 +64,26 @@ fi
 echo ""
 echo "▸ Installing to ~/.claude/ ..."
 
-mkdir -p ~/.claude/agents ~/.claude/rules ~/.claude/hooks
+mkdir -p ~/.claude/agents ~/.claude/rules ~/.claude/hooks ~/.claude/skills ~/.claude/scripts
 
 cp "$SCRIPT_DIR"/agents/*.md ~/.claude/agents/
 cp "$SCRIPT_DIR"/rules/*.md ~/.claude/rules/
 cp "$SCRIPT_DIR"/hooks/*.sh ~/.claude/hooks/
 chmod 700 ~/.claude/hooks/*.sh
+
+# Skills (vendored from borghei/Claude-Skills, see NOTICE.md)
+if [ -d "$SCRIPT_DIR/skills" ]; then
+  cp -R "$SCRIPT_DIR"/skills/* ~/.claude/skills/ 2>/dev/null || true
+  echo "  Copied: $(find ~/.claude/skills -maxdepth 1 -mindepth 1 -type d | wc -l | tr -d ' ') skills"
+fi
+
+# Utility scripts (vendored from borghei/Claude-Skills, see NOTICE.md)
+if [ -d "$SCRIPT_DIR/scripts/borghei" ] || [ -d "$SCRIPT_DIR/scripts/improvement" ]; then
+  [ -d "$SCRIPT_DIR/scripts/borghei" ] && mkdir -p ~/.claude/scripts/borghei && cp "$SCRIPT_DIR"/scripts/borghei/* ~/.claude/scripts/borghei/
+  [ -d "$SCRIPT_DIR/scripts/improvement" ] && mkdir -p ~/.claude/scripts/improvement && cp "$SCRIPT_DIR"/scripts/improvement/* ~/.claude/scripts/improvement/
+  find ~/.claude/scripts -name '*.py' -exec chmod +x {} +
+  echo "  Copied: $(find ~/.claude/scripts/borghei ~/.claude/scripts/improvement -name '*.py' 2>/dev/null | wc -l | tr -d ' ') vendored scripts"
+fi
 
 echo "  Copied: $(ls "$SCRIPT_DIR"/agents/*.md | wc -l | tr -d ' ') agents"
 echo "  Copied: $(ls "$SCRIPT_DIR"/rules/*.md | wc -l | tr -d ' ') rules"
@@ -217,6 +231,8 @@ echo "  Installed:"
 echo "    $(ls ~/.claude/agents/*.md 2>/dev/null | wc -l | tr -d ' ') agents  → ~/.claude/agents/"
 echo "    $(ls ~/.claude/rules/*.md 2>/dev/null | wc -l | tr -d ' ') rules   → ~/.claude/rules/"
 echo "    $(ls ~/.claude/hooks/*.sh 2>/dev/null | wc -l | tr -d ' ') hooks   → ~/.claude/hooks/"
+echo "    $(find ~/.claude/skills -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | tr -d ' ') skills  → ~/.claude/skills/"
+echo "    $(find ~/.claude/scripts/borghei ~/.claude/scripts/improvement -name '*.py' 2>/dev/null | wc -l | tr -d ' ') vendored scripts → ~/.claude/scripts/{borghei,improvement}/"
 echo ""
 echo "  Next steps:"
 echo "    1. Start a new Claude Code session"
