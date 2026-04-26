@@ -31,7 +31,7 @@ PROMOTION_CRITERIA = {
 MAX_RULE_LENGTH = 200
 INJECTION_MARKERS = re.compile(
     r"<system-reminder|<command-|<tool[_-]use|<\|im_start\||<\|im_end\||"
-    r"<function_calls|<|<task-notification|"
+    r"<function_calls|<task-notification|"
     r"^\s*<[a-z]",
     re.IGNORECASE | re.MULTILINE,
 )
@@ -225,10 +225,10 @@ def remove_entry_from_memory(content, lines, entry):
 def apply_promotion(memory_path, entry, target, target_path):
     """Apply the promotion. HARDENED: writes to candidates file by default.
 
-    Direct writes to CLAUDE.md / rules/ require BOTH --apply-direct AND an
-    interactive TTY confirmation. This blocks automated/silent memory
-    poisoning attacks. Default target is the candidates file, which the CTO
-    reviews manually before promoting via PR.
+    Direct writes to CLAUDE.md / rules/ require an interactive TTY plus an
+    explicit `PROMOTE` confirmation. This blocks automated/silent memory
+    poisoning attacks. The default target is the candidates file, which the
+    operator reviews manually before promoting via PR.
     """
     rule_text = generate_rule_text(entry)  # raises if sanitizer rejects
     now = datetime.now().strftime("%Y-%m-%d")
