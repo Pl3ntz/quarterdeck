@@ -438,6 +438,8 @@ Attackers may try to bypass detection. Be aware of:
 - Dependency supply chain validation for `requirements.txt` and `package.json`
 - File structure boundary checks including symlinks, binaries, hidden files, and oversized payloads
 
+> **Note (Quarterdeck distribution):** the `skill-tester`, `dependency-auditor`, and `infrastructure-compliance-auditor` references in the sections below point to upstream `borghei/Claude-Skills` components that are NOT bundled with Quarterdeck. For runtime validation, fall back to manual behavioral review or invoke them from the upstream repo directly.
+
 **This skill does NOT cover:**
 - Runtime or dynamic analysis — code is never executed during the audit (see `skill-tester` for runtime validation)
 - Live CVE database lookups or real-time vulnerability feeds (see `dependency-auditor` for active CVE scanning)
