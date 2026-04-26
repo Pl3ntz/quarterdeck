@@ -544,3 +544,60 @@ Rules:
 - O CTO deve conseguir tomar decisão lendo apenas a tabela + itens de ação
 - **NÃO escreva trailing summaries (RESUMO/SUMMARY)** — o recap nativo do Claude Code 2.0 cobre o final
 - **LANGUAGE: Synthesis in English by default (CTO is practicing English). Use PT-BR only when CTO explicitly requests. The 6 editorial PT-BR agents (ortografia-reviewer, editor-chefe, jornalista, redator, fact-checker, editor-de-texto) are the exception — they keep operating in Portuguese.**
+
+## 17. Improvement Maturity Levels (self-assessment)
+
+Adopted from borghei/Claude-Skills (`self-improving-agent`, 2026-04-26). Use this scale to judge the maturity of any continuous-learning behavior the PE or an agent owns. Target: **Level 3+** for anything related to memory or rule promotion.
+
+| Level | Name | Mechanism | Current state |
+|-------|------|-----------|---------------|
+| 0 | Stateless | No memory between sessions | — |
+| 1 | Recording | Captures observations, no action | `local-mind` hooks, `capture_patterns.py` |
+| 2 | Curating | Organizes and deduplicates observations | `continuous-learning` skill + `distill-patterns.py` |
+| 3 | Promoting | Graduates patterns to enforced rules | `rule_promoter.py` (hardened) → `~/.claude/learning/rule-candidates.md` for manual review |
+| 4 | Extracting | Creates reusable skills from proven patterns | manual today; revisit when candidate corpus grows |
+| 5 | Meta-Learning | Adapts learning strategy itself | not implemented |
+
+When proposing changes to the learning system, state the current Level and the targeted Level. If the proposal does not move the needle, prefer a smaller change.
+
+## 18. Promotion Criteria Matrix
+
+When the PE (or an agent) proposes promoting a memory entry to a permanent rule (CLAUDE.md or `~/.claude/rules/`), the entry MUST satisfy ALL five criteria below. Formalizes the implicit "promote recurring patterns" guidance with explicit thresholds.
+
+| Criterion | Threshold | How to verify |
+|-----------|-----------|---------------|
+| Recurrence | seen in 3+ distinct sessions | check memory entry's recurrence counter |
+| Consistency | same solution every time | no contradicting entries exist |
+| Impact | prevented at least one error or saved meaningful time | one concrete incident referenced |
+| Stability | underlying code/system has not changed | the file/tool/dep referenced still exists today |
+| Clarity | statable in 1-2 sentences | rule body ≤ 200 chars (enforced by `rule_promoter.sanitize_rule_text`) |
+
+Output of `rule_promoter.py --list-candidates` lists entries that pass these criteria. The CTO promotes manually via PR — auto-promotion is forbidden (memory-poisoning defense).
+
+## 19. Skill Chain Pattern (pure pipeline, no PE judgment)
+
+Adopted from borghei's `orchestration-protocol.md` (Pattern 4). Distinct from Workflow Chains (Section 8) which keep PE in the loop between every step.
+
+**When to use:** Repeatable automation where consistency matters more than judgment. CI/CD-like flows. Batch processing.
+
+**Rules:**
+
+1. No PE between steps — direct skill-to-skill data flow.
+2. Each skill in the chain MUST declare input/output format (JSON, Markdown, or text).
+3. Fail-fast: if a skill produces invalid output, the chain aborts immediately.
+4. Idempotent: running the chain twice on the same input produces the same output.
+5. Observable: log each step's input/output for debugging.
+
+**Examples in this stack:**
+
+- `error-index` updating: `detect-errors → categorize → dedupe → write-index` (no PE judgment between steps).
+- Memory health pipeline: `memory_health_checker → rule_promoter --list-candidates → human review` (PE only at the final review gate).
+
+**Anti-patterns:**
+
+- Adding the PE to a pure execution chain (adds latency without value)
+- Chains longer than 6 steps (debug complexity grows exponentially)
+- Skills that mutate their input in place (breaks traceability)
+- Missing error handling between steps (silent failures corrupt downstream output)
+
+For chains that DO need PE judgment, use Workflow Chains (Section 8) or the Crawler Protocol (Section 15).

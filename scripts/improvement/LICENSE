@@ -1,0 +1,22 @@
+The scripts in this directory are vendored from the borghei/Claude-Skills
+repository (https://github.com/borghei/Claude-Skills).
+
+Source skill: self-improving-agent
+Vendored: 2026-04-26
+Files:
+  - rule_promoter.py   (HARDENED — sanitizer + candidate-only output added)
+  - memory_health_checker.py
+  - rule_promoter.py.original (untouched copy for reference)
+
+License: MIT + Commons Clause (per self-improving-agent/SKILL.md frontmatter)
+
+The Commons Clause restricts SELLING the software but does not restrict use,
+modification, or non-commercial redistribution.
+
+Modifications by Pl3ntz (2026-04-26):
+  - rule_promoter.py: added sanitize_rule_text() to defend against memory
+    poisoning; changed apply_promotion() default target to rule-candidates.md
+    for manual CTO review; require interactive TTY confirmation.
+
+The "Software" is provided WITHOUT WARRANTY. See the original repository for
+full license text.
