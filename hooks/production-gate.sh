@@ -45,7 +45,7 @@ fi
 # Fast path: if command doesn't mention any prod alias, allow (unless catastrophic local)
 if ! echo "$command" | grep -qiE "$PROD_GREP"; then
   if echo "$command" | grep -qE 'rm\s+-[a-zA-Z]*r[a-zA-Z]*f[a-zA-Z]*\s+(/|~|\$HOME)\b|git\s+reset\s+--hard|git\s+clean\s+-[a-zA-Z]*f'; then
-    echo '{"hookSpecificOutput":{"permissionDecision":"deny"},"systemMessage":"PRODUCTION GATE: Comando local destrutivo detectado. Confirme com o CTO antes de executar."}'
+    echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny"},"systemMessage":"PRODUCTION GATE: Comando local destrutivo detectado. Confirme com o CTO antes de executar."}'
     exit 0
   fi
   echo '{}'
@@ -66,7 +66,7 @@ PROD_PATTERN = aliases_str if aliases_str else 'prod_server'
 def deny(reason):
     msg = f'PRODUCTION GATE: {reason}. Peca aprovacao ao CTO antes de executar.'
     print(json.dumps({
-        'hookSpecificOutput': {'permissionDecision': 'deny'},
+        'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'permissionDecision': 'deny'},
         'systemMessage': msg
     }))
     sys.exit(0)
@@ -103,8 +103,11 @@ if not remote_cmd.strip():
 
 # --- DENY OVERRIDES: always block these patterns ---
 DENY_OVERRIDES = [
-    (r'>\s', 'Redirecionamento de output para arquivo'),
-    (r'>>\s', 'Append para arquivo'),
+    # Shell redirect: > or >> followed by path-like target.
+    # Matches /, ~/, ./, ../, \$VAR, or filename with known extension.
+    # Does NOT match SQL operators (x > 5, name > 'foo') or stderr redirects (2>&1).
+    (r'\s>\s*(?:/|~/|\./|\.\./|\$[A-Za-z_]|[\w.-]+\.(?:log|txt|out|err|conf|cfg|json|yaml|yml|env|sh|py|md|csv|dat|bak|tmp|pid|sock|sql))', 'Redirecionamento de output para arquivo'),
+    (r'\s>>\s*(?:/|~/|\./|\.\./|\$[A-Za-z_]|[\w.-]+\.(?:log|txt|out|err|conf|cfg|json|yaml|yml|env|sh|py|md|csv|dat|bak|tmp|pid|sock|sql))', 'Append para arquivo'),
     (r'\|\s*tee\s', 'Pipe to tee (escrita em arquivo)'),
     (r'\|\s*sudo\s', 'Pipe to sudo'),
     (r'\|\s*bash', 'Pipe to bash (execucao arbitraria)'),
@@ -207,5 +210,5 @@ if [ $python_exit -eq 0 ]; then
 fi
 
 # Fallback: if Python fails, BLOCK (fail-closed)
-echo '{"hookSpecificOutput":{"permissionDecision":"deny"},"systemMessage":"PRODUCTION GATE: Erro interno no hook de seguranca. Comando bloqueado por precaucao."}'
+echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny"},"systemMessage":"PRODUCTION GATE: Erro interno no hook de seguranca. Comando bloqueado por precaucao."}'
 exit 0
