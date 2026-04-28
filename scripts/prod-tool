@@ -34,18 +34,53 @@ ALLOWED_ROOTS = (
 ALLOWED_SERVICES = re.compile(r"^[a-zA-Z0-9._@-]+$")
 MAX_LINES = 5000
 MAX_GREP_MATCHES = 2000
+MAX_PATTERN_LEN = 200
+
+SENSITIVE_NAME_PATTERNS = (
+    ".ssh/",
+    ".env",
+    "id_rsa",
+    "id_ed25519",
+    "id_ecdsa",
+    "id_dsa",
+    ".pem",
+    ".key",
+    "/shadow",
+    "/gshadow",
+    "credentials",
+    "secrets",
+    ".aws/",
+    ".gnupg/",
+    ".docker/config",
+    ".kube/config",
+)
 
 
 def _resolve_safe(path_str: str) -> pathlib.Path:
     """Resolve a path, refuse symlink escapes and non-allowlisted roots."""
     p = pathlib.Path(path_str).expanduser().resolve()
-    if not any(str(p).startswith(root) for root in ALLOWED_ROOTS):
+    if not any(_is_under(p, pathlib.Path(root)) for root in ALLOWED_ROOTS):
         raise SystemExit(
             f"prod-tool: path outside allowed roots ({', '.join(ALLOWED_ROOTS)}): {p}"
         )
+    name_lower = str(p).lower()
+    for sensitive in SENSITIVE_NAME_PATTERNS:
+        if sensitive in name_lower:
+            raise SystemExit(
+                f"prod-tool: refused — sensitive path matches '{sensitive}': {p}"
+            )
     if not p.exists():
         raise SystemExit(f"prod-tool: not found: {p}")
     return p
+
+
+def _is_under(p: pathlib.Path, root: pathlib.Path) -> bool:
+    """True if p == root or p is strictly inside root (component-aware, not string-prefix)."""
+    try:
+        p.relative_to(root)
+        return True
+    except ValueError:
+        return False
 
 
 def _iter_lines(p: pathlib.Path, start: int, end: int) -> Iterable[str]:
@@ -103,6 +138,10 @@ def cmd_tail(args: argparse.Namespace) -> int:
 
 def cmd_grep(args: argparse.Namespace) -> int:
     p = _resolve_safe(args.file)
+    if len(args.pattern) > MAX_PATTERN_LEN:
+        raise SystemExit(
+            f"prod-tool: pattern too long (max {MAX_PATTERN_LEN} chars) — ReDoS guard"
+        )
     try:
         pattern = re.compile(args.pattern)
     except re.error as e:
@@ -139,10 +178,15 @@ def cmd_ls(args: argparse.Namespace) -> int:
     p = _resolve_safe(args.path)
     if not p.is_dir():
         raise SystemExit(f"prod-tool: not a directory: {p}")
+    count = 0
     for entry in sorted(p.iterdir()):
+        if count >= MAX_LINES:
+            print(f"... [truncated at {MAX_LINES} entries]")
+            break
         kind = "d" if entry.is_dir() else "f"
         size = entry.stat().st_size if entry.is_file() else "-"
         print(f"{kind} {size:>10} {entry.name}")
+        count += 1
     return 0
 
 

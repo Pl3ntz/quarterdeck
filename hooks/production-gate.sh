@@ -124,6 +124,8 @@ DENY_OVERRIDES = [
     (r'\bperl\s+-e\s', 'perl -e (execucao indireta)'),
     (r'\bnohup\s', 'nohup (execucao em background)'),
     (r'(?:^|[;&|]\s*)ssh\s+\S', 'SSH aninhado em comando remoto (lateral movement)'),
+    (r'\\$\([^)]*\bssh\s', 'SSH em command substitution dollar-paren'),
+    (r'\`[^\`]*\bssh\s', 'SSH em backtick substitution'),
 ]
 
 for pattern, reason in DENY_OVERRIDES:
