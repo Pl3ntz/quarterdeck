@@ -363,7 +363,18 @@ state: [git status, service status — summarized]
 scope: [files/areas involved in this task]
 constraints: [production gate, SSH-only, Bun not npm, etc.]
 ---end-context---
+
+## Objective
+[1 sentence — what the agent must accomplish]
+
+## Output description
+[Format expected: Markdown sections, ≤N words, key sections to include]
+
+## Boundaries
+[What is OUT of scope: files NOT to touch, decisions NOT to make]
 ```
+
+Per Anthropic context engineering (2026-04): every spawn needs explicit objective + output description + boundaries. Vague prompts cause duplicate searches and overlap with sibling agents.
 
 Rules:
 - NEVER spawn an agent without context preamble
@@ -511,12 +522,34 @@ Example zone assignment in agent prompt:
 
 ### Parallel Execution Rules
 
-1. **3-5 agents max per wave** — more = diminishing returns + coordination overhead
+1. **HARD CAP: 5 agents max per wave** — Anthropic's published number; >5 = 15× cost vs single-agent with diminishing returns
 2. **Read-only agents always parallelize** — no conflict risk
 3. **Write agents need zone assignment** — PE verifies no file overlap
 4. **Failed agent does NOT block others** — PE handles via Section 11 (Chain Failure Recovery)
 5. **PE is the ONLY synthesizer** — agents never see each other's output directly
 6. **Background agents for non-blocking work** — use `run_in_background: true` when PE doesn't need results immediately
+
+### SOTA 2026 — Parallel vs Single-Agent Decision (added 2026-04-28)
+
+Empirical evidence (arXiv 2604.02460, 2502.08788, ICLR 2025 MAD, Anthropic multi-agent research blog):
+
+| Task type | Use parallel multi-agent | Use single Opus + extended thinking |
+|---|---|---|
+| **Judging / review** (code-review, security-audit, fact-check) | ✅ wins — heterogeneous critics catch different failure modes | ❌ underused |
+| **Breadth-first research** (multi-source comparison, OSINT, landscape mapping) | ✅ wins at 15× cost — only when value justifies | ❌ misses sources |
+| **Solution-finding** (design API, plan refactor, architect choice) | ❌ ANTI-PATTERN — agents read same files, produce overlapping output | ✅ wins at equal token budget |
+| **Red team vs blue team debate on same artifact** | ❌ ANTI-PATTERN unless models are heterogeneous (e.g., Opus vs Sonnet) | ✅ Opus + adversarial framing |
+
+**Default rule:** if all agents in a wave would read the **same files** and produce **same-type findings**, you have an anti-pattern. Either specialize their angles (different zones, different depths) or collapse to a single agent with extended thinking.
+
+### Anti-Patterns to Avoid (audit 2026-04-28)
+
+1. **Dual-format output requirement** (JSON + Markdown) — sub-agents cannot declare structured output contracts (GitHub issue #20625); pick Markdown only. Format-insensitive on Opus/Sonnet (0% perf delta).
+2. **agent-recall on every spawn** — only Quality Gate agents need it. Implementation/Research agents waste preamble tokens on irrelevant history.
+3. **Scratch files for short tasks** — folklore, not Anthropic-validated. Skip for tasks <5 tool calls.
+4. **Re-spawning when SendMessage suffices** — for stateful continuation of the same logical agent, prefer SendMessage. Fresh spawn for fresh tasks.
+5. **Verbose preamble bloat** — keep ≤800 tokens; >2k = compaction risk for low-signal data.
+6. **Multi-agent debate for solution-finding** — empirically loses to single-Opus + extended thinking at equal budget.
 
 ## 16. PE Synthesis Protocol (Fan-In Output)
 
@@ -543,6 +576,7 @@ Rules:
 - Síntese em no máximo 300 tokens
 - O CTO deve conseguir tomar decisão lendo apenas a tabela + itens de ação
 - **NÃO escreva trailing summaries (RESUMO/SUMMARY)** — o recap nativo do Claude Code 2.0 cobre o final
+- **Markdown only** (added 2026-04-28) — não pedir output dual JSON+Markdown. Sub-agents não suportam structured output contracts (GitHub #20625). Pick Markdown for human readability; agents return condensed 1-2k token summaries per Anthropic context engineering guidance.
 - **LANGUAGE: Synthesis in English by default (CTO is practicing English). Use PT-BR only when CTO explicitly requests. The 6 editorial PT-BR agents (ortografia-reviewer, editor-chefe, jornalista, redator, fact-checker, editor-de-texto) are the exception — they keep operating in Portuguese.**
 
 ## 17. Improvement Maturity Levels (self-assessment)

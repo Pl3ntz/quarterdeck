@@ -101,6 +101,10 @@ remote_cmd = remote_cmd.replace('\\\\\"', '\"').replace(\"\\\\\\\\\\'\" , \"'\")
 if not remote_cmd.strip():
     deny('SSH interativo para producao bloqueado')
 
+# Reject newline/CR injection (defeats line-oriented allowlist)
+if '\n' in remote_cmd or '\r' in remote_cmd:
+    deny('Comando contem newline/carriage return')
+
 # --- DENY OVERRIDES: always block these patterns ---
 DENY_OVERRIDES = [
     # Shell redirect: > or >> followed by path-like target.
@@ -119,6 +123,7 @@ DENY_OVERRIDES = [
     (r'\bpython3?\s+-c\s', 'python -c (execucao indireta)'),
     (r'\bperl\s+-e\s', 'perl -e (execucao indireta)'),
     (r'\bnohup\s', 'nohup (execucao em background)'),
+    (r'(?:^|[;&|]\s*)ssh\s+\S', 'SSH aninhado em comando remoto (lateral movement)'),
 ]
 
 for pattern, reason in DENY_OVERRIDES:
@@ -173,6 +178,14 @@ READ_ONLY = [
     r'^nginx\s+-[tT]',
     r'^openssl\s+s_client',
     r'^certbot\s+certificates',
+    # sed -n with line ranges (digits/comma) and 'p' command — no exec/write/edit
+    r'^sed\s+-n\s+\x27[\d,\s]+p\x27(?:\s+[A-Za-z0-9_./~-]+)?$',
+    # awk simple {print \$N} or {print \$N, \$M} with safe filename — no system/getline/redirect
+    r'^awk\s+\x27\{print\s+\\$\d{1,3}(?:\s*,\s*\\$\d{1,3})*\}\x27(?:\s+[A-Za-z0-9_./~-]+)?$',
+    # jq with -r/-c/-s/-n/-e flags only and basic .filter — no --rawfile, no -L, no module
+    r'^jq\s+(?:-[rcsne]\s+)*\x27\.[a-zA-Z0-9_.\[\]()?|\s,]*\x27(?:\s+[A-Za-z0-9_./~-]+)?$',
+    # prod-tool CLI on <prod_server> — argparse positive allowlist; deployed at /usr/local/bin/prod-tool
+    r'^prod-tool\s+(show|head|tail|grep|stat|ls|service-status|service-logs|df|ps)(\s.*)?$',
 ]
 
 # Handle command chains

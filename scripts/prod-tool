@@ -1,0 +1,234 @@
+#!/usr/bin/env python3
+"""
+prod-tool — read-only operations CLI for production server.
+
+Designed to replace ad-hoc sed/awk/jq/cat invocations over SSH. Uses argparse
+positive allowlist (no shell-out). Pairs with production-gate.sh hook which
+allowlists `^prod-tool\\s+\\S` so analysis runs without per-call confirmation
+while keeping arbitrary shell gated.
+
+Deploy target: /usr/local/bin/prod-tool on your-server (mode 0755, root:root).
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import pathlib
+import re
+import subprocess
+import sys
+from typing import Iterable
+
+ALLOWED_ROOTS = (
+    "/var/log",
+    "/etc",
+    "/root",
+    "/home",
+    "/opt",
+    "/srv",
+    "/tmp",
+)
+
+ALLOWED_SERVICES = re.compile(r"^[a-zA-Z0-9._@-]+$")
+MAX_LINES = 5000
+MAX_GREP_MATCHES = 2000
+
+
+def _resolve_safe(path_str: str) -> pathlib.Path:
+    """Resolve a path, refuse symlink escapes and non-allowlisted roots."""
+    p = pathlib.Path(path_str).expanduser().resolve()
+    if not any(str(p).startswith(root) for root in ALLOWED_ROOTS):
+        raise SystemExit(
+            f"prod-tool: path outside allowed roots ({', '.join(ALLOWED_ROOTS)}): {p}"
+        )
+    if not p.exists():
+        raise SystemExit(f"prod-tool: not found: {p}")
+    return p
+
+
+def _iter_lines(p: pathlib.Path, start: int, end: int) -> Iterable[str]:
+    with p.open("r", encoding="utf-8", errors="replace") as f:
+        for i, line in enumerate(f, start=1):
+            if i < start:
+                continue
+            if i > end:
+                break
+            yield f"{i}: {line.rstrip()}"
+
+
+def cmd_show(args: argparse.Namespace) -> int:
+    p = _resolve_safe(args.file)
+    end = args.end if args.end > 0 else args.start + 50
+    if end - args.start + 1 > MAX_LINES:
+        raise SystemExit(f"prod-tool: refused — request exceeds {MAX_LINES} lines")
+    for line in _iter_lines(p, args.start, end):
+        print(line)
+    return 0
+
+
+def cmd_head(args: argparse.Namespace) -> int:
+    p = _resolve_safe(args.file)
+    n = min(max(args.lines, 1), MAX_LINES)
+    with p.open("r", encoding="utf-8", errors="replace") as f:
+        for i, line in enumerate(f, start=1):
+            if i > n:
+                break
+            print(line.rstrip())
+    return 0
+
+
+def cmd_tail(args: argparse.Namespace) -> int:
+    p = _resolve_safe(args.file)
+    n = min(max(args.lines, 1), MAX_LINES)
+    with p.open("rb") as f:
+        try:
+            f.seek(0, os.SEEK_END)
+            size = f.tell()
+            block = 8192
+            data = b""
+            while size > 0 and data.count(b"\n") <= n:
+                read = min(block, size)
+                size -= read
+                f.seek(size)
+                data = f.read(read) + data
+            text = data.decode("utf-8", errors="replace")
+            for line in text.splitlines()[-n:]:
+                print(line)
+        finally:
+            pass
+    return 0
+
+
+def cmd_grep(args: argparse.Namespace) -> int:
+    p = _resolve_safe(args.file)
+    try:
+        pattern = re.compile(args.pattern)
+    except re.error as e:
+        raise SystemExit(f"prod-tool: invalid regex: {e}")
+    n = min(args.max, MAX_GREP_MATCHES)
+    matches = 0
+    with p.open("r", encoding="utf-8", errors="replace") as f:
+        for i, line in enumerate(f, start=1):
+            if pattern.search(line):
+                print(f"{i}: {line.rstrip()}")
+                matches += 1
+                if matches >= n:
+                    break
+    return 0
+
+
+def cmd_stat(args: argparse.Namespace) -> int:
+    p = _resolve_safe(args.path)
+    s = p.stat()
+    out = {
+        "path": str(p),
+        "size": s.st_size,
+        "mtime": int(s.st_mtime),
+        "mode": oct(s.st_mode & 0o777),
+        "uid": s.st_uid,
+        "gid": s.st_gid,
+        "type": "dir" if p.is_dir() else "file" if p.is_file() else "other",
+    }
+    print(json.dumps(out, indent=2))
+    return 0
+
+
+def cmd_ls(args: argparse.Namespace) -> int:
+    p = _resolve_safe(args.path)
+    if not p.is_dir():
+        raise SystemExit(f"prod-tool: not a directory: {p}")
+    for entry in sorted(p.iterdir()):
+        kind = "d" if entry.is_dir() else "f"
+        size = entry.stat().st_size if entry.is_file() else "-"
+        print(f"{kind} {size:>10} {entry.name}")
+    return 0
+
+
+def _systemctl(args: list[str]) -> int:
+    return subprocess.run(["systemctl", *args], check=False).returncode
+
+
+def _journalctl(args: list[str]) -> int:
+    return subprocess.run(["journalctl", *args], check=False).returncode
+
+
+def cmd_service_status(args: argparse.Namespace) -> int:
+    if not ALLOWED_SERVICES.match(args.name):
+        raise SystemExit("prod-tool: invalid service name")
+    return _systemctl(["status", "--no-pager", args.name])
+
+
+def cmd_service_logs(args: argparse.Namespace) -> int:
+    if not ALLOWED_SERVICES.match(args.name):
+        raise SystemExit("prod-tool: invalid service name")
+    n = min(max(args.lines, 1), MAX_LINES)
+    return _journalctl(["-u", args.name, "-n", str(n), "--no-pager"])
+
+
+def cmd_df(_: argparse.Namespace) -> int:
+    return subprocess.run(["df", "-h"], check=False).returncode
+
+
+def cmd_ps(_: argparse.Namespace) -> int:
+    return subprocess.run(
+        ["ps", "auxf", "--sort=-%mem"], check=False
+    ).returncode
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        prog="prod-tool",
+        description="Read-only operations on the production server.",
+    )
+    sub = parser.add_subparsers(dest="cmd", required=True)
+
+    p_show = sub.add_parser("show", help="Show specific lines from a file")
+    p_show.add_argument("file")
+    p_show.add_argument("start", type=int)
+    p_show.add_argument("end", type=int, nargs="?", default=0)
+    p_show.set_defaults(fn=cmd_show)
+
+    p_head = sub.add_parser("head", help="First N lines")
+    p_head.add_argument("file")
+    p_head.add_argument("-n", "--lines", type=int, default=20)
+    p_head.set_defaults(fn=cmd_head)
+
+    p_tail = sub.add_parser("tail", help="Last N lines")
+    p_tail.add_argument("file")
+    p_tail.add_argument("-n", "--lines", type=int, default=20)
+    p_tail.set_defaults(fn=cmd_tail)
+
+    p_grep = sub.add_parser("grep", help="Search regex in a file")
+    p_grep.add_argument("pattern")
+    p_grep.add_argument("file")
+    p_grep.add_argument("--max", type=int, default=200)
+    p_grep.set_defaults(fn=cmd_grep)
+
+    p_stat = sub.add_parser("stat", help="File metadata as JSON")
+    p_stat.add_argument("path")
+    p_stat.set_defaults(fn=cmd_stat)
+
+    p_ls = sub.add_parser("ls", help="Directory listing")
+    p_ls.add_argument("path")
+    p_ls.set_defaults(fn=cmd_ls)
+
+    p_status = sub.add_parser("service-status", help="systemctl status")
+    p_status.add_argument("name")
+    p_status.set_defaults(fn=cmd_service_status)
+
+    p_logs = sub.add_parser("service-logs", help="journalctl for a service")
+    p_logs.add_argument("name")
+    p_logs.add_argument("-n", "--lines", type=int, default=100)
+    p_logs.set_defaults(fn=cmd_service_logs)
+
+    sub.add_parser("df", help="Disk usage").set_defaults(fn=cmd_df)
+    sub.add_parser("ps", help="Process list").set_defaults(fn=cmd_ps)
+
+    args = parser.parse_args()
+    return args.fn(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
