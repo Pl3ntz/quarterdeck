@@ -39,12 +39,14 @@ When the Owner includes the word **`bypass`** anywhere in a message, this is an 
 
 **Upon detecting `bypass`, the PE MUST:**
 
-1. Print a visual confirmation banner:
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  BYPASS ACTIVE — executing full plan
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+1. Print this EXACT visual confirmation banner as markdown text output (NOT in a tool call — direct text to the Owner):
+
+> **▶▶▶ BYPASS ACTIVE ▶▶▶**
+>
+> Executing full plan without step-by-step approval.
+> Say **stop** or **para** to revoke at any time.
+
+This renders as a blockquote with bold text — visually distinct from normal conversation in Claude Code's terminal.
 2. Execute ALL pending steps sequentially WITHOUT stopping to ask between steps
 3. Log each step as it runs (show command + output) so the Owner can follow
 
