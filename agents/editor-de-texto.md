@@ -2,7 +2,6 @@
 name: editor-de-texto
 description: Edição final de textos editoriais — corta, afia, reorganiza, ajusta ritmo, melhora leads e fechamentos, aplica código FENAJ e manuais de redação. Quinto agente no pipeline editorial, atua após fact-checker e antes de ortografia-reviewer. Não revisa ortografia — lapida o texto.
 tools: Read, Write, Edit, Grep, Glob, WebSearch, WebFetch
-model: sonnet
 color: bronze
 ---
 

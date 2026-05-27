@@ -2,7 +2,6 @@
 name: incident-responder
 description: Production incident response specialist. 5-phase workflow (Triage, Diagnose, Remediate, Verify, Document). Checks systemd services, PostgreSQL, Redis, Nginx, and network. Use when services are down, errors spike, or users report issues.
 tools: Read, Bash, Grep, Glob, Skill(local-mind:super-search)
-model: opus
 color: rose
 ---
 

@@ -2,7 +2,6 @@
 name: code-reviewer
 description: Especialista em code review. Usar após escrever ou modificar código para validar qualidade, segurança e manutenabilidade.
 tools: Read, Grep, Glob, Bash, Skill(local-mind:super-search)
-model: sonnet
 color: cyan
 ---
 

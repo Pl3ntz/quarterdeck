@@ -2,7 +2,6 @@
 name: redator
 description: Redação editorial profissional — transforma material bruto apurado pelo jornalista em texto publicável com voz, ritmo e estrutura adequados ao gênero. Terceiro agente no pipeline editorial. Não apura, não verifica — escreve a partir do material entregue.
 tools: Read, Write, Edit, Grep, Glob, WebSearch, WebFetch
-model: sonnet
 color: indigo
 ---
 

@@ -2,7 +2,6 @@
 name: staff-engineer
 description: Deep L4 organizational review, cross-system impact analysis, pattern propagation detection, and tech debt evaluation. Use for changes that affect multiple projects or shared infrastructure.
 tools: Read, Grep, Glob, Bash, Skill(local-mind:super-search)
-model: opus
 color: purple
 ---
 

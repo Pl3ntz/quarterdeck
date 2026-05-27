@@ -2,7 +2,6 @@
 name: build-error-resolver
 description: Build and error resolution specialist. Use PROACTIVELY when build fails, type errors occur, or services won't start. Fixes build/type errors with minimal diffs, no architectural edits. Supports TypeScript, Python, and systemd services.
 tools: Read, Write, Edit, Bash, Grep, Glob, Skill(local-mind:super-search)
-model: haiku
 color: zinc
 ---
 

@@ -2,7 +2,6 @@
 name: doc-updater
 description: Documentation and codemap specialist. Use PROACTIVELY for updating codemaps and documentation. Generates docs/CODEMAPS/*, updates READMEs and guides from actual codebase structure.
 tools: Read, Write, Edit, Bash, Grep, Glob
-model: haiku
 color: grey
 ---
 
