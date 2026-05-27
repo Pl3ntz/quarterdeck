@@ -6,6 +6,8 @@
 
 This rule has TWO modes. The Owner chooses which one is active.
 
+---
+
 ### MODE 1: Step-by-Step (DEFAULT)
 
 Active when: no bypass was granted, or bypass expired/revoked.
@@ -27,24 +29,39 @@ In this mode:
 - NEVER chain multiple modifying commands with &&
 - NEVER assume that approval for step N means approval for step N+1
 
-### MODE 2: Plan Bypass
+---
 
-Active when: the Owner explicitly grants bypass (e.g., "executa tudo", "pode rodar o plano inteiro", "bypass aprovado", "aprovado, roda tudo").
+### MODE 2: Plan Bypass — keyword trigger `bypass`
 
-**How to activate:**
-1. PE presents the full plan with ALL commands listed
-2. PE asks via AskUserQuestion: "Plano tem N steps. Quer aprovar step-by-step (default) ou bypass para executar todos de uma vez?"
-3. Owner explicitly grants bypass
+**KEYWORD DETECTION (works like `ultrathink` in Claude Code):**
 
-**When bypass is active, the PE executes ALL listed steps sequentially WITHOUT asking between each step.** This is the whole point of bypass — uninterrupted execution of an approved plan.
+When the Owner includes the word **`bypass`** anywhere in a message, this is an IMMEDIATE and UNCONDITIONAL activation of Mode 2. No further confirmation needed. No AskUserQuestion needed. The Owner said `bypass` — that IS the approval.
 
-**Constraints:**
-- Bypass applies ONLY to the steps listed in the approved plan
-- Any NEW step discovered mid-execution requires fresh approval (exits bypass for that step)
-- If ANY step FAILS, bypass is IMMEDIATELY revoked — PE stops and reports
-- Bypass is single-use — does NOT carry over to the next plan or session
-- PE MUST log each step as it executes (show command + output) so the Owner can follow
+**Upon detecting `bypass`, the PE MUST:**
+
+1. Print a visual confirmation banner:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  BYPASS ACTIVE — executing full plan
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+2. Execute ALL pending steps sequentially WITHOUT stopping to ask between steps
+3. Log each step as it runs (show command + output) so the Owner can follow
+
+**Activation contexts:**
+- Owner says "bypass" with a plan already presented → execute that plan
+- Owner says "bypass" with a new request (e.g., "deploy X bypass") → PE builds the plan AND executes it in one shot
+- Owner says "bypass" mid-execution → remaining steps run without further approval
+
+**Constraints (even with bypass active):**
+- If ANY step FAILS, bypass is IMMEDIATELY revoked — PE stops, prints status, and asks what to do
+- Bypass is single-use — expires when the current plan finishes or fails
+- Does NOT carry over to the next plan or session
 - Database DROP/TRUNCATE and `rm -rf` on data directories ALWAYS require individual approval, even in bypass mode
+
+**Deactivation:** bypass expires automatically when the plan completes or fails. The Owner can also say "stop" or "para" at any time to revoke it mid-execution.
+
+---
 
 ## Always Allowed (both modes)
 
@@ -54,7 +71,7 @@ Read-only operations never require approval:
 - Web searches
 - Agent spawning for research/analysis
 
-## How to Ask (Mode 1)
+## How to Ask (Mode 1 only)
 
 Before ANY blocked action, use AskUserQuestion with:
 - Clear description of EXACTLY what command will be executed
@@ -64,4 +81,4 @@ Before ANY blocked action, use AskUserQuestion with:
 
 ## Why This Rule Exists
 
-On 2026-02-23, code patches were applied, services were restarted, and git commits were made on PRODUCTION without the Owner's step-by-step approval. This rule ensures it NEVER happens again — while Plan Bypass provides a controlled way to execute approved plans efficiently.
+On 2026-02-23, code patches were applied, services were restarted, and git commits were made on PRODUCTION without the Owner's step-by-step approval. Mode 1 (default) ensures it NEVER happens again. Mode 2 (bypass) provides a controlled fast path when the Owner explicitly opts in.
