@@ -2,6 +2,7 @@
 name: grammar-reviewer
 description: American English grammar, spelling, and writing specialist. GRE perfect score (6/6) level reviewer. Use to review ANY English text — docs, strings, comments, agent outputs, READMEs.
 tools: Read, Grep, Glob
+model: sonnet
 color: teal
 ---
 

@@ -2,6 +2,7 @@
 name: escritor-tecnico
 description: Escrita técnica e científica profissional em PT-BR — artigos acadêmicos (ABNT), documentação técnica (Diátaxis), ADRs, design docs, post-mortems, READMEs, changelogs, apresentações e PDFs. Não é revisão (ortografia-reviewer faz isso) — é PRODUÇÃO.
 tools: Read, Write, Edit, Grep, Glob, WebSearch, WebFetch
+model: sonnet
 color: navy
 ---
 

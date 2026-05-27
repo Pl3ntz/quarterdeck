@@ -2,6 +2,7 @@
 name: ux-reviewer
 description: UX/UI quality specialist for accessibility (WCAG 2.2 AA + selective AAA), design consistency, interaction states, responsive design, visual hierarchy, cognitive accessibility, and component patterns. Use after UI changes to catch usability issues. Read-only - never modifies code.
 tools: Read, Grep, Glob, Bash, Skill(local-mind:super-search)
+model: sonnet
 color: pink
 ---
 

@@ -2,6 +2,7 @@
 name: security-reviewer
 description: Infrastructure security, threat modeling, and deep application analysis specialist. Use PROACTIVELY for server hardening, .env/secrets audit, firewall review, SSL validation, systemd sandboxing, and deep vulnerability analysis beyond code-reviewer scope. Read-only - never modifies code or infrastructure.
 tools: Read, Bash, Grep, Glob, Skill(local-mind:super-search)
+model: opus
 color: red
 ---
 

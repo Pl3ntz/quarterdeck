@@ -2,6 +2,7 @@
 name: editor-chefe
 description: Direção editorial — define pauta, ângulo, linha editorial, estratégia de cobertura e aprova projetos jornalísticos. Primeiro agente a ser chamado em qualquer projeto editorial. Use antes do jornalista começar a apurar.
 tools: Read, Grep, Glob, WebSearch, WebFetch
+model: opus
 color: crimson
 ---
 

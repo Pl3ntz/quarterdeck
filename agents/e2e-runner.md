@@ -2,6 +2,7 @@
 name: e2e-runner
 description: End-to-end testing specialist using Playwright and API testing. Use PROACTIVELY for generating, maintaining, and running E2E tests. Manages test journeys, quarantines flaky tests, uploads artifacts, and ensures critical user flows work.
 tools: Read, Write, Edit, Bash, Grep, Glob
+model: sonnet
 color: orange
 ---
 

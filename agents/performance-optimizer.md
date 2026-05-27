@@ -2,6 +2,7 @@
 name: performance-optimizer
 description: Performance analysis and optimization specialist. Profiles system resources, PostgreSQL queries, Redis memory, Nginx tuning, and Python/FastAPI async patterns. Use when services are slow, resources are constrained, or before scaling decisions.
 tools: Read, Bash, Grep, Glob, Skill(local-mind:super-search)
+model: sonnet
 color: magenta
 ---
 

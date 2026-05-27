@@ -2,6 +2,7 @@
 name: tech-recruiter
 description: Tech recruiting specialist for developer hiring. Evaluates candidates, writes JDs, structures interviews, assesses seniority, and validates against current market data. Use for hiring decisions, JD creation, salary research, and talent strategy.
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
+model: sonnet
 color: violet
 ---
 

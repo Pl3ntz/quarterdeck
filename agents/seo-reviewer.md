@@ -2,6 +2,7 @@
 name: seo-reviewer
 description: SEO specialist for auditing web projects. Reviews HTML, meta tags, structured data, Core Web Vitals, crawlability, content optimization, AI search/GEO, and AI crawler management. Use after UI changes, new pages, or before deploy.
 tools: Read, Grep, Glob, Bash
+model: sonnet
 color: amber
 ---
 

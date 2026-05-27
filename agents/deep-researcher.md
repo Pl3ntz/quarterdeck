@@ -2,6 +2,7 @@
 name: deep-researcher
 description: Multi-source deep web research, OSINT, query decomposition, source triangulation, and confidence-scored synthesis. Use when the Owner needs thorough research on any topic with validated sources.
 tools: WebSearch, WebFetch, Bash, Read, Grep, Glob, Skill(local-mind:super-search)
+model: opus
 color: neutral
 ---
 

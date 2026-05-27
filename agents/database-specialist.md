@@ -2,6 +2,7 @@
 name: database-specialist
 description: PostgreSQL specialist for schema design, query optimization, indexing strategy, and migration safety. Use for EXPLAIN ANALYZE, schema review, index recommendations, migration planning, and database health checks.
 tools: Read, Bash, Grep, Glob, Skill(local-mind:super-search)
+model: sonnet
 color: white
 ---
 
