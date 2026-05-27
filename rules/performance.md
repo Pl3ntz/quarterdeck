@@ -52,7 +52,7 @@ For complex tasks requiring deep reasoning:
 ## Build Troubleshooting
 
 If build fails:
-1. Suggest **build-error-resolver** agent to CTO
+1. Suggest **build-error-resolver** agent to Owner
 2. Analyze error messages
 3. Fix incrementally
 4. Verify after each fix

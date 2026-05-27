@@ -19,12 +19,12 @@ MANDATORY workflow:
 
 ## Troubleshooting Test Failures
 
-1. Suggest **tdd-guide** agent to CTO for complex test issues
+1. Suggest **tdd-guide** agent to Owner for complex test issues
 2. Check test isolation
 3. Verify mocks are correct
 4. Fix implementation, not tests (unless tests are wrong)
 
 ## Agent Support
 
-- **tdd-guide** - Suggest to CTO for new features (enforces write-tests-first)
-- **e2e-runner** - Suggest to CTO for Playwright E2E testing
+- **tdd-guide** - Suggest to Owner for new features (enforces write-tests-first)
+- **e2e-runner** - Suggest to Owner for Playwright E2E testing

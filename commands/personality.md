@@ -67,8 +67,8 @@ Read the user's argument after `/personality`. Default to "show" if empty.
 
 - Global patterns: `~/.claude/learning/patterns.jsonl`
 - Global profile: `~/.claude/learning/profile.md`
-- Project patterns: `~/.claude/projects/<project-id>/learning/patterns.jsonl`
-- Project profile: `~/.claude/projects/<project-id>/learning/profile.md`
+- Project patterns: `~/.claude/projects/-Users-user-dev/learning/patterns.jsonl`
+- Project profile: `~/.claude/projects/-Users-user-dev/learning/profile.md`
 - Distillation script: `~/.claude/scripts/distill-patterns.py`
 - Capture hook: `~/.claude/hooks/capture-patterns.sh`
 - Injection hook: `~/.claude/hooks/inject-personality.sh`
