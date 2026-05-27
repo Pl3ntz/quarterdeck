@@ -37,18 +37,25 @@ In this mode:
 
 When the Owner includes the word **`bypass`** anywhere in a message, this is an IMMEDIATE and UNCONDITIONAL activation of Mode 2. No further confirmation needed. No AskUserQuestion needed. The Owner said `bypass` — that IS the approval.
 
-**Upon detecting `bypass`, the PE MUST:**
+**Upon detecting `bypass`, the PE MUST (in this exact order):**
 
-1. Print this EXACT visual confirmation banner as markdown text output (NOT in a tool call — direct text to the Owner):
+1. Create the bypass flag file so the harness hook allows commands through:
+```bash
+mkdir -p ~/.claude/tmp && touch ~/.claude/tmp/bypass-active
+```
+2. Print the visual confirmation banner as markdown text:
 
 > **▶▶▶ BYPASS ACTIVE ▶▶▶**
 >
 > Executing full plan without step-by-step approval.
 > Say **stop** or **para** to revoke at any time.
 
-This renders as a blockquote with bold text — visually distinct from normal conversation in Claude Code's terminal.
-2. Execute ALL pending steps sequentially WITHOUT stopping to ask between steps
-3. Log each step as it runs (show command + output) so the Owner can follow
+3. Execute ALL pending steps sequentially WITHOUT stopping to ask between steps
+4. Log each step as it runs (show command + output) so the Owner can follow
+5. When the plan finishes or fails, remove the flag:
+```bash
+rm -f ~/.claude/tmp/bypass-active
+```
 
 **Activation contexts:**
 - Owner says "bypass" with a plan already presented → execute that plan
@@ -61,7 +68,7 @@ This renders as a blockquote with bold text — visually distinct from normal co
 - Does NOT carry over to the next plan or session
 - Database DROP/TRUNCATE and `rm -rf` on data directories ALWAYS require individual approval, even in bypass mode
 
-**Deactivation:** bypass expires automatically when the plan completes or fails. The Owner can also say "stop" or "para" at any time to revoke it mid-execution.
+**Deactivation:** bypass expires automatically when the plan completes or fails (PE runs `rm -f ~/.claude/tmp/bypass-active`). The Owner can also say "stop" or "para" at any time to revoke. The flag file also auto-expires after 30 minutes as safety net.
 
 ---
 

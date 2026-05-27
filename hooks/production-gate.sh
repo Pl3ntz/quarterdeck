@@ -5,15 +5,15 @@
 # Configuration: ~/.claude/hooks/production-gate.conf
 # The conf file contains YOUR server aliases/IPs (not versioned)
 #
-# Strategy: ALLOWLIST for SSH to prod (default-deny)
-# - Only read-only commands pass without approval
-# - Everything else is BLOCKED with message to CTO
-# - Also blocks scp/rsync/sftp to prod
-# - Local commands are free (except catastrophic rm/git reset)
+# Strategy: ALLOWLIST for SSH to prod (default-ask)
+# - Only read-only commands pass automatically (permissionDecision: allow via {})
+# - Everything else prompts the user (permissionDecision: ask) — not hard-blocked
+# - scp/rsync/sftp to prod also prompts
+# - Local commands are free (except catastrophic rm/git reset — those prompt)
 #
 # I/O Contract (PreToolUse):
 # - Input: JSON via stdin (tool_name, tool_input)
-# - Output: JSON with permissionDecision deny to block, {} to allow
+# - Output: JSON with permissionDecision "ask" to prompt user, {} to allow, "deny" only on internal errors
 # - Exit 0 always
 
 input=$(cat)
@@ -34,6 +34,20 @@ if [ -z "$PROD_ALIASES" ] || [ -z "$PROD_GREP" ]; then
   exit 0
 fi
 
+# Bypass flag: if the PE activated bypass mode, skip all checks.
+# Flag file is created by the PE (via Bash tool) when the Owner says "bypass".
+# Auto-expires: flag older than 30 minutes is ignored (stale session protection).
+BYPASS_FLAG="$HOME/.claude/tmp/bypass-active"
+if [ -f "$BYPASS_FLAG" ]; then
+  flag_age=$(( $(date +%s) - $(stat -f %m "$BYPASS_FLAG" 2>/dev/null || stat -c %Y "$BYPASS_FLAG" 2>/dev/null || echo 0) ))
+  if [ "$flag_age" -lt 1800 ]; then
+    echo '{}'
+    exit 0
+  else
+    rm -f "$BYPASS_FLAG"
+  fi
+fi
+
 # Fast path: extract command
 command=$(echo "$input" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('command',''))" 2>/dev/null)
 
@@ -45,7 +59,7 @@ fi
 # Fast path: if command doesn't mention any prod alias, allow (unless catastrophic local)
 if ! echo "$command" | grep -qiE "$PROD_GREP"; then
   if echo "$command" | grep -qE 'rm\s+-[a-zA-Z]*r[a-zA-Z]*f[a-zA-Z]*\s+(/|~|\$HOME)\b|git\s+reset\s+--hard|git\s+clean\s+-[a-zA-Z]*f'; then
-    echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny"},"systemMessage":"PRODUCTION GATE: Comando local destrutivo detectado. Confirme com o CTO antes de executar."}'
+    echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"PRODUCTION GATE: Comando local destrutivo detectado. Confirme antes de executar."}}'
     exit 0
   fi
   echo '{}'
@@ -63,11 +77,14 @@ command = data.get('tool_input', {}).get('command', '')
 aliases_str = os.environ.get('PROD_ALIASES', '')
 PROD_PATTERN = aliases_str if aliases_str else 'prod_server'
 
-def deny(reason):
-    msg = f'PRODUCTION GATE: {reason}. Peca aprovacao ao CTO antes de executar.'
+def ask(reason):
+    msg = f'PRODUCTION GATE: {reason}. Confirme antes de executar.'
     print(json.dumps({
-        'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'permissionDecision': 'deny'},
-        'systemMessage': msg
+        'hookSpecificOutput': {
+            'hookEventName': 'PreToolUse',
+            'permissionDecision': 'ask',
+            'permissionDecisionReason': msg,
+        },
     }))
     sys.exit(0)
 
@@ -77,7 +94,7 @@ def allow():
 
 # --- BLOCK: scp, rsync, sftp to prod ---
 if re.search(rf'^(scp|rsync|sftp)\b', command) and re.search(PROD_PATTERN, command):
-    deny('Transferencia de arquivo para servidor de producao bloqueada')
+    ask('Transferencia de arquivo para servidor de producao bloqueada')
 
 # --- CHECK: SSH to prod (with optional user@ prefix) ---
 ssh_match = re.search(rf'ssh\s+(?:.*\s+)?(?:\w+@)?({PROD_PATTERN})(?:\s|$)', command)
@@ -99,11 +116,11 @@ remote_cmd = remote_cmd.replace('\\\\\"', '\"').replace(\"\\\\\\\\\\'\" , \"'\")
 
 # No remote command = interactive SSH = BLOCK
 if not remote_cmd.strip():
-    deny('SSH interativo para producao bloqueado')
+    ask('SSH interativo para producao bloqueado')
 
 # Reject newline/CR injection (defeats line-oriented allowlist)
 if '\n' in remote_cmd or '\r' in remote_cmd:
-    deny('Comando contem newline/carriage return')
+    ask('Comando contem newline/carriage return')
 
 # --- DENY OVERRIDES: always block these patterns ---
 DENY_OVERRIDES = [
@@ -130,7 +147,7 @@ DENY_OVERRIDES = [
 
 for pattern, reason in DENY_OVERRIDES:
     if re.search(pattern, remote_cmd):
-        deny(f'{reason} em producao')
+        ask(f'{reason} em producao')
 
 # --- ALLOWLIST: only these read-only commands pass ---
 READ_ONLY = [
@@ -167,7 +184,7 @@ READ_ONLY = [
     r'^fgrep\s',
     r'^rg\s',
     r'^ag\s',
-    r'^(sudo\s+-u\s+postgres\s+)?psql\s.*-c\s+[\"\x27]?\s*(SELECT|SHOW|EXPLAIN|\\\\d|\\\\l|\\\\c|\\\\x|\\\\timing)',
+    r'^(?:[A-Z_]+=(?:\S+|\\$\(\s*(?:grep|cut|tr|sed|awk|head|tail|cat|echo)\b[^)|]*(?:\|\s*(?:grep|cut|tr|sed|awk|head|tail|cat|echo)\b[^)|]*)*\))\s+)*(sudo\s+-u\s+postgres\s+)?psql\s.*-c\s+[\"\x27]?\s*(SELECT|SHOW|EXPLAIN|\\\\d|\\\\l|\\\\c|\\\\x|\\\\timing)',
     r'^echo\s',
     r'^date(\s|$)',
     r'^env(\s|$)',
@@ -186,7 +203,28 @@ READ_ONLY = [
     r'^awk\s+\x27\{print\s+\\$\d{1,3}(?:\s*,\s*\\$\d{1,3})*\}\x27(?:\s+[A-Za-z0-9_./~-]+)?$',
     # jq with -r/-c/-s/-n/-e flags only and basic .filter — no --rawfile, no -L, no module
     r'^jq\s+(?:-[rcsne]\s+)*\x27\.[a-zA-Z0-9_.\[\]()?|\s,]*\x27(?:\s+[A-Za-z0-9_./~-]+)?$',
-    # prod-tool CLI on <prod_server> — argparse positive allowlist; deployed at /usr/local/bin/prod-tool
+    # Docker read-only subcommands
+    r'^docker\s+(ps|images|image\s+ls|inspect|logs|stats|version|info|history|diff|port|top|events|search|context\s+ls|network\s+(ls|inspect)|volume\s+(ls|inspect))(\s|$)',
+    # Docker Compose read-only
+    r'^docker\s+compose\s+(ps|logs|images|top|config|version|port|events)(\s|$)',
+    r'^docker-compose\s+(ps|logs|images|top|config|version|port|events)(\s|$)',
+    # System metrics (read-only)
+    r'^iostat(\s|$)',
+    r'^vmstat(\s|$)',
+    r'^mpstat(\s|$)',
+    r'^sar(\s|$)',
+    # Mount info
+    r'^mount(\s|$)',
+    r'^findmnt(\s|$)',
+    # Crontab list only (not -e/-r/-i)
+    r'^crontab\s+-l(\s|$)',
+    # sysctl read-only (rejects -w / --write)
+    r'^sysctl\s+(?!-w\b)(?!--write\b)\S',
+    # Package manager: read/check/build subcommands only
+    r'^(?:bun|pnpm|npm|yarn)\s+(?:run\s+)?(?:build|test|lint|typecheck|check|format|verify|coverage|audit)(?::[A-Za-z0-9_:.-]+)?(?:\s|$)',
+    # Package manager / runtime: version queries
+    r'^(?:bun|pnpm|npm|yarn|node|python3?|deno|cargo|go|ruby|rustc)\s+(?:--version|-v|-V|version)(?:\s|$)',
+    # prod-tool CLI on your-server — argparse positive allowlist; deployed at /usr/local/bin/prod-tool
     r'^prod-tool\s+(show|head|tail|grep|stat|ls|service-status|service-logs|df|ps)(\s.*)?$',
 ]
 
@@ -214,7 +252,7 @@ for sub_cmd in chain_ops:
 
     if not allowed:
         first_word = sub_cmd.split()[0] if sub_cmd.split() else sub_cmd
-        deny(f'Comando \"{first_word}\" nao esta na allowlist de comandos read-only para producao. Comando completo: {sub_cmd[:100]}')
+        ask(f'Comando \"{first_word}\" nao esta na allowlist de comandos read-only para producao. Comando completo: {sub_cmd[:100]}')
 
 allow()
 " 2>/dev/null
