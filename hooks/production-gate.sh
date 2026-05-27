@@ -151,6 +151,7 @@ for pattern, reason in DENY_OVERRIDES:
 
 # --- ALLOWLIST: only these read-only commands pass ---
 READ_ONLY = [
+    r'^sleep\s+\d',
     r'^cat\s+\S',
     r'^less\s',
     r'^head\s',
