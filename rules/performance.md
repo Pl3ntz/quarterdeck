@@ -2,12 +2,12 @@
 
 ## Model Selection Strategy
 
-**Main Session (PE): Opus 4.7 (CURRENT)**
-- Released 2026-04-16, successor to Opus 4.6
+**Main Session (PE): Opus 4.8 (CURRENT)**
+- Model ID `claude-opus-4-8`; successor to Opus 4.7 (4.7 released 2026-04-16)
 - Best overall quality for orchestration, planning, and execution
-- New `xhigh` effort level (between high and max) for additional reasoning control
+- Fast mode supported (faster output, no downgrade to a smaller model) — toggle with /fast on Opus 4.8/4.7/4.6
 - Adaptive thinking is the only supported thinking mode (display defaults to "omitted")
-- Vision: 3x resolution capacity (up to 2,576px on long edge)
+- NOTE: 4.8 pricing/spec details below are carried over from 4.7 — reconfirm against current Anthropic pricing
 
 **Haiku 4.5** ($1/$5 per MTok — 5x cheaper than Opus):
 - build-error-resolver, doc-updater
@@ -15,15 +15,15 @@
 - Simple, scoped tasks
 
 **Sonnet 4.6** ($3/$15 per MTok — best cost/quality):
-- code-reviewer, ux-reviewer, tdd-guide, e2e-runner, fact-checker
+- code-reviewer, ux-reviewer, tdd-guide, e2e-runner
 - performance-optimizer, database-specialist, refactor-cleaner, devops-specialist
 - jornalista, redator, escritor-tecnico, editor-de-texto
 - ortografia-reviewer, grammar-reviewer, tech-recruiter, seo-reviewer
 - 79.6% SWE-bench (near-Opus parity for coding)
 
-**Opus 4.7** ($5/$25 per MTok — deepest reasoning):
+**Opus 4.8** ($5/$25 per MTok — deepest reasoning; pricing carried from 4.7, reconfirm):
 - staff-engineer, architect, planner, security-reviewer, incident-responder
-- editor-chefe, deep-researcher
+- editor-chefe, deep-researcher, fact-checker
 - Complex architectural decisions, production diagnosis, editorial direction
 - Improved coding, finance/legal benchmarks (GDPval-AA), multi-step reasoning
 - Best at catching subtle bugs
