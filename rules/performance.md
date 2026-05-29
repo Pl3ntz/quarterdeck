@@ -24,6 +24,11 @@
 **Opus 4.8** ($5/$25 per MTok — deepest reasoning; pricing carried from 4.7, reconfirm):
 - staff-engineer, architect, planner, security-reviewer, incident-responder
 - editor-chefe, deep-researcher, fact-checker
+
+**1M context variant (`opus[1m]`)** — only the main PE session and these big-context agents:
+- staff-engineer, architect, security-reviewer, deep-researcher (frontmatter `model: opus[1m]`)
+- Bare `opus`/`sonnet` aliases resolve to the standard 200K window — the `[1m]` suffix is required per-agent; subagents do NOT inherit the main session's 1M. Haiku has no 1M variant (capped 200K).
+- Ref: code.claude.com/docs/en/model-config.md (Extended context)
 - Complex architectural decisions, production diagnosis, editorial direction
 - Improved coding, finance/legal benchmarks (GDPval-AA), multi-step reasoning
 - Best at catching subtle bugs
