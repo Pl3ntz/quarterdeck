@@ -19,13 +19,21 @@ try:
     data = json.load(sys.stdin)
     tool = data.get('tool_name', data.get('tool', ''))
     tool_input = data.get('tool_input', {})
-    tool_output = data.get('tool_result', data.get('tool_output', data.get('result', '')))
-    if tool_output is None:
-        print(json.dumps({}))
-        sys.exit(0)
-    if isinstance(tool_output, dict):
-        tool_output = tool_output.get('output', tool_output.get('content', str(tool_output)))
-    tool_output = str(tool_output)
+
+    # Claude Code envia 'tool_response' (Bash: dict com stdout/stderr/interrupted)
+    # Fallbacks mantidos para compat futura
+    tool_response = data.get('tool_response', data.get('tool_result', data.get('tool_output', data.get('result', ''))))
+
+    interrupted = False
+    stdout, stderr = '', ''
+    if isinstance(tool_response, dict):
+        stdout = tool_response.get('stdout', '') or ''
+        stderr = tool_response.get('stderr', '') or ''
+        interrupted = bool(tool_response.get('interrupted'))
+        tool_output = (stdout + '\n' + stderr).strip()
+    else:
+        tool_output = str(tool_response or '')
+        stdout = tool_output  # legacy fallback
 
     if tool != 'Bash':
         print(json.dumps({}))
@@ -33,16 +41,12 @@ try:
 
     command = tool_input.get('command', '')
 
-    # Skip known non-error commands (false positive sources)
-    skip_prefixes = [
-        'git status', 'git log', 'git diff', 'git branch',
-        'ls', 'pwd', 'echo', 'which', 'type', 'whoami',
-        'date', 'uptime', 'df', 'du', 'wc', 'head', 'tail',
-    ]
-    cmd_start = command.strip().split('|')[0].strip().split('&&')[0].strip()
-    for skip in skip_prefixes:
-        if cmd_start.startswith(skip):
-            sys.exit(0)
+    # Detecta se o comando e' um log/file read — nesses casos NUNCA flaggar com base
+    # em stdout (o conteudo lido pode conter texto de erros antigos).
+    # stderr ainda e' checado (read pode falhar com 'Permission denied' real).
+    cmd_start = command.strip().split('|')[0].strip().split('&&')[0].strip().split(';')[0].strip()
+    log_read_prefixes = ('cat ', 'tail ', 'head ', 'less ', 'more ', 'grep ', 'rg ', 'ag ', 'view ')
+    is_log_read = any(cmd_start.startswith(p) for p in log_read_prefixes)
 
     # Strong error indicators (high confidence only)
     strong_patterns = [
@@ -87,11 +91,27 @@ try:
     log_dir = os.path.expanduser('~/.claude/logs')
     os.makedirs(log_dir, exist_ok=True)
 
-    for pattern in strong_patterns:
-        if pattern.lower() in tool_output.lower():
-            is_error = True
-            matched_pattern = pattern
-            break
+    # Interrupted (timeout / user cancel) = erro forte
+    if interrupted:
+        is_error = True
+        matched_pattern = 'interrupted'
+
+    # Match patterns: stderr first (erros reais — tracebacks, npm ERR!, bash errors).
+    # Stdout fallback APENAS se stderr vazio E nao for um log-read (evita matchar
+    # texto de erro em arquivos de log que estamos apenas lendo).
+    if not is_error:
+        if stderr.strip():
+            primary = stderr
+        elif not is_log_read:
+            primary = stdout
+        else:
+            primary = ''
+        if primary:
+            for pattern in strong_patterns:
+                if pattern.lower() in primary.lower():
+                    is_error = True
+                    matched_pattern = pattern
+                    break
 
     # Log ALL commands to command-history.jsonl (for resolution detection)
     history_file = os.path.join(log_dir, 'command-history.jsonl')
@@ -161,6 +181,26 @@ try:
 
     with open(log_file, 'a') as f:
         f.write(json.dumps(entry) + '\n')
+
+    # Gatilho event-driven: erro novo logado -> dispara a ponte erro->regra.
+    # Detached/non-blocking (nao atrasa o hook); single-flight via lock fcntl
+    # dentro da propria ponte garante que disparos concorrentes nao se atropelem.
+    try:
+        import subprocess
+        bridge_path = os.path.join(
+            os.path.expanduser('~/.claude/scripts/improvement'),
+            'error_to_rule_bridge.py',
+        )
+        if os.path.exists(bridge_path):
+            bridge_log = open(os.path.join(log_dir, 'bridge.log'), 'a')
+            subprocess.Popen(
+                ['python3', bridge_path],
+                stdout=bridge_log,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+    except Exception:
+        pass
 
     # Check error-index for known solution
     index_file = os.path.join(log_dir, 'error-index.md')

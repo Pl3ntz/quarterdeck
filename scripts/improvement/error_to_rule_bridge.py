@@ -276,6 +276,22 @@ def main():
     )
     args = parser.parse_args()
 
+    # Single-flight: o gatilho event-driven (detect-errors.sh) pode disparar
+    # várias instâncias em paralelo. Um lock fcntl não-bloqueante garante que
+    # só uma rode por vez — as demais saem sem corromper rule-candidates.md.
+    # Modos read-only (--dry-run/--list) não precisam do lock.
+    _lock_handle = None
+    if not args.dry_run and not args.list:
+        try:
+            import fcntl
+            lock_path = Path.home() / ".claude" / "logs" / "bridge.lock"
+            lock_path.parent.mkdir(parents=True, exist_ok=True)
+            _lock_handle = open(lock_path, "w")  # noqa: SIM115 — segurado pelo processo
+            fcntl.flock(_lock_handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except (OSError, BlockingIOError):
+            # outra instância já roda — sai limpo; ela cobre os eventos atuais
+            sys.exit(0)
+
     events_path = Path(args.events)
     candidates_path = Path(args.candidates)
 
