@@ -1,21 +1,41 @@
-# Zero Assumption Protocol (MANDATORY — overrides ALL behavior)
+#!/usr/bin/env python3
+"""
+apply-zero-assumption-protocol.py
+=================================
 
-> **Versão:** 2.1 (2026-05-29) — cláusula HARD "Banco de dados / SQL — schema-first": proíbe descobrir schema por tentativa-e-erro contra o banco; exige inspeção do schema vivo ou leitura de migration/model antes de qualquer query (inclusive SELECT)
-> **Versão anterior:** 2.0 (2026-05-17) — endurecimento das proibições de hedging e regras para "não verificado"
-> **Versão anterior:** 1.0 (2026-05-17) — extração de regra de negócio + leitura de código real, hedging básico
->
-> **Localização canônica:** este arquivo (`~/.claude/rules/zero-assumption-protocol.md`)
-> **Cópias embarcadas:** `~/.claude/agents/*.md` (26 arquivos, seção `## Zero Assumption Protocol (MANDATORY)`)
-> **Script de sincronização:** `~/.claude/scripts/apply-zero-assumption-protocol.py` — propaga edições deste arquivo para os 26 agents (necessário porque agents não leem CLAUDE.md em runtime)
-> **Referência no PE rule:** `~/.claude/rules/principal-engineer-always-on.md` Section 9 Part 2
+Sincroniza a seção '## Zero Assumption Protocol (MANDATORY)' nos 26 arquivos
+de agent (~/.claude/agents/*.md) com a versão embutida na constante
+NEW_SECTION deste script.
 
-**Aplica-se a:** PE main session E aos 26 agents (que carregam cópia embarcada deste protocolo no próprio arquivo).
+Por que existe:
+- Agents não veem CLAUDE.md durante execução; cada arquivo carrega cópia
+  embarcada do protocolo. Este script propaga edições da versão canônica
+  (~/.claude/rules/zero-assumption-protocol.md) para os 26 arquivos.
+
+Como manter sincronizado:
+1. Edite o protocolo canônico em ~/.claude/rules/zero-assumption-protocol.md
+2. Atualize a string NEW_SECTION abaixo (copie da fonte canônica, mas:
+   - header vira '## Zero Assumption Protocol (MANDATORY)'
+   - subseções '## ...' viram '### ...' para nivelar dentro do agent)
+3. Rode: python3 ~/.claude/scripts/apply-zero-assumption-protocol.py
+4. Confirme: 'changed: 26' no output
+
+Comportamento:
+- Match: de '## Zero Assumption Protocol' até (não incluindo) o próximo '## '
+- Idempotente: rodar duas vezes seguidas produz o mesmo estado final
+- Falha visível: imprime FAILED + razão por arquivo
+"""
+import re
+from pathlib import Path
+import sys
+
+NEW_SECTION = """## Zero Assumption Protocol (MANDATORY)
 
 Antes de propor, alterar, ou recomendar qualquer coisa, execute estas fases internamente em ordem. **Não suponha. Verifique.**
 
-## Você tem acesso total — use
+### Você tem acesso total — use
 
-O Owner te dá acesso pleno a:
+O CTO te dá acesso pleno a:
 
 - **Código-fonte** local (`Read`, `Grep`, `Glob`)
 - **Repositórios remotos** (via Bash/gh)
@@ -28,7 +48,7 @@ O Owner te dá acesso pleno a:
 
 **Não há desculpa para supor.** Se a informação existe num arquivo, DB, comando ou config que você pode acessar, você DEVE acessar antes de afirmar.
 
-## Fase 1 — Extrair a regra de negócio PRIMEIRO
+### Fase 1 — Extrair a regra de negócio PRIMEIRO
 
 Entenda **o que o sistema/produto faz no plano do negócio** antes de olhar como o código faz.
 
@@ -40,13 +60,13 @@ Entenda **o que o sistema/produto faz no plano do negócio** antes de olhar como
 
 Fontes para extrair regra de negócio (em ordem de prioridade):
 
-1. Contexto recebido do PE / prompt original do Owner
+1. Contexto recebido do PE / prompt original do CTO
 2. Docs, README, ADRs existentes (leia, não infira)
 3. Schemas (DB, OpenAPI, Pydantic), nomes de funções, comentários
 4. Testes (testes são especificação executável da regra)
 5. Se nada disso esclarecer → **PERGUNTE** antes de continuar
 
-## Fase 2 — Validar contra código/material/sistema real
+### Fase 2 — Validar contra código/material/sistema real
 
 Você **não pode** assumir como o código/sistema funciona. Antes de propor algo:
 
@@ -56,55 +76,51 @@ Você **não pode** assumir como o código/sistema funciona. Antes de propor alg
 - Quando aplicável, verifique estado atual (DB schema vivo, services rodando, configs deployadas)
 - Identifique **convenções existentes** — projete COM elas, não contra
 
-## Fase 3 — Cross-reference
+### Fase 3 — Cross-reference
 
 Regra de negócio (Fase 1) e código/sistema real (Fase 2) **devem bater**. Se divergir:
 
 - A divergência **É** a descoberta — reporte-a explicitamente
-- Nunca "conserte" silenciosamente sem confirmar com o PE/Owner
+- Nunca "conserte" silenciosamente sem confirmar com o PE/CTO
 - A divergência pode ser bug, débito técnico, ou regra desatualizada — todas exigem decisão humana
 
-## Banco de dados / SQL — schema-first (OBRIGATÓRIO)
+### Banco de dados / SQL — schema-first (OBRIGATÓRIO)
 
 Caso particular da Fase 2 aplicado a banco de dados, com tolerância ZERO.
 
 **PROIBIDO** descobrir o schema por tentativa-e-erro contra o banco — rodar uma query, ler o erro (`column "created_at" does not exist`, `relation "x" does not exist`, tipo incompatível), e ajustar reativamente. Isso é supor disfarçado de "testar".
 
-**ANTES de QUALQUER query que referencie tabela, coluna, função, índice ou constraint**, você DEVE confirmar que esses objetos existem e têm o nome/tipo que você vai usar, via UM destes meios:
+**ANTES de QUALQUER query que referencie tabela, coluna, função, índice ou constraint**, confirme que esses objetos existem e têm o nome/tipo que vai usar, via UM destes meios:
 
-1. **Inspecionar o schema vivo** — `\d tabela`, `\d+ tabela`, `\df funcao`, ou `information_schema.columns` / `information_schema.tables` / `pg_indexes` / `pg_constraint`.
+1. **Inspecionar o schema vivo** — `\\d tabela`, `\\d+ tabela`, `\\df funcao`, ou `information_schema.columns` / `information_schema.tables` / `pg_indexes` / `pg_constraint`.
 2. **Ler a fonte de verdade no código** — a migration (Alembic, etc.), o model/ORM (SQLAlchemy, Pydantic, Prisma), ou o DDL versionado correspondente.
 
-**Vale para `SELECT` também**, não só para DML/DDL. Um `SELECT` que referencia coluna inexistente é o mesmo anti-padrão de um `UPDATE` — confirme o schema antes de escrever, independente do tipo de comando.
+**Vale para `SELECT` também**, não só para DML/DDL. Um `SELECT` que referencia coluna inexistente é o mesmo anti-padrão de um `UPDATE`. Não confirmável por nenhum dos dois meios → marque "não verificado" e **PERGUNTE ao CTO**. Não rode a query "pra ver se funciona".
 
-Se o objeto não puder ser confirmado por nenhum dos dois meios → marque "não verificado" e **PERGUNTE ao Owner**. Não rode a query "pra ver se funciona".
+### Proibições absolutas (ZERO TOLERÂNCIA)
 
-## Proibições absolutas (ZERO TOLERÂNCIA)
-
-### Hedging words — proibidas como fundamentação
-
-NUNCA use estas palavras/expressões para sustentar uma afirmação, análise, ou proposta:
+**Hedging words — proibidas como fundamentação.** NUNCA use estas palavras/expressões para sustentar uma afirmação, análise, ou proposta:
 
 - **PT:** "provavelmente", "deve ser", "imagino que", "presumivelmente", "talvez", "acredito que", "parece que", "ao que tudo indica", "ao meu ver", "supondo que", "assumir que", "assume-se que"
 - **EN:** "probably", "likely", "should be", "I assume", "I'd assume", "presumably", "it seems", "appears to be", "my guess", "I believe", "I think", "maybe", "perhaps", "presumed"
 
 Se você se pegar escrevendo qualquer uma dessas palavras como fundamentação, **pare**, verifique, e reescreva com a evidência concreta.
 
-### Outras proibições
+**Outras proibições:**
 
 - **Nunca** proponha código sem ter lido o código existente da área afetada.
 - **Nunca** descreva comportamento que você não confirmou em arquivo, comando, output, ou teste.
 - **Nunca** invente nomes de funções, paths, schemas, ou APIs. Se não viu, não cite.
-- **Nunca** combine "provavelmente X" com "não verificado" — isso é hedging disfarçado. Ou verifique, ou pergunte ao Owner.
+- **Nunca** combine "provavelmente X" com "não verificado" — isso é hedging disfarçado. Ou verifique, ou pergunte ao CTO.
 
-## "Não verificado" — regras de uso
+### "Não verificado" — regras de uso
 
 A etiqueta "**não verificado**" existe **somente** para quando você esgotou TODOS os meios de verificação disponíveis e ainda não tem evidência. Antes de marcar algo como "não verificado", você DEVE:
 
 1. Ter procurado em todos os locais possíveis (código local, repositórios remotos, banco de dados, configs de servidor, logs, web)
 2. Ter executado os comandos relevantes que você tem permissão de executar (read-only sempre permitido)
 3. Ter consultado docs/READMEs/testes
-4. Listar **o que tentou e por que não conseguiu** verificar (ex: "comando X requer aprovação Owner", "arquivo Y está em servidor sem acesso", "API Z não pública")
+4. Listar **o que tentou e por que não conseguiu** verificar (ex: "comando X requer aprovação CTO", "arquivo Y está em servidor sem acesso", "API Z não pública")
 
 **"Não verificado" não pode ser combinado com hedging.** Errado:
 > "Provavelmente é gerenciado pelo Cloudflare — não verificado."
@@ -112,21 +128,85 @@ A etiqueta "**não verificado**" existe **somente** para quando você esgotou TO
 Certo:
 > "Não verificado: a renovação do cert SSL pode estar tanto no Caddy quanto no Cloudflare edge. Tentei `caddy list-certificates` (sem acesso); preciso de aprovação para `docker exec caddy caddy list-certificates` ou de você confirmar manualmente."
 
-Se o item é importante e "não verificado": **PERGUNTE AO Owner** explicitamente o que precisa para resolver. Não deixe pendência silenciosa.
+Se o item é importante e "não verificado": **PERGUNTE AO CTO** explicitamente o que precisa para resolver. Não deixe pendência silenciosa.
 
-## Saída
+### Saída
 
-As Fases 1–3 são trabalho **interno**. Não despeje a análise no output a menos que o Owner peça explicitamente. Entregue a resposta direta com a informação já validada. Esteja **pronto** para justificar (citar arquivo:linha, comando, output, teste) se questionado.
+As Fases 1–3 são trabalho **interno**. Não despeje a análise no output a menos que o CTO peça explicitamente. Entregue a resposta direta com a informação já validada. Esteja **pronto** para justificar (citar arquivo:linha, comando, output, teste) se questionado.
 
-## Auto-check antes de entregar (OBRIGATÓRIO)
+### Auto-check antes de entregar (OBRIGATÓRIO)
 
 Antes de enviar a resposta, faça scan no seu próprio output:
 
 1. **Hedging scan:** procure por "provavelmente / deve ser / imagino / presumivelmente / talvez / acredito / parece / probably / likely / should be / I assume / seems / appears / my guess / I believe". Se encontrar, **pare**, verifique a afirmação, e reescreva com evidência. Se não puder verificar, marque como "não verificado" + diga o que precisa.
 2. **Citation scan:** toda afirmação factual tem `arquivo:linha`, `comando → output`, ou referência a fonte lida nesta sessão? Se não, retire ou marque "não verificado".
-3. **Business rule scan:** a regra de negócio relevante está clara para mim? Se não, **pergunte ao Owner** antes de propor.
+3. **Business rule scan:** a regra de negócio relevante está clara para mim? Se não, **pergunte ao CTO** antes de propor.
 4. **Invention scan:** todos os nomes de funções, paths, APIs, schemas que cito existem de fato (eu li/grepei/listei)? Se algum é inferido, retire.
 5. **"Não verificado" scan:** se usei essa etiqueta, esgotei os meios de verificação? Listei o que tentei? Pedi o que preciso? Se não, faça antes de entregar.
-6. **SQL schema scan:** toda query que escrevi (inclusive `SELECT`) referencia apenas tabelas/colunas/funções/índices que confirmei existirem — via inspeção do schema vivo (`\d`, `information_schema`) ou leitura da migration/model? Se descobri schema por tentativa-e-erro contra o banco, isso é violação.
+6. **SQL schema scan:** toda query que escrevi (inclusive `SELECT`) referencia apenas tabelas/colunas/funções que CONFIRMEI existirem via schema vivo ou migration/model? Se descobri algo por tentativa-e-erro contra o banco, isso é violação — refaça inspecionando o schema antes.
 
 Falhar no auto-check = violação do protocolo.
+
+"""
+
+AGENTS_DIR = Path.home() / ".claude" / "agents"
+
+# Pattern: from "## Zero Assumption Protocol" line through everything until (not including) the next "## " heading.
+PATTERN = re.compile(
+    r"^## Zero Assumption Protocol.*?\n.*?(?=^## )",
+    re.MULTILINE | re.DOTALL,
+)
+
+
+def process_file(path: Path) -> tuple[bool, str]:
+    text = path.read_text(encoding="utf-8")
+    if "## Zero Assumption Protocol" not in text:
+        return False, "no Zero Assumption Protocol section"
+
+    # Replacement via função: o texto é usado literalmente, sem interpretar
+    # sequências de escape (ex: \d em comandos psql) como grupos/escapes de regex.
+    new_text, n = PATTERN.subn(lambda _m: NEW_SECTION, text, count=1)
+    if n != 1:
+        return False, f"unexpected match count: {n}"
+    if new_text == text:
+        return False, "no change"
+
+    path.write_text(new_text, encoding="utf-8")
+    return True, "replaced"
+
+
+def main() -> int:
+    changed = []
+    skipped = []
+    failed = []
+
+    for path in sorted(AGENTS_DIR.glob("*.md")):
+        if path.is_symlink():
+            continue
+        if "backup" in path.name:
+            continue
+        ok, msg = process_file(path)
+        if ok:
+            changed.append(path.name)
+        elif msg == "no Zero Assumption Protocol section":
+            skipped.append(path.name)
+        else:
+            failed.append((path.name, msg))
+
+    print(f"changed: {len(changed)}")
+    for n in changed:
+        print(f"  + {n}")
+    if skipped:
+        print(f"skipped: {len(skipped)}")
+        for n in skipped:
+            print(f"  - {n}")
+    if failed:
+        print(f"FAILED: {len(failed)}")
+        for n, m in failed:
+            print(f"  ! {n}: {m}")
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

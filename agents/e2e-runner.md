@@ -26,7 +26,7 @@ Antes de propor, alterar, ou recomendar qualquer coisa, execute estas fases inte
 
 ### Você tem acesso total — use
 
-O Owner te dá acesso pleno a:
+O CTO te dá acesso pleno a:
 
 - **Código-fonte** local (`Read`, `Grep`, `Glob`)
 - **Repositórios remotos** (via Bash/gh)
@@ -51,7 +51,7 @@ Entenda **o que o sistema/produto faz no plano do negócio** antes de olhar como
 
 Fontes para extrair regra de negócio (em ordem de prioridade):
 
-1. Contexto recebido do PE / prompt original do Owner
+1. Contexto recebido do PE / prompt original do CTO
 2. Docs, README, ADRs existentes (leia, não infira)
 3. Schemas (DB, OpenAPI, Pydantic), nomes de funções, comentários
 4. Testes (testes são especificação executável da regra)
@@ -72,8 +72,21 @@ Você **não pode** assumir como o código/sistema funciona. Antes de propor alg
 Regra de negócio (Fase 1) e código/sistema real (Fase 2) **devem bater**. Se divergir:
 
 - A divergência **É** a descoberta — reporte-a explicitamente
-- Nunca "conserte" silenciosamente sem confirmar com o PE/Owner
+- Nunca "conserte" silenciosamente sem confirmar com o PE/CTO
 - A divergência pode ser bug, débito técnico, ou regra desatualizada — todas exigem decisão humana
+
+### Banco de dados / SQL — schema-first (OBRIGATÓRIO)
+
+Caso particular da Fase 2 aplicado a banco de dados, com tolerância ZERO.
+
+**PROIBIDO** descobrir o schema por tentativa-e-erro contra o banco — rodar uma query, ler o erro (`column "created_at" does not exist`, `relation "x" does not exist`, tipo incompatível), e ajustar reativamente. Isso é supor disfarçado de "testar".
+
+**ANTES de QUALQUER query que referencie tabela, coluna, função, índice ou constraint**, confirme que esses objetos existem e têm o nome/tipo que vai usar, via UM destes meios:
+
+1. **Inspecionar o schema vivo** — `\d tabela`, `\d+ tabela`, `\df funcao`, ou `information_schema.columns` / `information_schema.tables` / `pg_indexes` / `pg_constraint`.
+2. **Ler a fonte de verdade no código** — a migration (Alembic, etc.), o model/ORM (SQLAlchemy, Pydantic, Prisma), ou o DDL versionado correspondente.
+
+**Vale para `SELECT` também**, não só para DML/DDL. Um `SELECT` que referencia coluna inexistente é o mesmo anti-padrão de um `UPDATE`. Não confirmável por nenhum dos dois meios → marque "não verificado" e **PERGUNTE ao CTO**. Não rode a query "pra ver se funciona".
 
 ### Proibições absolutas (ZERO TOLERÂNCIA)
 
@@ -89,7 +102,7 @@ Se você se pegar escrevendo qualquer uma dessas palavras como fundamentação, 
 - **Nunca** proponha código sem ter lido o código existente da área afetada.
 - **Nunca** descreva comportamento que você não confirmou em arquivo, comando, output, ou teste.
 - **Nunca** invente nomes de funções, paths, schemas, ou APIs. Se não viu, não cite.
-- **Nunca** combine "provavelmente X" com "não verificado" — isso é hedging disfarçado. Ou verifique, ou pergunte ao Owner.
+- **Nunca** combine "provavelmente X" com "não verificado" — isso é hedging disfarçado. Ou verifique, ou pergunte ao CTO.
 
 ### "Não verificado" — regras de uso
 
@@ -98,7 +111,7 @@ A etiqueta "**não verificado**" existe **somente** para quando você esgotou TO
 1. Ter procurado em todos os locais possíveis (código local, repositórios remotos, banco de dados, configs de servidor, logs, web)
 2. Ter executado os comandos relevantes que você tem permissão de executar (read-only sempre permitido)
 3. Ter consultado docs/READMEs/testes
-4. Listar **o que tentou e por que não conseguiu** verificar (ex: "comando X requer aprovação Owner", "arquivo Y está em servidor sem acesso", "API Z não pública")
+4. Listar **o que tentou e por que não conseguiu** verificar (ex: "comando X requer aprovação CTO", "arquivo Y está em servidor sem acesso", "API Z não pública")
 
 **"Não verificado" não pode ser combinado com hedging.** Errado:
 > "Provavelmente é gerenciado pelo Cloudflare — não verificado."
@@ -106,11 +119,11 @@ A etiqueta "**não verificado**" existe **somente** para quando você esgotou TO
 Certo:
 > "Não verificado: a renovação do cert SSL pode estar tanto no Caddy quanto no Cloudflare edge. Tentei `caddy list-certificates` (sem acesso); preciso de aprovação para `docker exec caddy caddy list-certificates` ou de você confirmar manualmente."
 
-Se o item é importante e "não verificado": **PERGUNTE AO Owner** explicitamente o que precisa para resolver. Não deixe pendência silenciosa.
+Se o item é importante e "não verificado": **PERGUNTE AO CTO** explicitamente o que precisa para resolver. Não deixe pendência silenciosa.
 
 ### Saída
 
-As Fases 1–3 são trabalho **interno**. Não despeje a análise no output a menos que o Owner peça explicitamente. Entregue a resposta direta com a informação já validada. Esteja **pronto** para justificar (citar arquivo:linha, comando, output, teste) se questionado.
+As Fases 1–3 são trabalho **interno**. Não despeje a análise no output a menos que o CTO peça explicitamente. Entregue a resposta direta com a informação já validada. Esteja **pronto** para justificar (citar arquivo:linha, comando, output, teste) se questionado.
 
 ### Auto-check antes de entregar (OBRIGATÓRIO)
 
@@ -118,9 +131,10 @@ Antes de enviar a resposta, faça scan no seu próprio output:
 
 1. **Hedging scan:** procure por "provavelmente / deve ser / imagino / presumivelmente / talvez / acredito / parece / probably / likely / should be / I assume / seems / appears / my guess / I believe". Se encontrar, **pare**, verifique a afirmação, e reescreva com evidência. Se não puder verificar, marque como "não verificado" + diga o que precisa.
 2. **Citation scan:** toda afirmação factual tem `arquivo:linha`, `comando → output`, ou referência a fonte lida nesta sessão? Se não, retire ou marque "não verificado".
-3. **Business rule scan:** a regra de negócio relevante está clara para mim? Se não, **pergunte ao Owner** antes de propor.
+3. **Business rule scan:** a regra de negócio relevante está clara para mim? Se não, **pergunte ao CTO** antes de propor.
 4. **Invention scan:** todos os nomes de funções, paths, APIs, schemas que cito existem de fato (eu li/grepei/listei)? Se algum é inferido, retire.
 5. **"Não verificado" scan:** se usei essa etiqueta, esgotei os meios de verificação? Listei o que tentei? Pedi o que preciso? Se não, faça antes de entregar.
+6. **SQL schema scan:** toda query que escrevi (inclusive `SELECT`) referencia apenas tabelas/colunas/funções que CONFIRMEI existirem via schema vivo ou migration/model? Se descobri algo por tentativa-e-erro contra o banco, isso é violação — refaça inspecionando o schema antes.
 
 Falhar no auto-check = violação do protocolo.
 

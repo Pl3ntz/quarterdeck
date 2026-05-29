@@ -104,30 +104,74 @@ def main() -> int:
         return 0
 
     # Memory poisoning defense (CRITICAL):
-    # Reject any prompt containing system-level XML tags or that starts with
-    # "<" (likely tool output, task notification, or hook injection — not
-    # user input). Without this, subagent outputs and injected content get
-    # captured as "user preferences" and persist via inject_personality.
+    # Only genuine, human-written user turns may enter patterns.jsonl. Without
+    # this gate, subagent outputs, tool results, system reminders, injected
+    # context preambles and pasted code get captured as "user preferences" and
+    # persist via inject_personality — poisoning the profile.
+    #
+    # Layer 1 — starts-with-"<": almost certainly markup/tool output, not prose.
     stripped = prompt.lstrip()
     if stripped.startswith("<"):
         log_error("rejected: starts with XML tag")
         return 0
+
+    prompt_lower_quick = prompt.lower()
+
+    # Layer 2 — XML/markup poison markers anywhere in the prompt. The bare "<"
+    # entry stays last so any residual angle-bracket markup is also rejected.
     poison_markers = (
         "<task-notification",
         "<system-reminder",
+        "</system-reminder",
         "<command-name",
         "<command-message",
+        "<command-args",
         "<tool-use-id",
+        "<tool_use",
+        "<tool_result",
         "<user-prompt-submit-hook",
         "<local-command-",
         "<function_calls",
+        "<function_results",
+        "<invoke",
+        "<parameter",
+        "antml:",
         "<",
     )
-    prompt_lower_quick = prompt.lower()
     for marker in poison_markers:
         if marker in prompt_lower_quick:
             log_error(f"rejected: contains marker {marker!r}")
             return 0
+
+    # Layer 3 — structural fingerprints of injected/pasted content that are
+    # valid prose (no "<") but are NOT user preferences. These leak when the
+    # user pastes an agent's output, a context preamble, or a transcript chunk.
+    structural_markers = (
+        "---context---",          # PE agent context preamble
+        "---end-context---",
+        "---agent-memory---",
+        "---end-agent-memory---",
+        "co-authored-by:",        # commit trailer / agent attribution
+        "generated with [claude", # PR/commit attribution
+        "🤖 generated",
+        "tool_result",            # transcript / tool-output paste
+        "tool_use_id",
+        "assistant:",             # pasted conversation transcript
+        "human:",
+        "[system-reminder]",
+        "important: this context", # injected system context tail
+    )
+    for marker in structural_markers:
+        if marker in prompt_lower_quick:
+            log_error(f"rejected: structural marker {marker!r}")
+            return 0
+
+    # Layer 4 — large fenced code blocks. A genuine preference/correction is
+    # short prose; a prompt dominated by a code paste is not a "preference".
+    # Reject only when there is a real fenced block (```), not inline `code`.
+    if prompt.count("```") >= 2:
+        log_error("rejected: contains fenced code block")
+        return 0
 
     prompt_lower = prompt.lower()
     signal_type = detect_signal(prompt_lower)
@@ -139,7 +183,7 @@ def main() -> int:
     scope = "global"
     target_dir = LEARNING_BASE
     project_learning = (
-        Path.home() / ".claude" / "projects" / ("-" + str(Path.cwd()).replace("/", "-").lstrip("-")) / "learning"
+        Path.home() / ".claude" / "projects" / "-Users-user-dev" / "learning"
     )
     if cwd and project_learning.exists():
         if signal_type in ("anti_pattern", "preference") and re.search(

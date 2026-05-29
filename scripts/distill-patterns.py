@@ -34,7 +34,7 @@ DEFAULT_CONFIDENCE = 3
 DEFAULT_DECAY_DAYS = 30
 GLOBAL_LEARNING_DIR = Path.home() / ".claude" / "learning"
 PROJECT_LEARNING_DIRS = [
-    Path.home() / ".claude" / "projects" / ("-" + str(Path.cwd()).replace("/", "-").lstrip("-")) / "learning",
+    Path.home() / ".claude" / "projects" / "-Users-user-dev" / "learning",
 ]
 
 
@@ -56,21 +56,125 @@ def parse_args():
     return args
 
 
+# Memory poisoning defense (distill side):
+# Markers that indicate a captured "prompt" is actually tool output, a subagent
+# response, an injected context preamble, or pasted markup — NOT a genuine user
+# preference. Kept in sync with capture_patterns.py. A line whose prompt trips
+# any of these is quarantined granularly (the bad line is isolated; clean lines
+# are preserved). This replaces the old destructive behavior that renamed the
+# WHOLE file to patterns.jsonl.poisoned-* and wiped all learning.
+POISON_SUBSTRINGS = (
+    "<task-notification",
+    "<system-reminder",
+    "</system-reminder",
+    "<command-name",
+    "<command-message",
+    "<command-args",
+    "<tool-use-id",
+    "<tool_use",
+    "<tool_result",
+    "<user-prompt-submit-hook",
+    "<local-command-",
+    "<function_calls",
+    "<function_results",
+    "<invoke",
+    "<parameter",
+    "antml:",
+    "---context---",
+    "---end-context---",
+    "---agent-memory---",
+    "co-authored-by:",
+    "generated with [claude",
+    "🤖 generated",
+    "tool_result",
+    "tool_use_id",
+    "[system-reminder]",
+)
+
+
+def is_poisoned_prompt(prompt: str) -> bool:
+    """True if a captured prompt looks like non-user content (poison)."""
+    if not isinstance(prompt, str) or not prompt.strip():
+        return False
+    if prompt.lstrip().startswith("<"):
+        return True
+    low = prompt.lower()
+    if any(m in low for m in POISON_SUBSTRINGS):
+        return True
+    if prompt.count("```") >= 2:
+        return True
+    return False
+
+
 def load_patterns(jsonl_path: Path) -> list[dict]:
-    """Load patterns from jsonl, skipping malformed lines."""
+    """Load patterns from jsonl, quarantining poisoned/malformed lines.
+
+    Granular quarantine (memory poisoning defense): malformed lines and valid
+    entries whose prompt is non-user content are appended to a quarantine file
+    and dropped from patterns.jsonl. Clean entries are always preserved — a
+    single bad line never destroys the rest of the learning corpus.
+
+    Idempotent and fail-safe: any IO/parse error leaves patterns.jsonl
+    untouched and returns whatever clean entries were parsed.
+    """
     if not jsonl_path.exists():
         return []
-    patterns = []
-    with jsonl_path.open() as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                patterns.append(json.loads(line))
-            except json.JSONDecodeError:
-                continue
-    return patterns
+
+    clean: list[dict] = []
+    clean_lines: list[str] = []
+    quarantined: list[str] = []
+
+    try:
+        with jsonl_path.open(encoding="utf-8") as f:
+            raw_lines = f.readlines()
+    except Exception as e:
+        print(f"  [warn] could not read {jsonl_path}: {type(e).__name__}", file=sys.stderr)
+        return []
+
+    for raw in raw_lines:
+        stripped = raw.strip()
+        if not stripped:
+            continue
+        try:
+            entry = json.loads(stripped)
+        except json.JSONDecodeError:
+            quarantined.append(stripped)  # malformed JSON
+            continue
+        if not isinstance(entry, dict) or is_poisoned_prompt(entry.get("prompt", "")):
+            quarantined.append(stripped)  # valid JSON but non-user content
+            continue
+        clean.append(entry)
+        clean_lines.append(stripped)
+
+    # Nothing poisoned → leave the file untouched (idempotent fast path).
+    if not quarantined:
+        return clean
+
+    try:
+        quarantine_file = jsonl_path.with_suffix(jsonl_path.suffix + ".quarantine")
+        with quarantine_file.open("a", encoding="utf-8") as qf:
+            for bad in quarantined:
+                qf.write(bad + "\n")
+        # Atomic-ish rewrite of the clean corpus.
+        tmp_file = jsonl_path.with_suffix(jsonl_path.suffix + ".tmp")
+        with tmp_file.open("w", encoding="utf-8") as cf:
+            for good in clean_lines:
+                cf.write(good + "\n")
+        os.replace(tmp_file, jsonl_path)
+        print(
+            f"  [quarantine] isolated {len(quarantined)} poisoned line(s) → "
+            f"{quarantine_file.name}; kept {len(clean)} clean entries"
+        )
+    except Exception as e:
+        # On any failure, do NOT corrupt the source — just proceed with the
+        # clean entries we already parsed in memory.
+        print(
+            f"  [warn] quarantine write failed ({type(e).__name__}); "
+            f"patterns.jsonl left intact",
+            file=sys.stderr,
+        )
+
+    return clean
 
 
 def apply_decay(patterns: list[dict], decay_days: int) -> list[dict]:
