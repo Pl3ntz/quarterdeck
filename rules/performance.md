@@ -7,13 +7,8 @@
 - Caso de uso canônico (Anthropic): orchestrator — despacha e sustenta subagents; long-horizon
 - Adaptive thinking only e SEMPRE ligado (não pode desativar em Fable 5); `thinking: {type: "disabled"}` retorna 400 na API
 - Safety classifiers (cybersec/bio) fazem fallback automático para Opus 4.8 — esperado, não é flag de conta
-- Regressões conhecidas vs Opus 4.8: precisão de code review (CodeRabbit 32.8% vs 35.5%), overthinking/timeouts em harness curto, ações não solicitadas — por isso agents Fable carregam seção "Fable 5 Operating Mode"
+- Regressões conhecidas vs Opus 4.8: precisão de code review (CodeRabbit 32.8% vs 35.5%), overthinking/timeouts em harness curto, ações não solicitadas
 - ATENÇÃO `claude -c`: sessões retomadas mantêm o modelo da sessão original, ignorando settings.json (comportamento documentado). Corrigir com `/model fable` na sessão retomada.
-
-**Fable 5** ($10/$50 per MTok — long-horizon, orquestração, research) — promovidos 2026-06-10:
-- architect, planner, deep-researcher, staff-engineer (frontmatter `model: fable`)
-- Ganho material: SWE-bench Pro 80% vs 69.2% (Opus 4.8); ambiguidade, escopo multi-thread, research longo
-- NÃO promover executores curtos nem code-reviewer (evidência de regressão; ver pesquisa 2026-06-09)
 
 **Haiku 4.5** ($1/$5 per MTok — 5x cheaper than Opus):
 - build-error-resolver, doc-updater
@@ -27,10 +22,11 @@
 - ortografia-reviewer, grammar-reviewer, tech-recruiter, seo-reviewer
 - 79.6% SWE-bench (near-Opus parity for coding)
 
-**Opus 4.8** ($5/$25 per MTok — deepest reasoning nos papéis que ficaram):
+**Opus 4.8** ($5/$25 per MTok — deepest reasoning):
+- architect, planner, deep-researcher, staff-engineer (revertidos de Fable 5 para Opus em 2026-06-17; promoção Fable temporariamente removida)
 - security-reviewer (também é o destino do fallback de safety do Fable), incident-responder
 - editor-chefe, fact-checker
-- Best at catching subtle bugs; precisão de review superior ao Fable 5 (evidência 2026-06-09)
+- Best at catching subtle bugs
 
 **Contexto 1M (atualizado 2026-06-10, ref: code.claude.com/docs/en/model-config.md, Extended context):**
 - Na Anthropic API, **Fable 5, Opus 4.8 e Opus 4.7 SEMPRE rodam com janela 1M** — sem sufixo necessário. Não existe alias `fable[1m]`; `model: fable` já é 1M.
