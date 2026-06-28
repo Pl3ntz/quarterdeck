@@ -1,0 +1,14 @@
+{
+  "github.com/anthropics": "anthropic",
+  "github.com/anthropic": "anthropic",
+  "docs.claude.com": "anthropic",
+  "github.com/openai": "openai",
+  "openai.com": "openai",
+  "platform.openai.com": "openai",
+  "github.com/googleapis": "google",
+  "github.com/google": "google",
+  "ai.google.dev": "google",
+  "cloud.google.com": "google",
+  "github.com/pydantic": "pydantic",
+  "blog.pydantic.dev": "pydantic"
+}

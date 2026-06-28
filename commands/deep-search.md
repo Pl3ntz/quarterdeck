@@ -12,7 +12,7 @@ This command invokes the **deep-researcher** agent for thorough, multi-source we
 2. **Searches** using 7 reformulation strategies (direct, decomposition, semantic expansion, perspective shift, multilingual, negation, temporal)
 3. **Fetches** and analyzes specific pages for deep extraction
 4. **OSINT** tools (whois, dig, curl) for infrastructure/domain research
-5. **Triangulates** sources — flags claims with fewer than 2 independent confirmations
+5. **Triangulates** sources — `[HIGH]` requires ≥3 independent organizations with ≥1 primary; same-org/echo sources collapse to one
 6. **Detects contradictions** — reports conflicting information with both sides
 7. **Iterates** up to 3 research cycles to fill gaps
 8. **Synthesizes** a structured report with confidence scores (HIGH/MEDIUM/LOW)
@@ -35,15 +35,33 @@ This command invokes the **deep-researcher** agent for thorough, multi-source we
 /deep-search What changed in FastAPI 0.115+ that affects WebSocket middleware?
 ```
 
-## Output Format
+## Output Format (PADRÃO MÍNIMO — canonical)
 
-The agent produces a structured report:
-- **Executive Summary**: 2-4 sentence overview
-- **Findings**: Each with confidence score and source count
-- **Contradictions & Debates**: Conflicting information with both sides
-- **Sources**: Table with URLs, dates, and authority ratings
-- **Unresolved Gaps**: What remains unanswered
-- **Search Strategy**: What queries were used and why
+The agent produces EXACTLY these sections (the contract enforced in `deep-researcher.md`):
+- `### ACHADOS` — máx 5, ordenados por confiança; cada um `[HIGH|MEDIUM|LOW]` + contagem de fontes + índices `[1,3]`
+- `### CONTRADIÇÕES` — discordâncias com avaliação (ou `- nenhuma`)
+- `### LACUNAS` — o que ficou sem resposta / 1 só fonte / não verificado
+- `### PRÓXIMO PASSO` — sempre presente
+- `### OPEN QUESTIONS / ASSUMPTIONS` — quando o escopo é ambíguo (o agente é one-shot; o PE decide re-spawnar)
+- `### FONTES` — uma linha por fonte: URL + data + tier (primária/secundária/terciária) + QUALITY
+- `### APÊNDICE` — opcional, fora do budget (queries, domínios, tools que falharam)
+
+Confiança: **HIGH = ≥3 organizações independentes com ≥1 primária**; MEDIUM = 2; LOW = 1; UNVERIFIED = 0.
+
+## Validation step (wire-in — MANDATORY)
+
+After the deep-researcher returns, run the deterministic validator on its output before using it:
+
+```bash
+python3 ~/.claude/scripts/deep-researcher-validate.py <report-file> --fix --liveness
+```
+
+The validator (deterministic — what prompt-only cannot reliably enforce):
+- **auto-downgrades** any `[HIGH]` not backed by ≥3 distinct organizations (OSINT/infra claims use a verbatim-command-output floor instead);
+- **curls** every FONTES URL (404/NXDOMAIN on a cited URL = fabrication flag; 403/429 = blocked, not dead);
+- **flags** missing required sections and hedging-as-grounding.
+
+Use the `--fix` output (corrected labels) as the delivered result. If the validator reports CONTRACT violations (a missing required section — it cannot invent content), **re-spawn** the agent with that feedback rather than shipping. See `~/.claude/evals/deep-researcher/` for the eval harness that measures this.
 
 ## Integration with Other Commands
 
