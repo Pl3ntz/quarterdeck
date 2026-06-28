@@ -1,0 +1,53 @@
+name: leak-guard
+
+# Defense-in-depth BACKSTOP for the local pre-push hook. The hook is the real
+# prevention (blocks before content leaves the machine); this CI catches what
+# bypasses it (--no-verify, a fresh clone without hooks installed) and fails the
+# build. Two independent layers, both fail-closed, neither echoes a real match.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # Layer 1 — secrets/PII by SHAPE (API keys, tokens, private keys). No sensitive
+  # list needed, so it is safe to define in the public repo. --redact guarantees
+  # findings are masked in the (public) log.
+  gitleaks:
+    name: secrets by shape (gitleaks, redacted)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks (latest release, fail-closed)
+        run: |
+          set -euo pipefail
+          url="$(curl -fsSL https://api.github.com/repos/gitleaks/gitleaks/releases/latest \
+            | grep -oE '"browser_download_url": *"[^"]+linux_x64\.tar\.gz"' \
+            | grep -oE 'https://[^"]+' | head -1)"
+          test -n "$url" || { echo "::error::could not resolve gitleaks release URL"; exit 1; }
+          curl -fsSL "$url" -o /tmp/gl.tgz
+          tar -xzf /tmp/gl.tgz -C /tmp gitleaks
+          sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+      - name: Scan history (redacted, fail on findings)
+        run: gitleaks detect --source . --redact --no-banner --exit-code 1
+
+  # Layer 2 — project CODENAMES the denylist knows. The denylist is sensitive
+  # (it IS the list of names we protect), so it arrives as an encrypted secret and
+  # the scan never prints a match (see .github/scripts/ci-leak-scan.sh).
+  denylist:
+    name: project codenames (denylist, no-echo)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan all tracked content against the denylist
+        env:
+          QD_DENYLIST_B64: ${{ secrets.QD_DENYLIST_B64 }}
+        run: |
+          git ls-files -z | xargs -0 cat 2>/dev/null \
+            | bash .github/scripts/ci-leak-scan.sh
