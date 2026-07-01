@@ -160,6 +160,7 @@ for cmd in [
     'bash $HOME/.claude/hooks/block-build.sh',
     'bash $HOME/.claude/hooks/production-gate.sh',
     'bash $HOME/.claude/hooks/test-gate.sh',
+    'bash $HOME/.claude/hooks/eval-gate.sh',
 ]:
     if not any(cmd in h.get('command', '') for h in bash_hooks):
         bash_hooks.append({'type': 'command', 'command': cmd})
