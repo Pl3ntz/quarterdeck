@@ -44,11 +44,11 @@ QD_ROOT = Path(__file__).resolve().parents[2]
 AGENTS_WITH_FIXTURES = [
     "grammar-reviewer", "ortografia-reviewer", "code-reviewer", "security-reviewer",
     "ux-reviewer", "performance-optimizer", "database-specialist", "seo-reviewer",
-    "staff-engineer",
+    "staff-engineer", "incident-responder",
 ]
 
 FIXTURE_NAMES = ("test-errors.md", "test-code.py", "test-ui.tsx", "test-schema.sql",
-                 "test-page.html", "test-change.md")
+                 "test-page.html", "test-change.md", "test-incident.log")
 
 _SEV = r"(CRITICAL|HIGH|MEDIUM|LOW|CRITICO|CRÍTICO|ALTO|MEDIO|MÉDIO|BAIXO)"
 FINDING_RE = re.compile(r"^\s*[-*]\s*\*\*\[?\s*" + _SEV + r"\s*\]?\*\*\s*(.*)$", re.IGNORECASE)
