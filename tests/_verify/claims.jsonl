@@ -1,0 +1,6 @@
+{"id": "real-mutable-default", "label": "real", "text": "CRITICAL mutable default argument `acc=[]` in accumulate() — the list is shared across calls and accumulates state between invocations (target.py:2)"}
+{"id": "real-bare-except", "label": "real", "text": "HIGH bare `except:` in parse() swallows all exceptions including KeyboardInterrupt/SystemExit and hides errors (target.py:9)"}
+{"id": "real-eq-none", "label": "real", "text": "LOW comparison `x == None` should use `x is None` for identity (target.py:14)"}
+{"id": "fake-sql-injection", "label": "fake", "text": "CRITICAL SQL injection: user input is concatenated directly into a SQL query string in parse() (target.py:8)"}
+{"id": "fake-hardcoded-secret", "label": "fake", "text": "HIGH hardcoded API key / credential embedded as a literal in the module (target.py:1)"}
+{"id": "fake-race-condition", "label": "fake", "text": "HIGH race condition: a shared global counter is mutated without a lock across threads in accumulate() (target.py:3)"}
