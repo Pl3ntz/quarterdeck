@@ -87,3 +87,21 @@ python scripts/eval/stability_runner.py --all --runs 5
   warns on `git commit` when a staged `agents/<name>.md` changed, that agent
   ships a fixture, and no eval run was seen in the session transcript. It only
   warns — the harness fires K LLM calls, too slow/costly to block a commit.
+
+## Adversarial verifier (`verify_findings.py`)
+
+Complements the stability harness. Where `stability_runner.py` measures whether
+an agent *detects* seeded issues, `verify_findings.py` measures whether a claimed
+finding *survives scrutiny*: it runs an independent skeptical judge per finding
+that tries to REFUTE it against the real file, keeping only what holds. This is
+the adversarial-verify pattern — cut false positives before findings reach a human.
+
+```bash
+python scripts/eval/verify_findings.py --file <src> --claims <jsonl> [--runs N]
+```
+
+`--claims` is a jsonl of `{id, text}`. If a claim carries `label: real|fake`, the
+run is also **scored** (does it keep the real, refute the fake) — the regression
+check for the verifier itself. Self-test fixture: `tests/_verify/` (3 real + 3
+fake claims about `target.py`) — baseline 6/6.
+
