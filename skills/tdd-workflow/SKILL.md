@@ -1,6 +1,6 @@
 ---
 name: tdd-workflow
-description: Use this skill when writing new features, fixing bugs, or refactoring code. Enforces test-driven development with 80%+ coverage including unit, integration, and E2E tests.
+description: Use this skill when writing new features, fixing bugs, or refactoring code. Enforces test-driven development with 80%+ coverage. Test tooling by stack — pytest + httpx for FastAPI, vitest for Hono/React, Playwright for E2E.
 ---
 
 # Test-Driven Development Workflow
@@ -81,8 +81,12 @@ describe('Semantic Search', () => {
 ```
 
 ### Step 3: Run Tests (They Should Fail)
+
+Use the runner for the project's stack (the `npm test` below is a placeholder):
 ```bash
-npm test
+pytest -q            # Python / FastAPI
+bun test             # or: npx vitest run   — TS / Hono / React
+npx playwright test  # E2E
 # Tests should fail - we haven't implemented yet
 ```
 
@@ -98,7 +102,7 @@ export async function searchMarkets(query: string) {
 
 ### Step 5: Run Tests Again
 ```bash
-npm test
+pytest -q   # or: bun test / npx vitest run
 # Tests should now pass
 ```
 
@@ -111,7 +115,7 @@ Improve code quality while keeping tests green:
 
 ### Step 7: Verify Coverage
 ```bash
-npm run test:coverage
+pytest --cov=. --cov-report=term-missing   # or: npx vitest run --coverage
 # Verify 80%+ coverage achieved
 ```
 
@@ -129,7 +133,7 @@ describe('Button Component', () => {
   })
 
   it('calls onClick when clicked', () => {
-    const handleClick = jest.fn()
+    const handleClick = vi.fn()   // vitest
     render(<Button onClick={handleClick}>Click</Button>)
 
     fireEvent.click(screen.getByRole('button'))
@@ -145,32 +149,38 @@ describe('Button Component', () => {
 ```
 
 ### API Integration Test Pattern
+
+**Python (FastAPI) — pytest + httpx against the ASGI app:**
+```python
+import pytest
+from httpx import AsyncClient, ASGITransport
+from main import app
+
+@pytest.mark.asyncio
+async def test_list_jobs_ok():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        r = await ac.get("/api/jobs")
+    assert r.status_code == 200
+    assert isinstance(r.json()["jobs"], list)
+
+@pytest.mark.asyncio
+async def test_bad_body_returns_422():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        r = await ac.post("/api/match", json={"scopes": []})   # violates Field(min_length=1)
+    assert r.status_code == 422
+```
+
+**TS (Hono) — vitest against `app.request()`:**
 ```typescript
-import { NextRequest } from 'next/server'
-import { GET } from './route'
+import { describe, it, expect } from 'vitest'
+import app from '../src/server/index.js'
 
-describe('GET /api/markets', () => {
-  it('returns markets successfully', async () => {
-    const request = new NextRequest('http://localhost/api/markets')
-    const response = await GET(request)
-    const data = await response.json()
-
-    expect(response.status).toBe(200)
-    expect(data.success).toBe(true)
-    expect(Array.isArray(data.data)).toBe(true)
-  })
-
-  it('validates query parameters', async () => {
-    const request = new NextRequest('http://localhost/api/markets?limit=invalid')
-    const response = await GET(request)
-
-    expect(response.status).toBe(400)
-  })
-
-  it('handles database errors gracefully', async () => {
-    // Mock database failure
-    const request = new NextRequest('http://localhost/api/markets')
-    // Test error handling
+describe('GET /api/cv/:id', () => {
+  it('404s an unknown id', async () => {
+    const res = await app.request('/api/cv/nope')
+    expect(res.status).toBe(404)
   })
 })
 ```
@@ -231,84 +241,71 @@ test('user can create a new market', async ({ page }) => {
 ## Test File Organization
 
 ```
+# Python (FastAPI) — tests/ mirrors src, pytest
+api/
+├── src/<pkg>/routers/jobs.py
+└── tests/
+    ├── test_jobs.py            # httpx integration
+    └── test_store.py           # data layer (temp sqlite)
+
+# TS (Hono + React) — colocated unit tests + top-level e2e
 src/
-├── components/
-│   ├── Button/
-│   │   ├── Button.tsx
-│   │   ├── Button.test.tsx          # Unit tests
-│   │   └── Button.stories.tsx       # Storybook
-│   └── MarketCard/
-│       ├── MarketCard.tsx
-│       └── MarketCard.test.tsx
-├── app/
-│   └── api/
-│       └── markets/
-│           ├── route.ts
-│           └── route.test.ts         # Integration tests
+├── client/components/Button/Button.test.tsx   # vitest + RTL
+├── server/api/cv.test.ts                       # vitest against app.request()
 └── e2e/
-    ├── markets.spec.ts               # E2E tests
-    ├── trading.spec.ts
+    ├── cv.spec.ts                              # Playwright
     └── auth.spec.ts
 ```
 
 ## Mocking External Services
 
-### Supabase Mock
-```typescript
-jest.mock('@/lib/supabase', () => ({
-  supabase: {
-    from: jest.fn(() => ({
-      select: jest.fn(() => ({
-        eq: jest.fn(() => Promise.resolve({
-          data: [{ id: 1, name: 'Test Market' }],
-          error: null
-        }))
-      }))
-    }))
-  }
-}))
+Mock the flaky/external edges (LLM APIs, network); use a real temp DB for data code.
+
+### LLM client mock (Python — pytest, monkeypatch)
+```python
+def test_match_degrades_when_llm_fails(monkeypatch):
+    # force the optional refine to fail; the endpoint must still return the
+    # deterministic heuristic order, never 500 (graceful degradation).
+    def boom(*a, **k):
+        raise groq_client.GroqError("rate limited")
+    monkeypatch.setattr(groq_client, "rerank", boom)
+    result = ranking.match(profile, jobs, refine=True)
+    assert result.mode == "heuristic"
 ```
 
-### Redis Mock
-```typescript
-jest.mock('@/lib/redis', () => ({
-  searchMarketsByVector: jest.fn(() => Promise.resolve([
-    { slug: 'test-market', similarity_score: 0.95 }
-  ])),
-  checkRedisHealth: jest.fn(() => Promise.resolve({ connected: true }))
-}))
+### DB — use a real temp SQLite, not a mock
+```python
+def test_upsert_roundtrip(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    import importlib, store; importlib.reload(store)
+    store.init_db()
+    store.upsert_job(sample_job)
+    assert store.count_active() == 1
 ```
 
-### OpenAI Mock
+### TS (Hono/React) — vitest with `vi.fn()` / `vi.mock()`
 ```typescript
-jest.mock('@/lib/openai', () => ({
-  generateEmbedding: jest.fn(() => Promise.resolve(
-    new Array(1536).fill(0.1) // Mock 1536-dim embedding
-  ))
-}))
+import { vi } from 'vitest'
+vi.mock('../src/lib/llm.js', () => ({ rerank: vi.fn(async () => []) }))
 ```
 
 ## Test Coverage Verification
 
 ### Run Coverage Report
 ```bash
-npm run test:coverage
+pytest --cov=. --cov-report=term-missing   # Python
+npx vitest run --coverage                  # TS
 ```
 
 ### Coverage Thresholds
-```json
-{
-  "jest": {
-    "coverageThresholds": {
-      "global": {
-        "branches": 80,
-        "functions": 80,
-        "lines": 80,
-        "statements": 80
-      }
-    }
-  }
-}
+```python
+# Python — pyproject.toml
+[tool.coverage.report]
+fail_under = 80
+```
+```typescript
+// TS — vitest.config.ts
+test: { coverage: { thresholds: { lines: 80, functions: 80, branches: 80, statements: 80 } } }
 ```
 
 ## Common Testing Mistakes to Avoid
@@ -363,23 +360,20 @@ test('updates user', () => {
 
 ### Watch Mode During Development
 ```bash
-npm test -- --watch
-# Tests run automatically on file changes
+pytest-watch          # Python    | npx vitest    # TS (watch is default)
 ```
 
 ### Pre-Commit Hook
 ```bash
-# Runs before every commit
-npm test && npm run lint
+pytest -q && ruff check .          # Python
+bun test && npx tsc --noEmit       # TS
 ```
 
 ### CI/CD Integration
 ```yaml
-# GitHub Actions
-- name: Run Tests
-  run: npm test -- --coverage
-- name: Upload Coverage
-  uses: codecov/codecov-action@v3
+# GitHub Actions — pick the stack's step
+- run: pytest --cov=. --cov-report=xml   # Python
+# - run: npx vitest run --coverage       # TS
 ```
 
 ## Best Practices

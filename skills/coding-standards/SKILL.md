@@ -1,6 +1,6 @@
 ---
 name: coding-standards
-description: Universal coding standards, best practices, and patterns for TypeScript, JavaScript, React, and Node.js development.
+description: Coding standards and quality principles for the stacks used here — TypeScript/React (Vite) on the frontend, and Python (FastAPI) or TypeScript (Hono/Bun) on the backend. For backend API/data patterns see backend-patterns.
 ---
 
 # Coding Standards & Best Practices
@@ -256,49 +256,39 @@ interface ApiResponse<T> {
   }
 }
 
-// Success response
-return NextResponse.json({
-  success: true,
-  data: markets,
-  meta: { total: 100, page: 1, limit: 10 }
-})
-
-// Error response
-return NextResponse.json({
-  success: false,
-  error: 'Invalid request'
-}, { status: 400 })
+// Return the resource directly; let the framework serialize.
+// FastAPI (Python):
+//   return {"jobs": jobs, "total": total}          # dict -> JSON
+//   raise HTTPException(status_code=400, detail="...")  # errors
+// Hono (TS):
+//   return c.json({ jobs, total })
+//   return c.json({ error: 'invalid request' }, 400)
 ```
+
+See `backend-patterns` for the full API/error/rate-limit conventions per stack.
 
 ### Input Validation
 
+Validate at the edge; let a bad shape be rejected automatically.
+
+```python
+# Python — Pydantic v2 (FastAPI rejects a bad body with 422 automatically)
+from pydantic import BaseModel, Field
+
+class CreateJob(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    categories: list[str] = Field(min_length=1)
+```
+
 ```typescript
+// TS — zod (Hono)
 import { z } from 'zod'
-
-// ✅ GOOD: Schema validation
-const CreateMarketSchema = z.object({
-  name: z.string().min(1).max(200),
-  description: z.string().min(1).max(2000),
-  endDate: z.string().datetime(),
-  categories: z.array(z.string()).min(1)
+const CreateJob = z.object({
+  title: z.string().min(1).max(200),
+  categories: z.array(z.string()).min(1),
 })
-
-export async function POST(request: Request) {
-  const body = await request.json()
-
-  try {
-    const validated = CreateMarketSchema.parse(body)
-    // Proceed with validated data
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Validation failed',
-        details: error.errors
-      }, { status: 400 })
-    }
-  }
-}
+const parsed = CreateJob.safeParse(await c.req.json())
+if (!parsed.success) return c.json({ error: 'validation failed' }, 400)
 ```
 
 ## File Organization
@@ -306,22 +296,21 @@ export async function POST(request: Request) {
 ### Project Structure
 
 ```
+# TypeScript (Hono + Vite/React) service
 src/
-├── app/                    # Next.js App Router
-│   ├── api/               # API routes
-│   ├── markets/           # Market pages
-│   └── (auth)/           # Auth pages (route groups)
-├── components/            # React components
-│   ├── ui/               # Generic UI components
-│   ├── forms/            # Form components
-│   └── layouts/          # Layout components
-├── hooks/                # Custom React hooks
-├── lib/                  # Utilities and configs
-│   ├── api/             # API clients
-│   ├── utils/           # Helper functions
-│   └── constants/       # Constants
-├── types/                # TypeScript types
-└── styles/              # Global styles
+├── server/              # Hono app: index.ts + api/ (one module per domain) + middleware.ts
+├── db/                  # Drizzle: index.ts (client) + schema.ts
+├── client/              # React (Vite): pages/, components/, hooks/, lib/
+└── shared/              # types shared between server and client
+
+# Python (FastAPI) service — router-based layout
+api/src/<pkg>/
+├── main.py              # app + lifespan
+├── config.py            # settings from env
+├── dependencies.py      # shared Depends()
+└── routers/             # one module per domain (auth.py, jobs.py, ...)
+
+# Smaller Python service: flat module split — main.py + store.py + sync.py + ranking.py
 ```
 
 ### File Naming
@@ -415,18 +404,20 @@ export function Dashboard() {
 
 ### Database Queries
 
-```typescript
-// ✅ GOOD: Select only needed columns
-const { data } = await supabase
-  .from('markets')
-  .select('id, name, status')
-  .limit(10)
+```python
+# ✅ Select only needed columns, always bound the limit (raw SQL / asyncpg)
+rows = await pool.fetch("SELECT id, title, status FROM jobs WHERE active = $1 LIMIT $2", True, 10)
 
-// ❌ BAD: Select everything
-const { data } = await supabase
-  .from('markets')
-  .select('*')
+# ❌ SELECT * with no limit
+rows = await pool.fetch("SELECT * FROM jobs")
 ```
+
+```typescript
+// ✅ Drizzle — pick columns, bound the limit
+db.select({ id: jobs.id, title: jobs.title }).from(jobs).limit(10)
+```
+
+Full data-layer conventions (connection handling, parameterization, WAL) live in `backend-patterns`.
 
 ## Testing Standards
 
