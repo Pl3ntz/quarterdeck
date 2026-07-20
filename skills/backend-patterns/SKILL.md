@@ -1,582 +1,285 @@
 ---
 name: backend-patterns
-description: Backend architecture patterns, API design, database optimization, and server-side best practices for Node.js, Express, and Next.js API routes.
+description: Backend architecture patterns for the two stacks actually used here — Python (FastAPI + Pydantic v2 + raw SQL, no ORM) and TypeScript (Hono on Bun + Drizzle). API design, hand-written SQL data access, error handling, rate limiting, and graceful degradation.
 ---
 
 # Backend Development Patterns
 
-Backend architecture patterns and best practices for scalable server-side applications.
+Two backend stacks are used here. Match the pattern to the project's real stack — do not import ORM/Repository/Express idioms that aren't used.
 
-## API Design Patterns
+| Stack | Framework | Data layer | Where |
+|---|---|---|---|
+| **Python** | FastAPI + Pydantic v2 | **Raw SQL** — `asyncpg` (Postgres) or `sqlite3` (stdlib). No ORM, no SQLAlchemy, no Alembic. | FastAPI services |
+| **TypeScript** | Hono (on Bun) | **Drizzle** query builder (typed SQL, not a Repository). | Hono services |
 
-### RESTful API Structure
+Core philosophy across both: **hand-written SQL, thin data layer, predictable behavior**. The database access is explicit and auditable, never hidden behind an ORM abstraction.
 
-```typescript
-// ✅ Resource-based URLs
-GET    /api/markets                 # List resources
-GET    /api/markets/:id             # Get single resource
-POST   /api/markets                 # Create resource
-PUT    /api/markets/:id             # Replace resource
-PATCH  /api/markets/:id             # Update resource
-DELETE /api/markets/:id             # Delete resource
+---
 
-// ✅ Query parameters for filtering, sorting, pagination
-GET /api/markets?status=active&sort=volume&limit=20&offset=0
+# Python track — FastAPI + Pydantic v2 + raw SQL
+
+## App structure
+
+Two shapes are used depending on size:
+
+- **Router-based** (larger service): a package with `main.py`, `config.py`, `dependencies.py`, and a `routers/` folder (one module per domain). Wire shared resources with `Depends`.
+- **Flat module split** (smaller service): `main.py` plus focused modules (`store.py`, `sync.py`, `ranking.py`, …). Constants and tunables live at the top of the module with a one-line comment each.
+
+```python
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    store.init_db()          # startup
+    stop = sync.start()      # background workers off the request path
+    yield
+    if stop is not None:
+        stop.set()           # shutdown
+
+app = FastAPI(title="Service", lifespan=lifespan)
 ```
 
-### Repository Pattern
+CORS origins come from the environment, never hard-coded (prod domain lives in the server `.env`, gitignored):
 
-```typescript
-// Abstract data access logic
-interface MarketRepository {
-  findAll(filters?: MarketFilters): Promise<Market[]>
-  findById(id: string): Promise<Market | null>
-  create(data: CreateMarketDto): Promise<Market>
-  update(id: string, data: UpdateMarketDto): Promise<Market>
-  delete(id: string): Promise<void>
-}
-
-class SupabaseMarketRepository implements MarketRepository {
-  async findAll(filters?: MarketFilters): Promise<Market[]> {
-    let query = supabase.from('markets').select('*')
-
-    if (filters?.status) {
-      query = query.eq('status', filters.status)
-    }
-
-    if (filters?.limit) {
-      query = query.limit(filters.limit)
-    }
-
-    const { data, error } = await query
-
-    if (error) throw new Error(error.message)
-    return data
-  }
-
-  // Other methods...
-}
-```
-
-### Service Layer Pattern
-
-```typescript
-// Business logic separated from data access
-class MarketService {
-  constructor(private marketRepo: MarketRepository) {}
-
-  async searchMarkets(query: string, limit: number = 10): Promise<Market[]> {
-    // Business logic
-    const embedding = await generateEmbedding(query)
-    const results = await this.vectorSearch(embedding, limit)
-
-    // Fetch full data
-    const markets = await this.marketRepo.findByIds(results.map(r => r.id))
-
-    // Sort by similarity
-    return markets.sort((a, b) => {
-      const scoreA = results.find(r => r.id === a.id)?.score || 0
-      const scoreB = results.find(r => r.id === b.id)?.score || 0
-      return scoreA - scoreB
-    })
-  }
-
-  private async vectorSearch(embedding: number[], limit: number) {
-    // Vector search implementation
-  }
-}
-```
-
-### Middleware Pattern
-
-```typescript
-// Request/response processing pipeline
-export function withAuth(handler: NextApiHandler): NextApiHandler {
-  return async (req, res) => {
-    const token = req.headers.authorization?.replace('Bearer ', '')
-
-    if (!token) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
-
-    try {
-      const user = await verifyToken(token)
-      req.user = user
-      return handler(req, res)
-    } catch (error) {
-      return res.status(401).json({ error: 'Invalid token' })
-    }
-  }
-}
-
-// Usage
-export default withAuth(async (req, res) => {
-  // Handler has access to req.user
-})
-```
-
-## Database Patterns
-
-### Query Optimization
-
-```typescript
-// ✅ GOOD: Select only needed columns
-const { data } = await supabase
-  .from('markets')
-  .select('id, name, status, volume')
-  .eq('status', 'active')
-  .order('volume', { ascending: false })
-  .limit(10)
-
-// ❌ BAD: Select everything
-const { data } = await supabase
-  .from('markets')
-  .select('*')
-```
-
-### N+1 Query Prevention
-
-```typescript
-// ❌ BAD: N+1 query problem
-const markets = await getMarkets()
-for (const market of markets) {
-  market.creator = await getUser(market.creator_id)  // N queries
-}
-
-// ✅ GOOD: Batch fetch
-const markets = await getMarkets()
-const creatorIds = markets.map(m => m.creator_id)
-const creators = await getUsers(creatorIds)  // 1 query
-const creatorMap = new Map(creators.map(c => [c.id, c]))
-
-markets.forEach(market => {
-  market.creator = creatorMap.get(market.creator_id)
-})
-```
-
-### Transaction Pattern
-
-```typescript
-async function createMarketWithPosition(
-  marketData: CreateMarketDto,
-  positionData: CreatePositionDto
-) {
-  // Use Supabase transaction
-  const { data, error } = await supabase.rpc('create_market_with_position', {
-    market_data: marketData,
-    position_data: positionData
-  })
-
-  if (error) throw new Error('Transaction failed')
-  return data
-}
-
-// SQL function in Supabase
-CREATE OR REPLACE FUNCTION create_market_with_position(
-  market_data jsonb,
-  position_data jsonb
+```python
+from fastapi.middleware.cors import CORSMiddleware
+_ALLOWED_ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "http://localhost:8000").split(",") if o.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST", "PUT", "OPTIONS"],   # explicit, not ["*"]
+    allow_headers=["content-type"],
 )
-RETURNS jsonb
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  -- Start transaction automatically
-  INSERT INTO markets VALUES (market_data);
-  INSERT INTO positions VALUES (position_data);
-  RETURN jsonb_build_object('success', true);
-EXCEPTION
-  WHEN OTHERS THEN
-    -- Rollback happens automatically
-    RETURN jsonb_build_object('success', false, 'error', SQLERRM);
-END;
-$$;
 ```
 
-## Caching Strategies
+## Validation — Pydantic v2
 
-### Redis Caching Layer
+Model the request body; let validation reject bad input at the edge (a bad shape returns 422 automatically).
 
-```typescript
-class CachedMarketRepository implements MarketRepository {
-  constructor(
-    private baseRepo: MarketRepository,
-    private redis: RedisClient
-  ) {}
+```python
+from pydantic import BaseModel, Field
 
-  async findById(id: string): Promise<Market | null> {
-    // Check cache first
-    const cached = await this.redis.get(`market:${id}`)
-
-    if (cached) {
-      return JSON.parse(cached)
-    }
-
-    // Cache miss - fetch from database
-    const market = await this.baseRepo.findById(id)
-
-    if (market) {
-      // Cache for 5 minutes
-      await this.redis.setex(`market:${id}`, 300, JSON.stringify(market))
-    }
-
-    return market
-  }
-
-  async invalidateCache(id: string): Promise<void> {
-    await this.redis.del(`market:${id}`)
-  }
-}
+class Profile(BaseModel):
+    role: str = Field(min_length=1, max_length=120)
+    skills: list[str] = Field(default_factory=list)
+    scopes: list[str] = Field(min_length=1, max_length=3)   # empty list -> 422
 ```
 
-### Cache-Aside Pattern
+## Data layer — raw SQL, no ORM
 
-```typescript
-async function getMarketWithCache(id: string): Promise<Market> {
-  const cacheKey = `market:${id}`
+SQL lives as module-level string constants. A short-lived connection is opened per operation via a context manager (safe across the sync thread and uvicorn's request threads). WAL + `busy_timeout` so readers never block.
 
-  // Try cache
-  const cached = await redis.get(cacheKey)
-  if (cached) return JSON.parse(cached)
+```python
+import sqlite3
+from contextlib import contextmanager
 
-  // Cache miss - fetch from DB
-  const market = await db.markets.findUnique({ where: { id } })
+DB_PATH = os.path.join(os.environ.get("DATA_DIR", "/data"), "app.db")
+BUSY_TIMEOUT_MS = 5000
 
-  if (!market) throw new Error('Market not found')
+_SCHEMA = """
+CREATE TABLE IF NOT EXISTS jobs (
+  job_url TEXT PRIMARY KEY,
+  title TEXT, company TEXT, first_seen_at TEXT,
+  active INTEGER DEFAULT 1
+);
+CREATE INDEX IF NOT EXISTS idx_jobs_first_seen ON jobs(first_seen_at);
+"""
 
-  // Update cache
-  await redis.setex(cacheKey, 300, JSON.stringify(market))
+_UPSERT_SQL = "INSERT OR REPLACE INTO jobs (job_url, title, company, first_seen_at, active) VALUES (?, ?, ?, ?, 1)"
 
-  return market
-}
+@contextmanager
+def _conn():
+    con = sqlite3.connect(DB_PATH, timeout=BUSY_TIMEOUT_MS / 1000)
+    try:
+        con.execute("PRAGMA journal_mode=WAL")
+        con.execute(f"PRAGMA busy_timeout={BUSY_TIMEOUT_MS}")
+        yield con
+        con.commit()
+    except Exception:
+        con.rollback()
+        raise
+    finally:
+        con.close()
+
+def upsert_job(job) -> None:
+    with _conn() as c:
+        c.execute(_UPSERT_SQL, (job.url, job.title, job.company, _utc_iso()))
 ```
 
-## Error Handling Patterns
+Postgres uses the same "raw SQL, explicit connection" philosophy through `asyncpg` (a pool, parameterized queries with `$1, $2`), never string interpolation:
 
-### Centralized Error Handler
-
-```typescript
-class ApiError extends Error {
-  constructor(
-    public statusCode: number,
-    public message: string,
-    public isOperational = true
-  ) {
-    super(message)
-    Object.setPrototypeOf(this, ApiError.prototype)
-  }
-}
-
-export function errorHandler(error: unknown, req: Request): Response {
-  if (error instanceof ApiError) {
-    return NextResponse.json({
-      success: false,
-      error: error.message
-    }, { status: error.statusCode })
-  }
-
-  if (error instanceof z.ZodError) {
-    return NextResponse.json({
-      success: false,
-      error: 'Validation failed',
-      details: error.errors
-    }, { status: 400 })
-  }
-
-  // Log unexpected errors
-  console.error('Unexpected error:', error)
-
-  return NextResponse.json({
-    success: false,
-    error: 'Internal server error'
-  }, { status: 500 })
-}
-
-// Usage
-export async function GET(request: Request) {
-  try {
-    const data = await fetchData()
-    return NextResponse.json({ success: true, data })
-  } catch (error) {
-    return errorHandler(error, request)
-  }
-}
+```python
+rows = await pool.fetch("SELECT id, title FROM jobs WHERE active = $1 ORDER BY first_seen_at DESC LIMIT $2", True, limit)
 ```
 
-### Retry with Exponential Backoff
+**Never** build SQL by string concatenation with user input — always parameterize (`?` for sqlite3, `$1` for asyncpg).
 
-```typescript
-async function fetchWithRetry<T>(
-  fn: () => Promise<T>,
-  maxRetries = 3
-): Promise<T> {
-  let lastError: Error
+## Error handling — HTTPException + graceful degradation
 
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await fn()
-    } catch (error) {
-      lastError = error as Error
+Raise `HTTPException` with a specific status. Map known failure classes before the generic case.
 
-      if (i < maxRetries - 1) {
-        // Exponential backoff: 1s, 2s, 4s
-        const delay = Math.pow(2, i) * 1000
-        await new Promise(resolve => setTimeout(resolve, delay))
-      }
-    }
-  }
+```python
+from fastapi import HTTPException
 
-  throw lastError!
-}
-
-// Usage
-const data = await fetchWithRetry(() => fetchFromAPI())
+@app.post("/api/cv/upload")
+async def upload_cv(file: UploadFile = File(...)):
+    raw = await file.read()
+    if len(raw) > CV_UPLOAD_MAX_BYTES:
+        raise HTTPException(status_code=413, detail="Arquivo grande demais.")
+    if not raw.startswith(b"%PDF"):                     # magic-byte before any parse
+        raise HTTPException(status_code=400, detail="PDF inválido.")
+    try:
+        return ats.parse(raw)
+    except ats.PdfBudgetError:
+        raise HTTPException(status_code=413, detail="PDF muito complexo para processar.")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Não foi possível ler o PDF.")
 ```
 
-## Authentication & Authorization
+**Graceful degradation over 500:** when an optional external dependency (an LLM API, a third-party board) fails, degrade to a deterministic fallback instead of returning 500. The critical path must not depend on a flaky upstream.
 
-### JWT Token Validation
-
-```typescript
-import jwt from 'jsonwebtoken'
-
-interface JWTPayload {
-  userId: string
-  email: string
-  role: 'admin' | 'user'
-}
-
-export function verifyToken(token: string): JWTPayload {
-  try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload
-    return payload
-  } catch (error) {
-    throw new ApiError(401, 'Invalid token')
-  }
-}
-
-export async function requireAuth(request: Request) {
-  const token = request.headers.get('authorization')?.replace('Bearer ', '')
-
-  if (!token) {
-    throw new ApiError(401, 'Missing authorization token')
-  }
-
-  return verifyToken(token)
-}
-
-// Usage in API route
-export async function GET(request: Request) {
-  const user = await requireAuth(request)
-
-  const data = await getDataForUser(user.userId)
-
-  return NextResponse.json({ success: true, data })
-}
+```python
+try:
+    ranked = await refine_with_llm(top)          # optional enhancement
+except (GroqError, asyncio.TimeoutError):
+    logger.warning("refine failed, serving heuristic order")
+    ranked = top                                  # deterministic fallback, still 200
 ```
 
-### Role-Based Access Control
+## Rate limiting — per-IP sliding window
+
+In-process sliding window keyed by client IP, with a cap on the dict so rotating IPs can't grow it unbounded. Only trust forwarded-IP headers when the TCP peer is an internal proxy.
+
+```python
+def _client_ip(request: Request) -> str:
+    peer = request.client.host if request.client else "unknown"
+    if _is_trusted_proxy(peer):                      # private/loopback peer only
+        cf = request.headers.get("cf-connecting-ip")
+        if cf:
+            return cf.strip()
+        xff = request.headers.get("x-forwarded-for")
+        if xff:
+            return xff.split(",")[0].strip()
+    return peer                                      # public peer -> headers are forgeable
+```
+
+## Config — env + top-of-module constants
+
+Tunables are module constants with a one-line comment; secrets and environment-specific values come from `os.environ`, never committed.
+
+```python
+REFINE_DEADLINE = 75.0      # deadline for the LLM refine call
+MATCH_RL_PER_MIN = 30       # /api/match requests per IP — anti-flood
+CV_UPLOAD_MAX_BYTES = 5 * 1024 * 1024   # 5 MB PDF cap
+```
+
+---
+
+# TypeScript track — Hono on Bun + Drizzle
+
+## App structure — route composition + middleware chain
+
+Compose one route module per domain with `app.route()`. Cross-cutting concerns are middleware applied by path prefix. Serve the built SPA last, with a fallback to `index.html`.
 
 ```typescript
-type Permission = 'read' | 'write' | 'delete' | 'admin'
+import { Hono } from 'hono'
+import { serveStatic } from 'hono/bun'
+import { rateLimitMiddleware, authMiddleware, adminMiddleware } from './middleware.js'
+import cvRoutes from './api/cv.js'
+import authRoutes from './api/auth.js'
+import adminRoutes from './api/admin.js'
 
-interface User {
-  id: string
-  role: 'admin' | 'moderator' | 'user'
-}
+const app = new Hono()
 
-const rolePermissions: Record<User['role'], Permission[]> = {
-  admin: ['read', 'write', 'delete', 'admin'],
-  moderator: ['read', 'write', 'delete'],
-  user: ['read', 'write']
-}
-
-export function hasPermission(user: User, permission: Permission): boolean {
-  return rolePermissions[user.role].includes(permission)
-}
-
-export function requirePermission(permission: Permission) {
-  return async (request: Request) => {
-    const user = await requireAuth(request)
-
-    if (!hasPermission(user, permission)) {
-      throw new ApiError(403, 'Insufficient permissions')
-    }
-
-    return user
-  }
-}
-
-// Usage
-export const DELETE = requirePermission('delete')(async (request: Request) => {
-  // Handler with permission check
+// Security headers on every response
+app.use('*', async (c, next) => {
+  await next()
+  c.header('X-Content-Type-Options', 'nosniff')
+  c.header('X-Frame-Options', 'DENY')
+  c.header('Referrer-Policy', 'strict-origin-when-cross-origin')
 })
+
+app.use('/api/*', rateLimitMiddleware)
+app.use('/api/cv/*', authMiddleware)          // protect by prefix
+app.use('/api/admin/*', adminMiddleware)
+
+app.route('/api/auth', authRoutes)
+app.route('/api/cv', cvRoutes)
+app.route('/api/admin', adminRoutes)
+
+app.use('/*', serveStatic({ root: './dist/client' }))        // static assets
+app.get('*', serveStatic({ path: './dist/client/index.html' })) // SPA fallback
+
+export default {
+  port: parseInt(process.env.PORT ?? '4321', 10),
+  hostname: process.env.HOST ?? '0.0.0.0',
+  fetch: app.fetch,
+}
 ```
 
-## Rate Limiting
-
-### Simple In-Memory Rate Limiter
+## Route handlers — typed context, explicit status
 
 ```typescript
-class RateLimiter {
-  private requests = new Map<string, number[]>()
+import { Hono } from 'hono'
+const cvRoutes = new Hono()
 
-  async checkLimit(
-    identifier: string,
-    maxRequests: number,
-    windowMs: number
-  ): Promise<boolean> {
-    const now = Date.now()
-    const requests = this.requests.get(identifier) || []
+cvRoutes.get('/:id', async (c) => {
+  const id = c.req.param('id')
+  const cv = await getCvById(id)
+  if (!cv) return c.json({ error: 'not found' }, 404)
+  return c.json(cv)
+})
 
-    // Remove old requests outside window
-    const recentRequests = requests.filter(time => now - time < windowMs)
-
-    if (recentRequests.length >= maxRequests) {
-      return false  // Rate limit exceeded
-    }
-
-    // Add current request
-    recentRequests.push(now)
-    this.requests.set(identifier, recentRequests)
-
-    return true
-  }
-}
-
-const limiter = new RateLimiter()
-
-export async function GET(request: Request) {
-  const ip = request.headers.get('x-forwarded-for') || 'unknown'
-
-  const allowed = await limiter.checkLimit(ip, 100, 60000)  // 100 req/min
-
-  if (!allowed) {
-    return NextResponse.json({
-      error: 'Rate limit exceeded'
-    }, { status: 429 })
-  }
-
-  // Continue with request
-}
+export default cvRoutes
 ```
 
-## Background Jobs & Queues
+## Data layer — Drizzle query builder
 
-### Simple Queue Pattern
+Drizzle is a typed query builder over SQL, not an ORM with a Repository layer. Compose queries directly; keep the SQL intent visible.
 
 ```typescript
-class JobQueue<T> {
-  private queue: T[] = []
-  private processing = false
+import { eq, desc } from 'drizzle-orm'
+import { db } from '../db/index.js'
+import { cvs } from '../db/schema.js'
 
-  async add(job: T): Promise<void> {
-    this.queue.push(job)
-
-    if (!this.processing) {
-      this.process()
-    }
-  }
-
-  private async process(): Promise<void> {
-    this.processing = true
-
-    while (this.queue.length > 0) {
-      const job = this.queue.shift()!
-
-      try {
-        await this.execute(job)
-      } catch (error) {
-        console.error('Job failed:', error)
-      }
-    }
-
-    this.processing = false
-  }
-
-  private async execute(job: T): Promise<void> {
-    // Job execution logic
-  }
-}
-
-// Usage for indexing markets
-interface IndexJob {
-  marketId: string
-}
-
-const indexQueue = new JobQueue<IndexJob>()
-
-export async function POST(request: Request) {
-  const { marketId } = await request.json()
-
-  // Add to queue instead of blocking
-  await indexQueue.add({ marketId })
-
-  return NextResponse.json({ success: true, message: 'Job queued' })
+export async function listActiveCvs(userId: string, limit = 20) {
+  return db.select({ id: cvs.id, title: cvs.title })
+    .from(cvs)
+    .where(eq(cvs.userId, userId))
+    .orderBy(desc(cvs.updatedAt))
+    .limit(limit)          // select only needed columns, always bound the limit
 }
 ```
 
-## Logging & Monitoring
+---
 
-### Structured Logging
+# Cross-cutting (both stacks)
 
-```typescript
-interface LogContext {
-  userId?: string
-  requestId?: string
-  method?: string
-  path?: string
-  [key: string]: unknown
-}
+## Retry with exponential backoff (for flaky upstreams)
 
-class Logger {
-  log(level: 'info' | 'warn' | 'error', message: string, context?: LogContext) {
-    const entry = {
-      timestamp: new Date().toISOString(),
-      level,
-      message,
-      ...context
-    }
-
-    console.log(JSON.stringify(entry))
-  }
-
-  info(message: string, context?: LogContext) {
-    this.log('info', message, context)
-  }
-
-  warn(message: string, context?: LogContext) {
-    this.log('warn', message, context)
-  }
-
-  error(message: string, error: Error, context?: LogContext) {
-    this.log('error', message, {
-      ...context,
-      error: error.message,
-      stack: error.stack
-    })
-  }
-}
-
-const logger = new Logger()
-
-// Usage
-export async function GET(request: Request) {
-  const requestId = crypto.randomUUID()
-
-  logger.info('Fetching markets', {
-    requestId,
-    method: 'GET',
-    path: '/api/markets'
-  })
-
-  try {
-    const markets = await fetchMarkets()
-    return NextResponse.json({ success: true, data: markets })
-  } catch (error) {
-    logger.error('Failed to fetch markets', error as Error, { requestId })
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
-  }
-}
+```python
+async def with_retry(fn, max_retries=3):
+    for i in range(max_retries):
+        try:
+            return await fn()
+        except TransientError:
+            if i == max_retries - 1:
+                raise
+            await asyncio.sleep(2 ** i)   # 1s, 2s, 4s
 ```
 
-**Remember**: Backend patterns enable scalable, maintainable server-side applications. Choose patterns that fit your complexity level.
+## Structured logging
+
+Log JSON lines with context; log the failure and degrade, don't swallow it silently.
+
+```python
+import logging
+logger = logging.getLogger("service")
+logging.basicConfig(level=logging.INFO)
+logger.info("ranked jobs", extra={"count": len(ranked), "refined": used_llm})
+```
+
+---
+
+**Remember:** the two stacks here share one principle — **explicit, hand-written data access and graceful degradation**. When adding backend code, read the target project's real stack first (`requirements.txt`/`pyproject.toml` for Python, `package.json` for TS) and follow the matching track. Do not introduce ORMs, Repository/Service scaffolding, Express, or Next.js API routes — none are used here.
