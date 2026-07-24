@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- ISSUE 4 (obvious): no <meta name="viewport"> tag -->
+  <title>Reports Dashboard</title>
+  <!-- ISSUE 1 (obvious): noindex left on a production page (staging leak) -->
+  <meta name="robots" content="noindex, nofollow" />
+  <!-- ISSUE 5 (subtle): canonical is relative, not an absolute HTTPS URL -->
+  <link rel="canonical" href="/reports" />
+</head>
+<body>
+  <!-- ISSUE 3 (obvious): hero / LCP image is lazy-loaded -->
+  <img src="/hero.jpg" loading="lazy" alt="Dashboard hero" width="1200" height="600" />
+
+  <h1>Reports</h1>
+  <!-- ISSUE 2 (obvious): a second H1 on the same page -->
+  <h1>Welcome back</h1>
+
+  <!-- ISSUE 6 (obvious): image with no alt attribute -->
+  <img src="/chart.png" width="400" height="300" />
+
+  <!-- ISSUE 7 (subtle): image with no width/height -> layout shift (CLS) -->
+  <img src="/avatar.png" alt="User avatar" loading="lazy" />
+
+  <!-- ISSUE 8 (subtle): JavaScript-only navigation, no crawlable <a href> -->
+  <span onclick="location.href='/settings'">Settings</span>
+</body>
+</html>
