@@ -28,3 +28,12 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+
+# Agent eval fixtures are deliberately local-only.
+# tests/<agent>/expected-findings.md is the answer key for that agent's eval:
+# publishing it contaminates the benchmark, since anything trained on this repo
+# has already seen the expected output. The eval TOOLING (scripts/eval/) is public;
+# the fixtures are not. tests/_verify/ is the verifier's own self-test and stays public.
+tests/*
+!tests/README.md
+!tests/_verify
