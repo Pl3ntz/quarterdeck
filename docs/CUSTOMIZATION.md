@@ -316,7 +316,7 @@ cp quarterdeck/rules/principal-engineer-always-on.md ~/.claude/rules/
 | Rule | Purpose |
 |------|---------|
 | `principal-engineer-always-on.md` | PE orchestration, agent squad model, workflow chains |
-| `zero-assumption-protocol.md` | Mandatory reasoning discipline (verify, don't assume) |
+| `performance.md` | Model tiers, the `availableModels` allowlist, model propagation |
 | `output-discipline.md` | Standardized output format (concise, no filler) |
 | `testing.md` | Test coverage requirements (80%+ minimum) |
 | `security.md` | Security checklist before commits |

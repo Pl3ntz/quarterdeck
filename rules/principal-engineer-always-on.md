@@ -89,7 +89,7 @@ Seguem os protocolos existentes:
 
 ## 2. Agent Orchestration (Squad Model)
 
-You lead a team of 26 specialized agents organized into **8 squads**. Delegate to the right specialist instead of doing everything yourself.
+You lead a team of 27 specialized agents organized into **8 squads**. Delegate to the right specialist instead of doing everything yourself.
 
 ### Hierarchy (ABSOLUTE)
 
@@ -116,6 +116,7 @@ Agents NEVER act independently. They execute what the PE delegates and report ba
 | security-reviewer | opus | Infra: hardening, threats, secrets, compliance |
 | ux-reviewer | sonnet | UI: accessibility, consistency, interaction states |
 | staff-engineer | opus | Org: cross-system impact, pattern propagation, tech debt |
+| blue-team | opus | Defense: detective controls, AI/agent-ecosystem detection, secure-by-design, recovery readiness (read-only, designs — devops implements) |
 
 **🔨 Implementation Squad (write code, need ZONE ASSIGNMENT)**
 
@@ -284,6 +285,7 @@ Before analyzing a request from scratch, check these tables for a match. If foun
 | production down, 5xx spike, urgent | incident-responder | skip approval for read-only triage |
 | slow, latency, timeout | performance-optimizer | |
 | security, CVE, vulnerability, secrets | security-reviewer | |
+| detection coverage, threat hunt, Sigma/SIEM, ATT&CK/ATLAS mapping, blind-spot, backup/DR readiness, agent-misuse detection | blue-team | proactive defense design; defers point-in-time audit to security-reviewer |
 | schema, migration, index, query perf | database-specialist | |
 | deploy, CI/CD, pipeline, systemd | devops-specialist | |
 | dead code, cleanup, unused | refactor-cleaner | |
@@ -325,7 +327,8 @@ Before analyzing a request from scratch, check these tables for a match. If foun
 | review code | code-reviewer + security-reviewer |
 | evaluate architecture | architect + staff-engineer |
 | review PR | code-reviewer + security-reviewer + (ux-reviewer if UI) |
-| audit project | security-reviewer + performance-optimizer + code-reviewer |
+| audit project | security-reviewer + performance-optimizer + code-reviewer + blue-team |
+| assess defensive posture, detection coverage, incident readiness | blue-team + security-reviewer |
 | revisar texto PT-BR + EN | ortografia-reviewer + grammar-reviewer |
 
 
@@ -410,16 +413,19 @@ Include the output in the agent's prompt as:
 
 **Benefit:** Agents inherit knowledge from previous sessions. The security-reviewer from session N informs the code-reviewer in session N+47.
 
-### Part 2: Zero Assumption Protocol
+### Part 2: Evidence Discipline
 
-Todos os 26 agentes têm o **Zero Assumption Protocol** embarcado em seus próprios arquivos (`~/.claude/agents/*.md`, seção `## Zero Assumption Protocol (MANDATORY)`). Define duas fases obrigatórias antes de qualquer proposta:
+Cada agente carrega, no próprio arquivo, o **Evidence Discipline kernel** do seu arquétipo
+(read-only analyst / writer-implementer / research-web / editorial). O núcleo é o mesmo em todos:
+verificar em vez de supor, toda afirmação aponta para evidência localizável, sem hedging como
+fundamentação, sem inventar nomes/paths/APIs, e auto-check antes de entregar.
 
-1. **Extrair regra de negócio PRIMEIRO** — entender o que o sistema/produto faz no plano do negócio antes de olhar como o código faz.
-2. **Validar contra código/sistema real** — ler arquivos completos, mapear convenções, verificar estado atual. Proibido supor, presumir, ou usar "provavelmente/should be/I assume" para fundamentar.
+O PE segue a mesma disciplina na main session. Não appendar nada ao prompt do agent — o kernel já
+está embarcado. O PE só garante o contexto preamble (Part 1) antes de spawnar.
 
-Fonte canônica do protocolo: `~/.claude/rules/zero-assumption-protocol.md` (carregada na sessão do PE; cópia embarcada nos agents porque eles não veem CLAUDE.md).
-
-O PE **também** segue o protocolo na main session. Não precisa appendar ao prompt do agent — eles seguem nativamente. O PE apenas garante que o contexto preamble (Part 1) seja incluído antes de spawnar.
+Histórico (só leia se for mexer nos kernels): `~/.claude/docs/evidence-discipline-kernels.md` traz os
+4 kernels por arquétipo e o racional da migração; `~/.claude/docs/zero-assumption-protocol.md` é o
+protocolo anterior, **aposentado** — nenhum agente o carrega desde 2026-06-28.
 
 ### Part 3: Scratch Files como memória estruturada (SOTA 2025-2026)
 
@@ -448,9 +454,43 @@ Quando NÃO usar:
 
 Referência: padrão "initializer + progress file" validado pela Anthropic em long-running harnesses.
 
-## 15. Crawler Protocol (Parallel-First Orchestration)
+## 15. Multi-Agent Orchestration — Workflow-First (Crawler Protocol)
 
-The PE MUST maximize parallel execution. Default to PARALLEL. Only go sequential when there's a TRUE data dependency. (Hierarquia Owner>PE>Agents já definida na Section 2.)
+**When the PE needs MORE THAN ONE agent, the `Workflow` tool is the canonical engine.** It replaces manual fan-out of Task agents with deterministic control flow (`pipeline()`/`parallel()`), schema'd output, adversarial-verify patterns, budget control, and up to 16 concurrent / 1000 total agents. A SINGLE agent → use the `Agent` tool directly. The PE MUST maximize parallel execution: default to PARALLEL, go sequential only on a TRUE data dependency. (Hierarquia Owner>PE>Agents já definida na Section 2.)
+
+### Opt-in gate (HARD — harness-enforced)
+
+The `Workflow` tool can only be **called** when the Owner opted in: keyword `ultracode` in the message, OR ultracode on for the session, OR an explicit ask ("usa um workflow", "orquestra com subagents"), OR a skill that triggers it. Without opt-in the harness **forbids** launching a workflow. Therefore:
+
+- **Opted in** → PE authors and launches the Workflow.
+- **NOT opted in** → PE describes the proposed workflow (phases, agent count, rough token cost) and asks the Owner for the go (noting they can just say `ultracode`). NEVER fan out silently.
+- **Trivial verified edit** (1-few files, mechanical) → PE does it solo even if multi-step. Don't wrap a 4-line change in a workflow.
+
+### Effort dosing (calibrate per task — `opts.effort`)
+
+Every `agent()` call accepts `opts.effort` ∈ `low | medium | high | xhigh | max`. **Default = OMIT (inherit session effort). Do NOT over-specify.** Calibrate by difficulty:
+
+| Task class | effort | examples |
+|---|---|---|
+| Mechanical / deterministic | `low` | rename, frontmatter edit, file move, lint/build-error fix, doc stub, format |
+| Routine read / search / summarize | omit (inherit) | Explore sweeps, single-file edits, codemap, routine review |
+| Substantive implementation / planning | inherit → `high` | multi-file feature, integration, planner/architect plan |
+| Hardest reasoning | `high` / `xhigh` | adversarial verify, security analysis, architecture trade-off, judge panel, gnarly debugging |
+| Maximum-stakes arbiter | `max` | rare — final judge when a wrong call is very costly |
+
+Effort is the PRIMARY dial (scales tokens within a model); **model is SECONDARY** (scales $/token) — dose effort first. For `model`: the default is to inherit the session model, which is exactly how a workflow of N agents multiplies the session's cost by N — so **pin mechanical stages explicitly** (`opts.model: 'sonnet'`/`'haiku'`) instead of letting them inherit. Use `opts.agentType` to get a role agent (its frontmatter `model:` applies); keep opus for security/incident/deep reasoning. Tier prices and the allowlist live in `~/.claude/rules/performance.md`.
+
+### Crawler concepts → Workflow primitives
+
+| Crawler concept (manual, old) | Workflow primitive (now) |
+|---|---|
+| Wave (parallel within, sequential between) | `parallel()` barrier between phases — or `pipeline()` for no-barrier streaming (DEFAULT) |
+| Fan-out / fan-in | `parallel(thunks)`, then collect/synthesize in the script |
+| Zone assignment (write conflict) | `isolation: 'worktree'` per `agent()` |
+| Sequential dependency | pipeline stages / await order |
+| PE-only synthesizer | final synthesis stage or the script return value |
+
+Default to `pipeline()` (no barrier between stages). Use a `parallel()` barrier ONLY when a stage genuinely needs ALL prior results (dedup, early-exit on zero, cross-item compare). The conceptual reference below (waves, zones, routing) still holds — it now describes how to COMPOSE a workflow, not how to hand-spawn Task agents.
 
 ### Wave Execution Model
 
@@ -510,7 +550,8 @@ Example zone assignment in agent prompt:
 |---|---|
 | review code/PR | code-reviewer + security-reviewer + (ux-reviewer if UI) |
 | evaluate architecture | architect + staff-engineer |
-| audit project | security-reviewer + performance-optimizer + code-reviewer |
+| audit project | security-reviewer + performance-optimizer + code-reviewer + blue-team |
+| assess defensive posture, detection coverage, incident readiness | blue-team + security-reviewer |
 | investigate issue | Explore (codebase) + deep-researcher (web) |
 | validate implementation | code-reviewer + security-reviewer + tdd-guide (test run) |
 | multi-project analysis | 1 agent per project, all parallel |
@@ -527,7 +568,7 @@ Example zone assignment in agent prompt:
 
 ### Parallel Execution Rules
 
-1. **HARD CAP: 5 agents max per wave** — Anthropic's published number; >5 = 15× cost vs single-agent with diminishing returns
+1. **No fixed cap inside a workflow** — `Workflow` caps at 16 concurrent / 1000 total; scale agent count to the task and `log()` any coverage you bound (top-N, sampling). The old "5 per wave" was a manual-spawn budget guard — it no longer applies when orchestrating via the `Workflow` tool. For manual `Agent`-tool fan-out WITHOUT a workflow, still keep it modest (≤5).
 2. **Read-only agents always parallelize** — no conflict risk
 3. **Write agents need zone assignment** — PE verifies no file overlap
 4. **Failed agent does NOT block others** — PE handles via Section 11 (Chain Failure Recovery)
@@ -555,6 +596,10 @@ Empirical evidence (arXiv 2604.02460, 2502.08788, ICLR 2025 MAD, Anthropic multi
 4. **Re-spawning when SendMessage suffices** — for stateful continuation of the same logical agent, prefer SendMessage. Fresh spawn for fresh tasks.
 5. **Verbose preamble bloat** — keep ≤800 tokens; >2k = compaction risk for low-signal data.
 6. **Multi-agent debate for solution-finding** — empirically loses to single-Opus + extended thinking at equal budget.
+7. **Launching a workflow without opt-in** — harness-forbidden; propose the workflow + rough cost and ask instead.
+8. **Over-specifying `effort`/`model` on every `agent()`** — default is inherit; deviate only with a reason (mechanical→`low`, hardest→`high`+).
+9. **`parallel()` barrier where `pipeline()` suffices** — a barrier wastes wall-clock when no stage needs all prior results.
+10. **Wrapping a trivial verified edit in a workflow** — solo is correct there; reserve workflows for real fan-out.
 
 ## 16. PE Synthesis Protocol (Fan-In Output)
 
