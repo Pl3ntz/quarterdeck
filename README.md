@@ -30,9 +30,9 @@
 
 ## What is Quarterdeck?
 
-**Quarterdeck** is the command area of a ship — where the Captain coordinates the crew. In this project, **you are the Captain**.
+**Quarterdeck** is the command area of a ship, where the Captain coordinates the crew. In this project, **you are the Captain**.
 
-[Claude Code](https://claude.ai/code) (Anthropic's CLI for AI-assisted development) operates as a single generic agent by default. Quarterdeck transforms it into a **team of 26 specialists** — each focused on one area (code review, security, testing, deployment, research, etc.) — working **in parallel**, like a real engineering squad.
+[Claude Code](https://claude.ai/code) (Anthropic's CLI for AI-assisted development) operates as a single generic agent by default. Quarterdeck transforms it into a **team of 26 specialists**, each focused on one area (code review, security, testing, deployment, research, etc.), working **in parallel**, like a real engineering squad.
 
 ### Before vs After
 
@@ -99,7 +99,7 @@ Captain (you) ──→ PE (Principal Engineer) ──→ 26 Agents
 
 | Role | Who | What they do |
 |------|-----|-------------|
-| **Captain** | **You** — the person using Claude Code | Give requests, approve plans, make decisions |
+| **Captain** | **You**, the person using Claude Code | Give requests, approve plans, make decisions |
 | **PE** | Claude Code with Quarterdeck rules | Interprets your request, picks which agents to use, coordinates parallel work, synthesizes results |
 | **Agents** | 26 specialists (`.md` files) | Each executes a focused task and reports back to the PE |
 
@@ -112,22 +112,22 @@ You say: _"Implement JWT authentication"_
 The PE automatically decomposes into parallel waves:
 
 ```
-Wave 1 — Reconnaissance (3 agents in parallel):
+Wave 1: Reconnaissance (3 agents in parallel):
   ├── Explore: analyzes current auth code
   ├── Explore: checks existing tests
   └── deep-researcher: researches JWT best practices
 
-Wave 2 — Planning (1 agent):
+Wave 2: Planning (1 agent):
   └── planner: creates phased plan with risks
 
      → PE presents the plan → You approve ✓
 
-Wave 3 — Implementation (1 agent):
+Wave 3: Implementation (1 agent):
   └── tdd-guide: writes tests first, then implements
 
      → PE shows the code → You review ✓
 
-Wave 4 — Validation (2 agents in parallel):
+Wave 4: Validation (2 agents in parallel):
   ├── code-reviewer: checks code quality
   └── security-reviewer: checks auth security
 
@@ -142,14 +142,14 @@ Wave 4 — Validation (2 agents in parallel):
 
 Organized into 8 squads (functional teams):
 
-### Planning & Design — think before building
+### Planning & Design: think before building
 
 | Agent | What it does | Model |
 |-------|-------------|-------|
 | [**architect**](agents/architect.md) | Designs architecture, evaluates trade-offs, proposes alternatives | Opus |
 | [**planner**](agents/planner.md) | Creates implementation plans with phases, risks, and dependencies | Opus |
 
-### Quality Gate — validate without modifying (always run in parallel)
+### Quality Gate: validate without modifying (always run in parallel)
 
 | Agent | What it does | Model |
 |-------|-------------|-------|
@@ -158,7 +158,7 @@ Organized into 8 squads (functional teams):
 | [**ux-reviewer**](agents/ux-reviewer.md) | Checks accessibility, visual consistency, interaction states | Sonnet |
 | [**staff-engineer**](agents/staff-engineer.md) | Evaluates cross-project impact and tech debt | Opus |
 
-### Implementation — write code
+### Implementation: write code
 
 | Agent | What it does | Model |
 |-------|-------------|-------|
@@ -167,39 +167,39 @@ Organized into 8 squads (functional teams):
 | [**build-error-resolver**](agents/build-error-resolver.md) | Fixes build errors with minimal changes | Haiku |
 | [**refactor-cleaner**](agents/refactor-cleaner.md) | Removes dead code and consolidates duplicates | Sonnet |
 
-### Operations — keep the system running
+### Operations: keep the system running
 
 | Agent | What it does | Model |
 |-------|-------------|-------|
-| [**incident-responder**](agents/incident-responder.md) | Diagnoses outages (doesn't execute — only recommends) | Opus |
+| [**incident-responder**](agents/incident-responder.md) | Diagnoses outages (doesn't execute, only recommends) | Opus |
 | [**devops-specialist**](agents/devops-specialist.md) | CI/CD, automated deploys, systemd, monitoring | Sonnet |
 | [**performance-optimizer**](agents/performance-optimizer.md) | Finds bottlenecks in CPU, memory, queries, cache | Sonnet |
 | [**database-specialist**](agents/database-specialist.md) | PostgreSQL schema, slow queries, indexes, migrations | Sonnet |
 
-### Intelligence — research and document
+### Intelligence: research and document
 
 | Agent | What it does | Model |
 |-------|-------------|-------|
 | [**deep-researcher**](agents/deep-researcher.md) | Deep web research with source triangulation | Opus |
 | [**doc-updater**](agents/doc-updater.md) | Generates documentation from actual code | Haiku |
 
-### Language — review spelling and grammar
+### Language: review spelling and grammar
 
 | Agent | What it does | Model |
 |-------|-------------|-------|
 | [**ortografia-reviewer**](agents/ortografia-reviewer.md) | PT-BR reviewer (spelling, grammar, agreement) | Sonnet |
 | [**grammar-reviewer**](agents/grammar-reviewer.md) | EN-US reviewer (spelling, grammar, punctuation, style) | Sonnet |
 
-### Strategy — SEO and recruiting
+### Strategy: SEO and recruiting
 
 | Agent | What it does | Model |
 |-------|-------------|-------|
 | [**seo-reviewer**](agents/seo-reviewer.md) | Technical SEO + AI Search/GEO audit: Core Web Vitals, structured data, AI crawler management | Sonnet |
 | [**tech-recruiter**](agents/tech-recruiter.md) | Tech recruiting: job descriptions, candidate evaluation, interviews | Sonnet |
 
-### Editorial — content production with verified sources
+### Editorial: content production with verified sources
 
-Full professional editorial pipeline. All agents operate under the [Sourcing Discipline Protocol](rules/sourcing-discipline.md) — minimum 3-source triangulation, mandatory citations with URL and date.
+Full professional editorial pipeline. All agents operate under the [Sourcing Discipline Protocol](rules/sourcing-discipline.md): minimum 3-source triangulation, mandatory citations with URL and date.
 
 | Agent | What it does | Model |
 |-------|-------------|-------|
@@ -247,7 +247,7 @@ Three orchestration patterns documented in the [PE rule](rules/principal-enginee
 
 - **Improvement Maturity Levels** (0-5): self-assessment scale for any continuous-learning behavior.
 - **Promotion Criteria Matrix**: explicit thresholds (recurrence, consistency, impact, stability, clarity) before any pattern graduates to a permanent rule.
-- **Skill Chain Pattern**: pure pipelines without PE judgment between steps — for repeatable automation where consistency matters more than discretion.
+- **Skill Chain Pattern**: pure pipelines without PE judgment between steps, for repeatable automation where consistency matters more than discretion.
 
 ---
 
@@ -264,7 +264,7 @@ Every agent returns in the same structured format:
 ### SUMMARY: The users endpoint had a SQL injection risk that could
 expose sensitive data. Analyzed all endpoints in the auth module
 and verified query patterns. Found 1 CRITICAL vulnerability and 2
-MEDIUM issues — both with suggested fixes.
+MEDIUM issues, both with suggested fixes.
 ```
 
 The SUMMARY always follows the same logic: **system impact** → **how it was analyzed** → **concrete result with numbers**. You read it and immediately know what matters.
@@ -294,7 +294,7 @@ In the `.md` file frontmatter:
 
 ```yaml
 model: opus    # Deep reasoning ($5/$25 per MTok)
-model: sonnet  # Focused execution ($3/$15 per MTok) — best cost/quality
+model: sonnet  # Focused execution ($3/$15 per MTok), best cost/quality
 model: haiku   # Simple tasks ($1/$5 per MTok)
 ```
 
@@ -365,9 +365,9 @@ git push origin feat/my-agent
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
 
-Quarterdeck also bundles components vendored from third parties under their original licenses (MIT and MIT + Commons Clause). See [NOTICE.md](NOTICE.md) for the full license map and modifications log. The Commons Clause does not restrict personal use, modification, or non-commercial redistribution — only commercial resale of the vendored components.
+Quarterdeck also bundles components vendored from third parties under their original licenses (MIT and MIT + Commons Clause). See [NOTICE.md](NOTICE.md) for the full license map and modifications log. The Commons Clause does not restrict personal use, modification, or non-commercial redistribution, only commercial resale of the vendored components.
 
 ---
 
