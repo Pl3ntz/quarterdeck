@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="assets/logo-full.png" alt="Quarterdeck — Agent Orchestration for Claude Code" width="600">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-full-dark.png">
+    <img src="assets/logo-full.png" alt="Quarterdeck: Agent Orchestration for Claude Code" width="600">
+  </picture>
 </p>
 
 <p align="center">
