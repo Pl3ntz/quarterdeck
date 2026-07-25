@@ -90,13 +90,13 @@ On the FIRST substantive interaction of every session:
 3. This task is NEVER marked as completed during the session, it serves as a permanent reference anchor
 4. If the Owner's request evolves mid-session, create a new `Owner-REQUEST-UPDATE: <updated requirements>` task
 
-### Step 2: Pre-Completion RECAP (Before Stopping)
+### Step 2: (removed 2026-07-24)
 
-Before presenting the final answer to the Owner on non-trivial work, include a RECAP:
-
-```
-### RECAP: [2-3 flowing sentences explaining: the impact on the system/business, then how it was addressed, then what was delivered with concrete numbers]
-```
+This step required a `### RECAP` block before ending non-trivial work. It contradicted
+`rules/output-discipline.md`, which forbids trailing summaries verbatim -- Claude Code's
+native recap covers that ground. The rule that had enforcement code on disk
+(`hooks/verify-completion.sh`, never registered) was the one being overruled, so the
+requirement is removed here rather than left to be rediscovered.
 
 ### Step 3: Simple Task Exception
 
@@ -327,3 +327,215 @@ During tip extraction at session end:
 1. Review `error-events.jsonl` for unresolved errors (status: unresolved)
 2. If any were resolved during the session but not logged, capture them now
 3. Patterns that recur across 3+ sessions should be promoted to `tips-debugging.md` or the relevant topic file
+
+
+---
+
+## 6. Routing tables (full)
+
+Moved out of the always-on rule on 2026-07-24. These are lookup tables, consulted when a route
+is not obvious from the agent descriptions the Agent tool already exposes. Trigger phrases stay
+in pt-BR because that is what the Owner actually types.
+
+Before analyzing a request from scratch, check these tables for a match. If found, propose the listed route. If no match, use normal judgment.
+
+**Single-Agent Routes:**
+
+| Signal | Agent | Notes |
+|---|---|---|
+| build failed, type error, won't start | build-error-resolver | |
+| production down, 5xx spike, urgent | incident-responder | skip approval for read-only triage |
+| slow, latency, timeout | performance-optimizer | |
+| security, CVE, vulnerability, secrets | security-reviewer | |
+| detection coverage, threat hunt, Sigma/SIEM, ATT&CK/ATLAS mapping, blind-spot, backup/DR readiness, agent-misuse detection | blue-team | proactive defense design; defers point-in-time audit to security-reviewer |
+| schema, migration, index, query perf | database-specialist | |
+| deploy, CI/CD, pipeline, systemd | devops-specialist | |
+| dead code, cleanup, unused | refactor-cleaner | |
+| deploy, scp, patch | devops-specialist | follow deploy playbook for target project |
+| compare alternatives deeply, landscape analysis, systematic review | deep-researcher | multi-source comparison needed |
+| OSINT, investigate entity/domain, due diligence | deep-researcher | infrastructure/entity investigation |
+| validate claim from multiple sources, fact-check | deep-researcher | triangulation needed |
+| docs, codemap, README | doc-updater | |
+| e2e test, Playwright, user journey | e2e-runner | |
+| revisar ortografia PT-BR, gramática português | ortografia-reviewer | |
+| review EN grammar, spelling, English text | grammar-reviewer | |
+| SEO audit, Core Web Vitals, meta tags, structured data | seo-reviewer | |
+| criar JD, avaliar candidato, seniority level, salary | tech-recruiter | |
+| pauta, ângulo editorial, linha do veículo | editor-chefe | primeiro agent no pipeline editorial |
+| apurar reportagem, triangular fontes, entrevistar | jornalista | |
+| escrever reportagem, lead, texto jornalístico | redator | |
+| verificar fato, etiqueta Lupa, fact-check | fact-checker | |
+| editar texto jornalístico, cortar, FENAJ | editor-de-texto | |
+| ABNT, IMRAD, ADR, design doc, post-mortem, escrita técnica | escritor-tecnico | |
+
+**Multi-Agent Chains (approval between steps):**
+
+| Trigger | Chain |
+|---|---|
+| new feature, implement X | planner → tdd-guide → code-reviewer |
+| new API endpoint | planner → tdd-guide → code-reviewer → security-reviewer |
+| refactor, restructure | architect → refactor-cleaner → code-reviewer |
+| fix bug (non-trivial) | tdd-guide → code-reviewer |
+| UI change | tdd-guide → ux-reviewer → code-reviewer |
+| cross-system change | staff-engineer → architect → (specialists) |
+| research + implement | deep-researcher → planner → tdd-guide |
+| projeto editorial completo | editor-chefe → jornalista → redator → fact-checker → editor-de-texto → ortografia-reviewer |
+| texto técnico/acadêmico | escritor-tecnico → ortografia-reviewer |
+
+**Parallel Analysis (when Owner asks "review X"):**
+
+| Trigger | Agents (parallel) |
+|---|---|
+| review code | code-reviewer + security-reviewer |
+| evaluate architecture | architect + staff-engineer |
+| review PR | code-reviewer + security-reviewer + (ux-reviewer if UI) |
+| audit project | security-reviewer + performance-optimizer + code-reviewer + blue-team |
+| assess defensive posture, detection coverage, incident readiness | blue-team + security-reviewer |
+| revisar texto PT-BR + EN | ortografia-reviewer + grammar-reviewer |
+
+
+---
+
+## Squad roster (full, with model tier and role)
+
+Moved out of the always-on rule on 2026-07-24: the Agent tool's registry already exposes each
+agent's description and tools, so restating them per session was duplication. Model tier per
+agent is authoritative in `~/.claude/rules/performance.md`.
+
+**🔍 Planning & Design Squad**
+
+| Agent | Model | Role |
+|---|---|---|
+| architect | opus | HOW to build — patterns, trade-offs, ADRs |
+| planner | opus | IN WHAT ORDER to build — phases, risks, dependencies |
+
+**🛡️ Quality Gate Squad (read-only, ALWAYS run in PARALLEL)**
+
+| Agent | Model | Role |
+|---|---|---|
+| code-reviewer | sonnet | Code: quality, patterns, bugs, maintainability |
+| security-reviewer | opus | Infra: hardening, threats, secrets, compliance |
+| ux-reviewer | sonnet | UI: accessibility, consistency, interaction states |
+| staff-engineer | opus | Org: cross-system impact, pattern propagation, tech debt |
+| blue-team | opus | Defense: detective controls, AI/agent-ecosystem detection, secure-by-design, recovery readiness (read-only, designs — devops implements) |
+
+**🔨 Implementation Squad (write code, need ZONE ASSIGNMENT)**
+
+| Agent | Model | Role |
+|---|---|---|
+| tdd-guide | sonnet | TDD: tests-first, unit/integration, coverage 80%+ |
+| e2e-runner | sonnet | E2E: Playwright, user journeys, flaky management |
+| build-error-resolver | haiku | Fixes: build errors with minimal diff |
+| refactor-cleaner | sonnet | Cleanup: dead code removal, consolidation |
+
+**⚙️ Operations Squad**
+
+| Agent | Model | Role |
+|---|---|---|
+| incident-responder | opus | REACTIVE: production down, diagnosis, remediation options |
+| devops-specialist | sonnet | PROACTIVE: CI/CD, deploy, systemd, monitoring |
+| performance-optimizer | sonnet | Profiling: bottlenecks, tuning, resource optimization |
+| database-specialist | sonnet | PostgreSQL: schema, queries, indexes, migrations |
+
+**📚 Intelligence Squad**
+
+| Agent | Model | Role |
+|---|---|---|
+| deep-researcher | opus | Research: multi-source, OSINT, triangulation, confidence-scored |
+| doc-updater | haiku | Documentation: codemaps, READMEs from actual code |
+
+**✍️ Language Squad (read-only, single-language scope)**
+
+| Agent | Model | Role |
+|---|---|---|
+| ortografia-reviewer | sonnet | PT-BR: ortografia, gramática, concordância, regência (ENEM nota 1000) |
+| grammar-reviewer | sonnet | EN-US: spelling, grammar, punctuation, style (GRE 6/6) |
+
+**🎯 Strategy Squad (specialized advisors)**
+
+| Agent | Model | Role |
+|---|---|---|
+| seo-reviewer | sonnet | Technical SEO: Core Web Vitals, meta tags, structured data, rendering |
+| tech-recruiter | sonnet | Tech hiring: JD review/creation, candidate eval, seniority, market validation |
+
+**📰 Editorial Squad (content production pipeline)**
+
+Fluxo editorial completo: pauta → apuração → redação → verificação → edição → revisão ortográfica.
+Todos obrigatoriamente sob Sourcing Discipline Protocol (`~/.claude/rules/sourcing-discipline.md`).
+
+| Agent | Model | Role |
+|---|---|---|
+| editor-chefe | opus | Direção editorial: pauta, ângulo, linha do veículo, aprovação de projetos |
+| jornalista | sonnet | Apuração, investigação, entrevistas, triangulação de fontes, material bruto |
+| redator | sonnet | Produção editorial: transforma material bruto em texto publicável com voz/ritmo |
+| escritor-tecnico | sonnet | Escrita técnica/acadêmica: ABNT, IMRAD, Diátaxis, ADRs, design docs, post-mortems |
+| fact-checker | opus | Verificação independente (Rule of Two): etiquetas Lupa, triangulação 3+ fontes |
+| editor-de-texto | sonnet | Edição final: cortes, lead/fechamento, código FENAJ, linguagem jurídica |
+
+**Pipeline recomendado para projetos editoriais:**
+```
+editor-chefe → jornalista → redator → fact-checker → editor-de-texto → ortografia-reviewer
+  (pauta)      (apura)      (escreve)  (verifica)     (lapida)          (revisa)
+```
+
+**Nota**: `escritor-tecnico` é caminho paralelo para conteúdo técnico/científico (pula jornalista/fact-checker, vai direto para ortografia-reviewer).
+
+
+---
+
+## 17. Improvement Maturity Levels (self-assessment)
+
+Adopted from borghei/Claude-Skills (`self-improving-agent`, 2026-04-26). Use this scale to judge the maturity of any continuous-learning behavior the PE or an agent owns. Target: **Level 3+** for anything related to memory or rule promotion.
+
+| Level | Name | Mechanism | Current state |
+|-------|------|-----------|---------------|
+| 0 | Stateless | No memory between sessions | — |
+| 1 | Recording | Captures observations, no action | `local-mind` hooks, `capture_patterns.py` |
+| 2 | Curating | Organizes and deduplicates observations | `continuous-learning` skill + `distill-patterns.py` |
+| 3 | Promoting | Graduates patterns to enforced rules | `rule_promoter.py` (hardened) → `~/.claude/learning/rule-candidates.md` for manual review |
+| 4 | Extracting | Creates reusable skills from proven patterns | manual today; revisit when candidate corpus grows |
+| 5 | Meta-Learning | Adapts learning strategy itself | not implemented |
+
+When proposing changes to the learning system, state the current Level and the targeted Level. If the proposal does not move the needle, prefer a smaller change.
+
+## 18. Promotion Criteria Matrix
+
+When the PE (or an agent) proposes promoting a memory entry to a permanent rule (CLAUDE.md or `~/.claude/rules/`), the entry MUST satisfy ALL five criteria below. Formalizes the implicit "promote recurring patterns" guidance with explicit thresholds.
+
+| Criterion | Threshold | How to verify |
+|-----------|-----------|---------------|
+| Recurrence | seen in 3+ distinct sessions | check memory entry's recurrence counter |
+| Consistency | same solution every time | no contradicting entries exist |
+| Impact | prevented at least one error or saved meaningful time | one concrete incident referenced |
+| Stability | underlying code/system has not changed | the file/tool/dep referenced still exists today |
+| Clarity | statable in 1-2 sentences | rule body ≤ 200 chars (enforced by `rule_promoter.sanitize_rule_text`) |
+
+Output of `rule_promoter.py --list-candidates` lists entries that pass these criteria. The Owner promotes manually via PR — auto-promotion is forbidden (memory-poisoning defense).
+
+## 19. Skill Chain Pattern (pure pipeline, no PE judgment)
+
+Adopted from borghei's `orchestration-protocol.md` (Pattern 4). Distinct from Workflow Chains (Section 8) which keep PE in the loop between every step.
+
+**When to use:** Repeatable automation where consistency matters more than judgment. CI/CD-like flows. Batch processing.
+
+**Rules:**
+
+1. No PE between steps — direct skill-to-skill data flow.
+2. Each skill in the chain MUST declare input/output format (JSON, Markdown, or text).
+3. Fail-fast: if a skill produces invalid output, the chain aborts immediately.
+4. Idempotent: running the chain twice on the same input produces the same output.
+5. Observable: log each step's input/output for debugging.
+
+**Examples in this stack:**
+
+- `error-index` updating: `detect-errors → categorize → dedupe → write-index` (no PE judgment between steps).
+- Memory health pipeline: `memory_health_checker → rule_promoter --list-candidates → human review` (PE only at the final review gate).
+
+**Anti-patterns:**
+
+- Adding the PE to a pure execution chain (adds latency without value)
+- Chains longer than 6 steps (debug complexity grows exponentially)
+- Skills that mutate their input in place (breaks traceability)
+- Missing error handling between steps (silent failures corrupt downstream output)
+
+For chains that DO need PE judgment, use Workflow Chains (Section 8) or the Crawler Protocol (Section 15).
