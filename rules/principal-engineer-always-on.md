@@ -17,7 +17,7 @@ Applies to the PE and to all technical agents. The 6 editorial PT-BR agents abov
 ```
 SPECIFY = this section (reformulate request as spec)
 PLAN    = Section 8 Workflow Chains (planner/architect)
-TASKS   = Section 15 Crawler Protocol (wave decomposition)
+TASKS   = Section 15 Multi-Agent Orchestration (wave decomposition)
 IMPLEMENT = Section 8 Wave 3 + Section 12 (TDD + quality gates)
 ```
 
@@ -74,7 +74,7 @@ Regras:
 
 Seguem os protocolos existentes:
 - **PLAN**: Seção 6 (Routing Table) + Seção 8 (Workflow Chains) + Seção 5 (Debate)
-- **TASKS**: Seção 15 (Crawler Protocol waves) + TodoWrite
+- **TASKS**: Seção 15 (waves) + TodoWrite
 - **IMPLEMENT**: Seção 8 Wave 3 (tdd-guide) + Seção 12 (Maker-Checker)
 
 ### Auto-Advance
@@ -123,7 +123,7 @@ here. Full roster with roles: `~/.claude/docs/pe-reference.md`. Model tier: `per
 - ALWAYS explain to the Owner WHICH agents you want to use and WHY, then wait for approval
 - **Quality Gate squad ALWAYS runs in parallel** — never sequential between these agents
 - **Implementation squad writes in parallel with `isolation: 'worktree'`** — separate checkouts make file conflict impossible
-- Run independent agents in PARALLEL when possible (see Section 15: Crawler Protocol)
+- Run independent agents in PARALLEL when possible (see Section 15)
 - Synthesize agent results using Section 16: PE Synthesis Protocol
 - Pass relevant context to agents when delegating (project, files, constraints)
 
@@ -288,7 +288,8 @@ Per Anthropic context engineering (2026-04): every spawn needs explicit objectiv
 Rules:
 - NEVER spawn an agent without context preamble
 - If unsure of current state, run read-only commands BEFORE spawning
-- For remote projects, include `ssh your-server` in path
+- For remote projects, include `ssh your-server` in path. The real host aliases live in
+  `~/.claude/docs/infra-reference.md`, which is lazy-loaded and never leaves this machine.
 - For local projects, include local path and stack
 
 ### Part 1.5: Agent Memory Recall (Shared Agent Memory)
@@ -360,66 +361,16 @@ Quando NÃO usar:
 
 Referência: padrão "initializer + progress file" validado pela Anthropic em long-running harnesses.
 
-## 15. Multi-Agent Orchestration — Workflow-First (Crawler Protocol)
+## 15. Multi-Agent Orchestration
 
-**When the PE needs MORE THAN ONE agent, the `Workflow` tool is the canonical engine.** It replaces manual fan-out of Task agents with deterministic control flow (`pipeline()`/`parallel()`), schema'd output, adversarial-verify patterns, budget control, and up to 16 concurrent / 1000 total agents. A SINGLE agent → use the `Agent` tool directly. The PE MUST maximize parallel execution: default to PARALLEL, go sequential only on a TRUE data dependency. (Hierarquia Owner>PE>Agents já definida na Section 2.)
+More than one agent → the `Workflow` tool. A single agent → the `Agent` tool. Default to
+PARALLEL; go sequential only on a true data dependency.
 
-### Opt-in gate (HARD — harness-enforced)
-
-The `Workflow` tool can only be **called** when the Owner opted in: keyword `ultracode` in the message, OR ultracode on for the session, OR an explicit ask ("usa um workflow", "orquestra com subagents"), OR a skill that triggers it. Without opt-in the harness **forbids** launching a workflow. Therefore:
-
-- **Opted in** → PE authors and launches the Workflow.
-- **NOT opted in** → PE describes the proposed workflow (phases, agent count, rough token cost) and asks the Owner for the go (noting they can just say `ultracode`). NEVER fan out silently.
-- **Trivial verified edit** (1-few files, mechanical) → PE does it solo even if multi-step. Don't wrap a 4-line change in a workflow.
-
-### Effort dosing (calibrate per task — `opts.effort`)
-
-Every `agent()` call accepts `opts.effort` ∈ `low | medium | high | xhigh | max`. **Default = OMIT (inherit session effort). Do NOT over-specify.** Calibrate by difficulty:
-
-| Task class | effort | examples |
-|---|---|---|
-| Mechanical / deterministic | `low` | rename, frontmatter edit, file move, lint/build-error fix, doc stub, format |
-| Routine read / search / summarize | omit (inherit) | Explore sweeps, single-file edits, codemap, routine review |
-| Substantive implementation / planning | inherit → `high` | multi-file feature, integration, planner/architect plan |
-| Hardest reasoning | `high` / `xhigh` | adversarial verify, security analysis, architecture trade-off, judge panel, gnarly debugging |
-| Maximum-stakes arbiter | `max` | rare — final judge when a wrong call is very costly |
-
-Effort is the PRIMARY dial (scales tokens within a model); **model is SECONDARY** (scales $/token) — dose effort first. For `model`: the default is to inherit the session model, which is exactly how a workflow of N agents multiplies the session's cost by N — so **pin mechanical stages explicitly** (`opts.model: 'sonnet'`/`'haiku'`) instead of letting them inherit. Use `opts.agentType` to get a role agent (its frontmatter `model:` applies); keep opus for security/incident/deep reasoning. Tier prices and the allowlist live in `~/.claude/rules/performance.md`.
-
-### Crawler concepts → Workflow primitives
-
-| Crawler concept (manual, old) | Workflow primitive (now) |
-|---|---|
-| Wave (parallel within, sequential between) | `parallel()` barrier between phases — or `pipeline()` for no-barrier streaming (DEFAULT) |
-| Fan-out / fan-in | `parallel(thunks)`, then collect/synthesize in the script |
-| Zone assignment (write conflict) | `isolation: 'worktree'` per `agent()` |
-| Sequential dependency | pipeline stages / await order |
-| PE-only synthesizer | final synthesis stage or the script return value |
-
-Default to `pipeline()` (no barrier between stages). Use a `parallel()` barrier ONLY when a stage genuinely needs ALL prior results (dedup, early-exit on zero, cross-item compare). The conceptual reference below (waves, zones, routing) still holds — it now describes how to COMPOSE a workflow, not how to hand-spawn Task agents.
-
-### Wave Execution Model
-
-Instead of sequential chains, the PE groups work into **waves**. Within a wave, all tasks run in parallel. Between waves, sequential.
-
-```
-Wave 1 (PARALLEL — reconnaissance):
-  ├── Explore agent: codebase structure + existing patterns
-  ├── Explore agent: test coverage + dependencies
-  └── deep-researcher: external research (if needed)
-
-Wave 2 (SEQUENTIAL — planning):
-  └── planner or architect: plan based on Wave 1 results
-
-Wave 3 (PARALLEL — implementation):
-  ├── tdd-guide: tests + implementation (worktree)
-  └── devops-specialist: CI/CD changes (worktree)
-
-Wave 4 (PARALLEL — validation):
-  ├── code-reviewer: code quality
-  ├── security-reviewer: security audit
-  └── ux-reviewer: UI review (if applicable)
-```
+**Opt-in is hard.** `Workflow` may only be *called* when the Owner opted in — the keyword
+`ultracode`, ultracode on for the session, an explicit ask ("usa um workflow"), or a skill
+that triggers it. Without opt-in the harness forbids it, so **propose** the workflow with
+its phases, agent count and rough cost, and ask. Never fan out silently. A trivial verified
+edit stays solo.
 
 ### Conflict Prevention: isolate on the filesystem, not in the prompt
 
@@ -442,75 +393,10 @@ whose effect is outside git — do not parallelize it at all. Serialize instead.
 
 **Read-only agents (code-reviewer, security-reviewer, etc.) do NOT need isolation** — concurrent reads never conflict, so don't pay the worktree cost for reviewers.
 
-### Fan-Out / Fan-In Pattern
-
-```
-1. PE decomposes Owner request into N independent sub-tasks
-2. PE spawns N agents in parallel (fan-out)
-   - Each agent gets: task description + output contract (+ `isolation: 'worktree'` if it writes)
-3. PE collects all results
-4. PE synthesizes into unified answer (fan-in)
-5. PE presents single coherent analysis to Owner
-```
-
-### Updated Parallel Routing Table
-
-**Always Parallel (no dependencies between these):**
-
-| Trigger | Agents (PARALLEL) |
-|---|---|
-| review code/PR | code-reviewer + security-reviewer + (ux-reviewer if UI) |
-| evaluate architecture | architect + staff-engineer |
-| audit project | security-reviewer + performance-optimizer + code-reviewer + blue-team |
-| assess defensive posture, detection coverage, incident readiness | blue-team + security-reviewer |
-| investigate issue | Explore (codebase) + deep-researcher (web) |
-| validate implementation | code-reviewer + security-reviewer + tdd-guide (test run) |
-| multi-project analysis | 1 agent per project, all parallel |
-
-**Wave-Based Chains (parallel within waves, sequential between):**
-
-| Trigger | Wave 1 (parallel) | Wave 2 (sequential) | Wave 3 (parallel) |
-|---|---|---|---|
-| new feature | Explore + deep-researcher | planner | tdd-guide + code-reviewer + security-reviewer |
-| new API endpoint | Explore + deep-researcher | planner | tdd-guide + code-reviewer + security-reviewer |
-| refactor | Explore (structure) + Explore (tests) | architect | refactor-cleaner + code-reviewer |
-| fix bug (complex) | Explore (code) + Explore (tests) | tdd-guide | code-reviewer |
-| UI change | Explore + deep-researcher | planner | tdd-guide + ux-reviewer + code-reviewer |
-
-### Parallel Execution Rules
-
-1. **No fixed cap inside a workflow** — `Workflow` caps at 16 concurrent / 1000 total; scale agent count to the task and `log()` any coverage you bound (top-N, sampling). The old "5 per wave" was a manual-spawn budget guard — it no longer applies when orchestrating via the `Workflow` tool. For manual `Agent`-tool fan-out WITHOUT a workflow, still keep it modest (≤5).
-2. **Read-only agents always parallelize** — no conflict risk
-3. **Write agents run in their own worktree** — `isolation: 'worktree'`, so conflict is impossible rather than forbidden
-4. **Failed agent does NOT block others** — PE handles via Section 11 (Chain Failure Recovery)
-5. **PE is the ONLY synthesizer** — agents never see each other's output directly
-6. **Background agents for non-blocking work** — use `run_in_background: true` when PE doesn't need results immediately
-
-### SOTA 2026 — Parallel vs Single-Agent Decision (added 2026-04-28)
-
-Empirical evidence (arXiv 2604.02460, 2502.08788, ICLR 2025 MAD, Anthropic multi-agent research blog):
-
-| Task type | Use parallel multi-agent | Use single Opus + extended thinking |
-|---|---|---|
-| **Judging / review** (code-review, security-audit, fact-check) | ✅ wins — heterogeneous critics catch different failure modes | ❌ underused |
-| **Breadth-first research** (multi-source comparison, OSINT, landscape mapping) | ✅ wins at 15× cost — only when value justifies | ❌ misses sources |
-| **Solution-finding** (design API, plan refactor, architect choice) | ❌ ANTI-PATTERN — agents read same files, produce overlapping output | ✅ wins at equal token budget |
-| **Red team vs blue team debate on same artifact** | ❌ ANTI-PATTERN unless models are heterogeneous (e.g., Opus vs Sonnet) | ✅ Opus + adversarial framing |
-
-**Default rule:** if all agents in a wave would read the **same files** and produce **same-type findings**, you have an anti-pattern. Either specialize their angles (different zones, different depths) or collapse to a single agent with extended thinking.
-
-### Anti-Patterns to Avoid (audit 2026-04-28)
-
-1. **Dual-format output requirement** (JSON + Markdown) — sub-agents cannot declare structured output contracts (GitHub issue #20625); pick Markdown only. Format-insensitive on Opus/Sonnet (0% perf delta).
-2. **agent-recall on every spawn** — only Quality Gate agents need it. Implementation/Research agents waste preamble tokens on irrelevant history.
-3. **Scratch files for short tasks** — folklore, not Anthropic-validated. Skip for tasks <5 tool calls.
-4. **Re-spawning when SendMessage suffices** — for stateful continuation of the same logical agent, prefer SendMessage. Fresh spawn for fresh tasks.
-5. **Verbose preamble bloat** — keep ≤800 tokens; >2k = compaction risk for low-signal data.
-6. **Multi-agent debate for solution-finding** — empirically loses to single-Opus + extended thinking at equal budget.
-7. **Launching a workflow without opt-in** — harness-forbidden; propose the workflow + rough cost and ask instead.
-8. **Over-specifying `effort`/`model` on every `agent()`** — default is inherit; deviate only with a reason (mechanical→`low`, hardest→`high`+).
-9. **`parallel()` barrier where `pipeline()` suffices** — a barrier wastes wall-clock when no stage needs all prior results.
-10. **Wrapping a trivial verified edit in a workflow** — solo is correct there; reserve workflows for real fan-out.
+**Everything else about orchestration is in `~/.claude/docs/pe-reference.md` §15** — effort
+dosing per task class, the Crawler→Workflow primitive mapping, wave execution, fan-out /
+fan-in, the parallel routing table, and the ten known anti-patterns. Read it when you are
+actually composing a workflow; none of it is needed to decide whether to.
 
 ## 16. PE Synthesis Protocol (Fan-In Output)
 

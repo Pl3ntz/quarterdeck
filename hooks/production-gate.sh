@@ -106,11 +106,15 @@ ssh_match = re.search(rf'ssh\s+(?:.*\s+)?(?:\w+@)?({PROD_PATTERN})(?:\s|$)', com
 if not ssh_match:
     allow()
 
-# Extract the remote command
+# Extract the remote command.
+# Capture the opening quote char and grab greedily to the LAST matching quote
+# (backref \\1), so trailing LOCAL content after the close (2>/dev/null, | grep,
+# 2>&1, ...) does not defeat extraction. Greedy also over-captures rather than
+# under-captures, which is fail-safe: more of the body reaches the allowlist scan.
 remote_cmd = ''
-quoted_match = re.search(rf'ssh\s+(?:.*\s+)?(?:\w+@)?(?:{PROD_PATTERN})\s+[\"\x27](.+?)[\"\x27]\s*$', command)
+quoted_match = re.search(rf'ssh\s+(?:.*\s+)?(?:\w+@)?(?:{PROD_PATTERN})\s+([\"\x27])(.*)\\1', command)
 if quoted_match:
-    remote_cmd = quoted_match.group(1)
+    remote_cmd = quoted_match.group(2)
 else:
     unquoted_match = re.search(rf'ssh\s+(?:.*\s+)?(?:\w+@)?(?:{PROD_PATTERN})\s+(.+)$', command)
     if unquoted_match:
@@ -154,6 +158,12 @@ for pattern, reason in DENY_OVERRIDES:
     if re.search(pattern, remote_cmd):
         ask(f'{reason} em producao')
 
+# --- WRITE GUARD: psql com token de escrita ou funcao com efeito colateral -> ask ---
+# Denylist NAO e exaustiva (funcoes user-defined escapam); cobre os vetores conhecidos.
+WRITE_RE = r'\b(?:INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE|GRANT|REVOKE|COPY|MERGE|CALL|VACUUM|REINDEX|CLUSTER|REFRESH|LOCK|INTO|lo_export|lo_import|pg_read_file|pg_read_binary_file|pg_ls_dir|pg_stat_file|pg_terminate_backend|pg_cancel_backend|pg_reload_conf|dblink|setval|nextval)\b'
+if re.search(r'\bpsql\b', remote_cmd) and re.search(WRITE_RE, remote_cmd, re.IGNORECASE):
+    ask('psql com token de escrita ou funcao com efeito colateral - confirme manualmente')
+
 # --- ALLOWLIST: only these read-only commands pass ---
 READ_ONLY = [
     r'^sleep\s+\d',
@@ -190,7 +200,7 @@ READ_ONLY = [
     r'^fgrep\s',
     r'^rg\s',
     r'^ag\s',
-    r'^(?:[A-Z_]+=(?:\S+|\\$\(\s*(?:grep|cut|tr|sed|awk|head|tail|cat|echo)\b[^)|]*(?:\|\s*(?:grep|cut|tr|sed|awk|head|tail|cat|echo)\b[^)|]*)*\))\s+)*(sudo\s+-u\s+postgres\s+)?psql\s.*-c\s+[\"\x27]?\s*(SELECT|SHOW|EXPLAIN|\\\\d|\\\\l|\\\\c|\\\\x|\\\\timing)',
+    r'^(?:[A-Z_]+=(?:\S+|\\$\(\s*(?:grep|cut|tr|sed|awk|head|tail|cat|echo)\b[^)|]*(?:\|\s*(?:grep|cut|tr|sed|awk|head|tail|cat|echo)\b[^)|]*)*\))\s+)*(sudo\s+-u\s+postgres\s+)?psql\s.*-[A-Za-z]*c\s+[\"\x27]?\s*(SELECT|WITH|VALUES|TABLE|SHOW|EXPLAIN|\\\\d|\\\\l|\\\\c|\\\\x|\\\\timing)',
     r'^echo\s',
     r'^date(\s|$)',
     r'^env(\s|$)',
@@ -230,7 +240,7 @@ READ_ONLY = [
     r'^(?:bun|pnpm|npm|yarn)\s+(?:run\s+)?(?:build|test|lint|typecheck|check|format|verify|coverage|audit)(?::[A-Za-z0-9_:.-]+)?(?:\s|$)',
     # Package manager / runtime: version queries
     r'^(?:bun|pnpm|npm|yarn|node|python3?|deno|cargo|go|ruby|rustc)\s+(?:--version|-v|-V|version)(?:\s|$)',
-    # prod-tool CLI on your-server — argparse positive allowlist; deployed at /usr/local/bin/prod-tool
+    # prod-tool CLI on the production host — argparse positive allowlist; deployed at /usr/local/bin/prod-tool
     r'^prod-tool\s+(show|head|tail|grep|stat|ls|service-status|service-logs|df|ps)(\s.*)?$',
 ]
 
@@ -248,6 +258,10 @@ for sub_cmd in chain_ops:
     if re.match(r'^source\s+\S+\.env', sub_cmd):
         continue
     if re.match(r'^\.\s+\S+\.env', sub_cmd):
+        continue
+    # Env-var extraction from safe read-only commands (loading creds from .env).
+    # Pipe restrito ao MESMO conjunto read-only (fix bypass exfil via | curl/nc).
+    if re.match(r'^(?:export\s+)?[A-Za-z_]\w*=\\$\(\s*(?:grep|cut|tr|sed|awk|head|tail|cat|echo|ls|sort|uniq)\b[^)|]*(?:\|\s*(?:grep|cut|tr|sed|awk|head|tail|cat|echo|ls|sort|uniq)\b[^)|]*)*\)$', sub_cmd):
         continue
 
     allowed = False
