@@ -10,6 +10,8 @@
 # - Output: JSON with permissionDecision deny to block, {} to allow
 # - Exit 0 always
 
+. "$HOME/.claude/hooks/lib/hook-common.sh"
+
 input=$(cat)
 
 # Fast path: extract command
@@ -26,9 +28,12 @@ if ! echo "$command" | grep -qE '(^|&&|;)\s*git\s+commit\b'; then
   exit 0
 fi
 
-# Detect working dir from command (cd <path> &&) ou fallback PWD
-work_dir=$(echo "$command" | grep -oE 'cd[[:space:]]+[^&;]+' | head -1 | sed -E 's/^cd[[:space:]]+//' | xargs)
-[ -z "$work_dir" ] && work_dir="$PWD"
+# Detect working dir from command (cd <path> &&) ou fallback PWD.
+# hook_work_dir expands a literal ~ / $HOME: without that, `cd ~/repo` yielded the
+# directory "~/repo", every -f test below failed, and this gate silently ALLOWED the
+# commit. Confirmed failing open on 2026-07-24; fixed via the shared helper so the same
+# defect cannot reappear in a fourth hook.
+work_dir=$(hook_work_dir "$command")
 
 # Projeto containerizado: testes rodam dentro do container, nao localmente.
 # Conflita com CRITICAL RULE "NEVER run build/test commands locally".
