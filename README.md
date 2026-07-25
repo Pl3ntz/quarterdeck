@@ -1,32 +1,15 @@
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-full-dark.png">
-    <img src="assets/logo-full.png" alt="Quarterdeck: Agent Orchestration for Claude Code" width="600">
-  </picture>
-</p>
+# Quarterdeck
 
-<p align="center">
-  <strong>The command bridge for Claude Code</strong><br>
-  A squad of specialists, and the guardrails that stop them from shipping something wrong.
-</p>
+Agent orchestration for [Claude Code](https://claude.ai/code): a set of specialist agents,
+and the gates that stop them from committing something wrong.
 
-<p align="center">
-  <a href="#what-it-enforces">What it enforces</a> &bull;
-  <a href="#quick-start">Quick Start</a> &bull;
-  <a href="#the-26-agents">Agents</a> &bull;
-  <a href="#how-it-works">How It Works</a> &bull;
-  <a href="docs/ARCHITECTURE.md">Architecture</a> &bull;
-  <a href="docs/CUSTOMIZATION.md">Customization</a>
-</p>
+[What it enforces](#what-it-enforces) · [Quick start](#quick-start) · [Agents](#the-26-agents) ·
+[Architecture](docs/ARCHITECTURE.md) · [Customization](docs/CUSTOMIZATION.md)
 
-<p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
-  <a href="NOTICE.md"><img src="https://img.shields.io/badge/notice-third--party-yellow.svg" alt="Third-Party Notice"></a>
-  <img src="https://img.shields.io/badge/agents-26-brightgreen.svg" alt="26 Agents">
-  <img src="https://img.shields.io/badge/guardrail_checks-49-red.svg" alt="49 Guardrail Checks">
-  <img src="https://img.shields.io/badge/agents_with_measured_baselines-15-blue.svg" alt="15 Agents Measured">
-  <img src="https://img.shields.io/badge/Claude_Code-2.1.32+-purple.svg" alt="Claude Code">
-</p>
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Third-party notice](https://img.shields.io/badge/notice-third--party-lightgrey.svg)](NOTICE.md)
+
+Requires Claude Code 2.1.32 or later.
 
 ---
 
@@ -112,8 +95,8 @@ it would contaminate the benchmark.
 
 ## What it remembers
 
-Every block is recorded — the command, the rule that caught it, the reason — by a single
-helper the gates share, so the context exists at the moment it is worth something.
+Every block is recorded by a single helper the gates share: the command, the rule that caught
+it, the reason. The context exists at the moment it is worth something.
 
 At the end of a session, `learning-check` reports any **override** that was used without a
 lesson being written down. Overrides rather than blocks: being correctly stopped teaches
@@ -123,8 +106,8 @@ manufactures empty ones.
 
 This replaced a pipeline that aggregated error-string frequency into candidates like
 *"Recurring error (68x): investigate root cause"*. It produced 57 of those over two months
-and none was ever promoted, because a count cannot be turned back into a rule — whatever
-made the error worth one is gone by the time the count exists.
+and none was ever promoted. A count cannot be turned back into a rule, because whatever made
+the error worth one is gone by the time the count exists.
 
 ## Tools
 
@@ -137,7 +120,7 @@ scripts/wt.sh new fix-login                        # a worktree per parallel ses
 
 `wt.sh` exists because parallel work is safer as a filesystem fact than as an instruction.
 Two sessions editing one checkout race; separate checkouts cannot. The same reasoning applies
-to agents, which get `isolation: 'worktree'` when they write — replacing a protocol that asked
+to agents, which get `isolation: 'worktree'` when they write. That replaced a protocol asking
 the orchestrator to map file zones and restate them in every prompt, enforced by nothing.
 
 ---

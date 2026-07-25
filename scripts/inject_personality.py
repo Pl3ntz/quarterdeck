@@ -88,21 +88,18 @@ def find_project_profile(cwd: str) -> Path | None:
             break
         search_dir = search_dir.parent
 
-    # Fallback to per-project storage (project-id derived from cwd)
-    try:
-        project_id = "-" + str(Path.cwd()).replace("/", "-").lstrip("-")
-        fallback = (
-            Path.home()
-            / ".claude"
-            / "projects"
-            / project_id
-            / "learning"
-            / "profile.md"
-        )
-        if fallback.exists():
-            return fallback
-    except Exception:
-        pass
+    # Fallback to per-project storage
+    # derive the project key from $HOME to avoid hardcoding the username
+    fallback = (
+        Path.home()
+        / ".claude"
+        / "projects"
+        / str(Path.home() / "dev").replace("/", "-")
+        / "learning"
+        / "profile.md"
+    )
+    if fallback.exists():
+        return fallback
     return None
 
 

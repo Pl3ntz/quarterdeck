@@ -34,7 +34,7 @@ fi
 # Query agent-recall for past findings
 # Use the built plugin script if available, otherwise raw node
 # Configure this path to your local-mind plugin installation
-RECALL_SCRIPT="${LOCAL_MIND_PATH:-$HOME/.claude/plugins/local-mind}/plugin/scripts/agent-recall.cjs"
+RECALL_SCRIPT="${LOCAL_MIND_PATH:-$HOME/.claude/plugins/cache/local-memory-plugins/local-mind/0.1.0}/scripts/agent-recall.cjs"
 
 if [ ! -f "$RECALL_SCRIPT" ]; then
   echo '{}'
