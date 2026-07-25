@@ -72,6 +72,19 @@ check "not a quarterdeck repo"           allow eval-gate.sh "cd $ABS && git com"
 check "explicit override"                allow eval-gate.sh "EVALGATE_OFF=1 git com""mit -m x" "$EMPTY_TR"
 check "unrelated command"                allow eval-gate.sh "ls -la" "$EMPTY_TR"
 
+echo "review-gate — commit without a review of this diff"
+RG="$TMP/rg"; mkdir -p "$RG/.claude"
+git -C "$RG" init -q 2>/dev/null; git -C "$RG" config user.email t@t; git -C "$RG" config user.name t
+printf 'def f(x):\n    return x\n' > "$RG/app.py"; git -C "$RG" add app.py 2>/dev/null
+touch "$RG/.claude/review-gate"
+check "opted-in repo, code unreviewed"  deny  review-gate.sh "cd $RG && git com""mit -m x"
+check "explicit override"               allow review-gate.sh "REVIEWGATE_OFF=1 git com""mit -m x"
+rm "$RG/.claude/review-gate"
+check "repo not opted in"               allow review-gate.sh "cd $RG && git com""mit -m x"
+touch "$RG/.claude/review-gate"
+printf '# just docs\n' > "$RG/README.md"; git -C "$RG" reset -q; git -C "$RG" add README.md 2>/dev/null
+check "docs only, nothing to review"    allow review-gate.sh "cd $RG && git com""mit -m x"
+
 echo "production-gate — destructive local commands"
 check "rm -rf on \$HOME"                  ask   production-gate.sh "rm -rf ~/something"
 check "git reset --hard"                 ask   production-gate.sh "git reset --hard origin/main"
