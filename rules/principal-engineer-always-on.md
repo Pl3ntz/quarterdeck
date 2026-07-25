@@ -28,8 +28,25 @@ Ao receber QUALQUER request do Owner, classifique PRIMEIRO:
 | Nível | Critério | Gates | Exemplos |
 |-------|----------|-------|----------|
 | **Trivial** | 1-2 tool calls, 1 arquivo, sem risco | Nenhum — executa direto | typo fix, pergunta rápida, leitura de arquivo |
-| **Médio** | 3-10 tool calls, 2-5 arquivos, risco baixo | SPECIFY + IMPLEMENT | bug fix, config change, endpoint simples |
-| **Complexo** | 10+ tool calls, 5+ arquivos, risco médio/alto, multi-agent | SPECIFY + PLAN + TASKS + IMPLEMENT | nova feature, refactor, cross-system, infra |
+| **Médio** | 3-10 tool calls, 2-5 arquivos, risco baixo | SPECIFY + IMPLEMENT | bug fix, config change, endpoint interno sem contrato novo |
+| **Complexo** | 10+ tool calls, 5+ arquivos, ou uma mudança difícil de reverter (produção, dados, contrato público) | SPECIFY + PLAN + TASKS + IMPLEMENT | nova feature, refactor, cross-system, infra |
+
+**Urgência não é complexidade.** "Urgente", "crítico", "o cliente precisa amanhã" descrevem
+a pressão do prazo, não o tamanho do trabalho. Um botão de exportar CSV continua sendo um
+componente e um handler quando é para amanhã. Inflar a triagem por causa da linguagem do
+pedido troca o trabalho pela cerimônia justamente quando há menos tempo para ela.
+
+**Contrato público é o caso mais fácil de subestimar.** Um endpoint novo exposto a terceiros,
+um schema de API, um formato que outro sistema consome — depois de publicado, mudar quebra
+quem já integrou, e isso é irreversível no sentido que importa mesmo quando o código cabe em
+dois arquivos. Vale Complexo pelo contrato, não pelo tamanho. Endpoint interno, atrás de auth
+própria, sem consumidor externo, continua Médio.
+
+**Quantos agents a tarefa usa também não é medida de complexidade.** Duas tarefas pequenas e
+independentes rodando em paralelo somam duas tarefas pequenas, não um projeto. Triagem olha
+tamanho, risco e reversibilidade do trabalho; paralelismo é decisão de execução, tomada
+depois. Abrir PLAN, TASKS e Interview-Me porque dois agents vão rodar é a cerimônia que a
+regra existe para evitar.
 
 ### Gate SPECIFY (obrigatório para Médio e Complexo)
 
@@ -61,6 +78,10 @@ Regras:
 - Áreas de código não relacionadas no mesmo request
 - Múltiplos projetos ou serviços mencionados
 - Verbos diferentes para domínios diferentes: "implemente X, corrija Y, refatore Z"
+
+**Quando NÃO é multi-goal:** o Owner já ter separado os itens e pedido paralelo resolve o
+escopo em vez de levantá-lo. "Implementa em paralelo A e B, são independentes" é uma decisão
+de execução, não dois pedidos — propor split ali é devolver a pergunta que ele já respondeu.
 
 **Se multi-goal detectado:**
 1. Listar os goals separadamente para o Owner
@@ -220,16 +241,54 @@ already carries every agent's purpose and tools, so this rule does not restate t
 trigger→agent tables (single-agent, chains, parallel sets) live in
 `~/.claude/docs/pe-reference.md` §6 — read it when a route is not obvious.
 
+**Ambiguity is the absence of a finish line, not loose wording.** Ask before routing when you
+cannot say what "done" would look like: "improve login security" could mean MFA, rate
+limiting, a session rewrite or a password policy, and picking one is picking the whole
+project. Route normally when the wording is loose but the work is not: "this ETL module is
+spaghetti, refactor it" and "I think we have a detection blind spot" both describe the
+problem casually while the action is clear.
+
+Short does not mean Trivial. Triage on how much is unspecified, not on word count. Where the
+finish line is missing and the stakes are real, route to nobody, ask 3-5 questions, and treat
+it as Complexo once the answers arrive.
+
 What the descriptions do NOT make obvious, and what therefore gets routed wrong:
 
 | Situation | Route to | Not |
 |---|---|---|
 | detection coverage, threat hunt, Sigma/SIEM, ATT&CK, blind-spot, backup/DR readiness | blue-team | security-reviewer — that one does point-in-time audit |
 | production down NOW, 5xx spike | incident-responder (read-only triage needs no approval) | devops-specialist |
-| one slow SQL query | database-specialist | performance-optimizer |
 | single fact, docs or syntax lookup | PE answers with WebSearch | deep-researcher — ~18x the tokens |
 | "audit the project" | security-reviewer + performance-optimizer + code-reviewer + blue-team, in parallel | any one of them alone |
 | PT-BR text vs EN text | ortografia-reviewer vs grammar-reviewer | each is single-language, never both |
+
+A route driven by a **symptom** rather than by a role is not inferable from any agent's
+description, because the symptom names a problem and the description names a job. These were
+removed on 2026-07-25 and the routing eval regressed on exactly the cases they cover, so they
+are back:
+
+| Symptom | Route to |
+|---|---|
+| build broken, type error, will not start | build-error-resolver |
+| slow, latency, timeout, high TTFB | performance-optimizer — **unless one query is the thing that is slow, which is database-specialist** |
+| CVE, vulnerability, exposed secret | security-reviewer |
+| schema, migration, index | database-specialist |
+| deploy, CI/CD, pipeline, systemd unit | devops-specialist |
+| restart, stop or reconfigure a service on a server | devops-specialist, and the production gate applies: one approval per modifying command, never chained with `&&` |
+| dead code, duplication, cleanup | refactor-cleaner |
+| E2E, Playwright, user journey | e2e-runner |
+
+Multi-step work has a shape the descriptions also cannot carry, since it is about order:
+
+| Trigger | Chain |
+|---|---|
+| new feature | planner → tdd-guide → code-reviewer |
+| new API endpoint | planner → tdd-guide → code-reviewer → security-reviewer |
+| refactor, restructure | architect → refactor-cleaner → code-reviewer |
+| UI change | tdd-guide → ux-reviewer → code-reviewer |
+| bug fix, non-trivial | tdd-guide → code-reviewer |
+| cross-system change | staff-engineer → architect → specialists |
+| research then build | deep-researcher → planner → tdd-guide |
 
 Editorial work runs as an ordered pipeline, not a set:
 `editor-chefe → jornalista → redator → fact-checker → editor-de-texto → ortografia-reviewer`.

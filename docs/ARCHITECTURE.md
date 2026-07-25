@@ -30,7 +30,7 @@ Principal Engineer (PE)
 
 ## The 26 Agents Organized into 8 Squads
 
-### 🔍 Planning & Design Squad
+### Planning & Design Squad
 
 Design and architecture decisions before building.
 
@@ -39,7 +39,7 @@ Design and architecture decisions before building.
 | **architect** | Opus | HOW to build — patterns, trade-offs, alternatives |
 | **planner** | Opus | IN WHAT ORDER to build — phases, risks, dependencies |
 
-### 🛡️ Quality Gate Squad
+### Quality Gate Squad
 
 Validate without modifying. ALWAYS runs in PARALLEL.
 
@@ -50,7 +50,7 @@ Validate without modifying. ALWAYS runs in PARALLEL.
 | **ux-reviewer** | Sonnet | Accessibility, visual consistency, interaction states |
 | **staff-engineer** | Opus | Cross-system impact, tech debt, pattern propagation |
 
-### 🔨 Implementation Squad
+### Implementation Squad
 
 Write code. Requires zone assignment to prevent conflicts.
 
@@ -72,7 +72,7 @@ Keep the system running: deploy, monitor, optimize.
 | **performance-optimizer** | Sonnet | CPU/memory/query bottlenecks, caching, tuning |
 | **database-specialist** | Sonnet | PostgreSQL: schema, migrations, slow queries, indexes |
 
-### 📚 Intelligence Squad
+### Intelligence Squad
 
 Research, documentation, knowledge capture.
 
@@ -81,7 +81,7 @@ Research, documentation, knowledge capture.
 | **deep-researcher** | Opus | Multi-source web research, triangulation, confidence scoring |
 | **doc-updater** | Haiku | Generate documentation from actual code |
 
-### ✍️ Language Squad
+### Language Squad
 
 Text review (read-only). Single-language scope each.
 
@@ -90,7 +90,7 @@ Text review (read-only). Single-language scope each.
 | **ortografia-reviewer** | Sonnet | PT-BR: spelling, grammar, agreement, register |
 | **grammar-reviewer** | Sonnet | EN-US: spelling, grammar, punctuation, style |
 
-### 🎯 Strategy Squad
+### Strategy Squad
 
 Specialized consulting.
 
@@ -99,7 +99,7 @@ Specialized consulting.
 | **seo-reviewer** | Sonnet | Technical SEO: Core Web Vitals, structured data, crawlability |
 | **tech-recruiter** | Sonnet | Job descriptions, candidate evaluation, market validation |
 
-### 📰 Editorial Squad
+### Editorial Squad
 
 Professional content production with verified sources. Full pipeline: **pauta → apuração → redação → verificação → edição → revisão ortográfica**.
 

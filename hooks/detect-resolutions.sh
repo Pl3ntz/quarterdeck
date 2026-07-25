@@ -23,14 +23,24 @@ try:
     data = json.load(sys.stdin)
     tool = data.get('tool_name', data.get('tool', ''))
     tool_input = data.get('tool_input', {})
-    tool_output = data.get('tool_result', data.get('tool_output', data.get('result', '')))
-    if tool_output is None:
-        exit_silent()
-    if isinstance(tool_output, dict):
-        tool_output = tool_output.get('output', tool_output.get('content', str(tool_output)))
-    tool_output = str(tool_output)
+
+    # Claude Code envia 'tool_response' (Bash: dict com stdout/stderr/interrupted)
+    tool_response = data.get('tool_response', data.get('tool_result', data.get('tool_output', data.get('result', ''))))
+
+    interrupted = False
+    if isinstance(tool_response, dict):
+        stdout = tool_response.get('stdout', '') or ''
+        stderr = tool_response.get('stderr', '') or ''
+        interrupted = bool(tool_response.get('interrupted'))
+        tool_output = (stdout + '\n' + stderr).strip()
+    else:
+        tool_output = str(tool_response or '')
 
     if tool != 'Bash':
+        exit_silent()
+
+    # Comando interrompido nao e resolucao
+    if interrupted:
         exit_silent()
 
     command = tool_input.get('command', '')

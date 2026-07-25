@@ -18,7 +18,7 @@ Every agent returns results in the same structured format for consistency:
 ### NEXT STEP: Fix the SQL injection before merging.
 
 ### SUMMARY: The users endpoint had multiple security issues found
-during comprehensive analysis. Identified 1 CRITICAL vulnerability and
+during analysis. Identified 1 CRITICAL vulnerability and
 2 MEDIUM issues with suggested fixes in each case.
 ```
 
@@ -26,7 +26,7 @@ The **SUMMARY** follows a consistent pattern: system impact → how analyzed →
 
 ---
 
-## 🔍 Planning & Design Squad
+## Planning & Design Squad
 
 Strategic thinking before building. Designs systems and creates implementation plans.
 
@@ -37,7 +37,7 @@ Strategic thinking before building. Designs systems and creates implementation p
 
 ---
 
-## 🛡️ Quality Gate Squad
+## Quality Gate Squad
 
 Validation layer (read-only) — always run in parallel. Never modify code; only provide structured feedback.
 
@@ -50,7 +50,7 @@ Validation layer (read-only) — always run in parallel. Never modify code; only
 
 ---
 
-## 🔨 Implementation Squad
+## Implementation Squad
 
 Write code following established patterns. Each has focused responsibility and must report progress back to PE.
 
@@ -76,7 +76,7 @@ Keep systems running — diagnose issues, deploy changes, optimize performance, 
 
 ---
 
-## 📚 Intelligence Squad
+## Intelligence Squad
 
 Research and documentation — validate sources, generate docs from code.
 
@@ -87,7 +87,7 @@ Research and documentation — validate sources, generate docs from code.
 
 ---
 
-## ✍️ Language Squad
+## Language Squad
 
 Spelling, grammar, and writing quality for single languages (read-only).
 
@@ -98,7 +98,7 @@ Spelling, grammar, and writing quality for single languages (read-only).
 
 ---
 
-## 🎯 Strategy Squad
+## Strategy Squad
 
 Specialized advisors for SEO and technical recruiting.
 
@@ -109,7 +109,7 @@ Specialized advisors for SEO and technical recruiting.
 
 ---
 
-## 📰 Editorial Squad
+## Editorial Squad
 
 Full editorial pipeline under [Sourcing Discipline Protocol](../rules/sourcing-discipline.md) — minimum 3-source triangulation, mandatory citations with URL and date.
 
