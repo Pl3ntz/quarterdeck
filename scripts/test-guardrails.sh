@@ -85,6 +85,40 @@ touch "$RG/.claude/review-gate"
 printf '# just docs\n' > "$RG/README.md"; git -C "$RG" reset -q; git -C "$RG" add README.md 2>/dev/null
 check "docs only, nothing to review"    allow review-gate.sh "cd $RG && git com""mit -m x"
 
+echo "egress-guard — sensitive data leaving via a non-git path"
+# The fixtures are SYNTHESISED, never written literally: a suite that guards against
+# secrets and PII would otherwise carry them, and this file is mirrored to a public repo.
+# The host alias is read from the local conf, the CPF is computed from its check digits,
+# and the key is assembled from fragments.
+FAKE_CPF=$(python3 -c "
+def dv(b):
+    s=sum(int(d)*w for d,w in zip(b,range(len(b)+1,1,-1))); r=11-s%11
+    return '0' if r>=10 else str(r)
+b='529982247'; d1=dv(b); print(b+d1+dv(b+d1))")
+FAKE_KEY="sk-""ant-""api03-$(printf 'A%.0s' $(seq 1 48))"
+HOST=$(grep -m1 '^PROD_ALIASES=' "$HOME/.claude/hooks/production-gate.conf" 2>/dev/null | cut -d= -f2- | cut -d'|' -f1)
+
+egress() {
+  local label="$1" expected="$2" payload="$3"
+  local got; got=$(printf '%s' "$payload" | bash "$HOOKS/egress-guard.sh" 2>/dev/null \
+    | python3 -c "import json,sys;d=json.load(sys.stdin);print(d.get('hookSpecificOutput',{}).get('permissionDecision','allow'))")
+  if [ "$got" = "$expected" ]; then pass=$((pass+1)); [ "$VERBOSE" = "-v" ] && printf '  ok    %-56s %s\n' "$label" "$got"
+  else fail=$((fail+1)); printf '  FAIL  %-56s expected=%s got=%s\n' "$label" "$expected" "$got"; fi
+}
+
+[ -n "$HOST" ] && egress "infra alias in a WebFetch prompt" deny \
+  "{\"tool_name\":\"WebFetch\",\"tool_input\":{\"url\":\"https://x.com\",\"prompt\":\"ssh $HOST\"}}"
+egress "check-digit valid CPF typed into a browser" deny \
+  "{\"tool_name\":\"mcp__playwright__browser_type\",\"tool_input\":{\"text\":\"$FAKE_CPF\"}}"
+egress "API key in a search query" deny \
+  "{\"tool_name\":\"WebSearch\",\"tool_input\":{\"query\":\"$FAKE_KEY\"}}"
+egress "ordinary documentation fetch" allow \
+  '{"tool_name":"WebFetch","tool_input":{"url":"https://docs.claude.com/x","prompt":"permission modes"}}'
+egress "ordinary search" allow \
+  '{"tool_name":"WebSearch","tool_input":{"query":"postgres index performance"}}'
+egress "ordinary navigation" allow \
+  '{"tool_name":"mcp__chrome-devtools__navigate_page","tool_input":{"url":"https://github.com"}}'
+
 echo "production-gate — destructive local commands"
 check "rm -rf on \$HOME"                  ask   production-gate.sh "rm -rf ~/something"
 check "git reset --hard"                 ask   production-gate.sh "git reset --hard origin/main"
