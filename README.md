@@ -61,7 +61,7 @@ Agent definitions are prompts, and prompts are easy to copy. These are the parts
 
 | Gate | Refuses when | Cost |
 |---|---|---|
-| `review-gate` | staged code has no review for **this exact diff**, or the review found a CRITICAL | none at commit; the review runs when you choose |
+| `review-gate` | staged code has no review for **this exact diff**, or the review found a CRITICAL | none at commit; `scripts/review-staged.sh` runs the reviewers when you choose |
 | `eval-gate` | an agent's prompt changed and its stability report is older than the edit | none |
 | `suite-gate` | the guardrail suite fails against the files **being committed** | 21s |
 | `test-gate` | nothing ran the test suite this session | none |
@@ -107,6 +107,38 @@ is the only view that distinguishes them.
 15 of the agents have K=5 stability baselines from `scripts/eval/`. The runners ship; the
 fixtures deliberately do not, since `expected-findings.md` is the answer key and publishing
 it would contaminate the benchmark.
+
+---
+
+## What it remembers
+
+Every block is recorded — the command, the rule that caught it, the reason — by a single
+helper the gates share, so the context exists at the moment it is worth something.
+
+At the end of a session, `learning-check` reports any **override** that was used without a
+lesson being written down. Overrides rather than blocks: being correctly stopped teaches
+nothing, while an override means the rule was wrong for that case or the case was genuinely
+exceptional. It reports and does not block, because forcing an entry after every override
+manufactures empty ones.
+
+This replaced a pipeline that aggregated error-string frequency into candidates like
+*"Recurring error (68x): investigate root cause"*. It produced 57 of those over two months
+and none was ever promoted, because a count cannot be turned back into a rule — whatever
+made the error worth one is gone by the time the count exists.
+
+## Tools
+
+```bash
+scripts/agent-usage-report.py --report --days 30   # cost per (agent, model)
+scripts/test-guardrails.sh -v                      # 49 checks, no model calls
+scripts/review-staged.sh                           # review the staged diff, record it by hash
+scripts/wt.sh new fix-login                        # a worktree per parallel session
+```
+
+`wt.sh` exists because parallel work is safer as a filesystem fact than as an instruction.
+Two sessions editing one checkout race; separate checkouts cannot. The same reasoning applies
+to agents, which get `isolation: 'worktree'` when they write — replacing a protocol that asked
+the orchestrator to map file zones and restate them in every prompt, enforced by nothing.
 
 ---
 
