@@ -182,25 +182,10 @@ try:
     with open(log_file, 'a') as f:
         f.write(json.dumps(entry) + '\n')
 
-    # Gatilho event-driven: erro novo logado -> dispara a ponte erro->regra.
-    # Detached/non-blocking (nao atrasa o hook); single-flight via lock fcntl
-    # dentro da propria ponte garante que disparos concorrentes nao se atropelem.
-    try:
-        import subprocess
-        bridge_path = os.path.join(
-            os.path.expanduser('~/.claude/scripts/improvement'),
-            'error_to_rule_bridge.py',
-        )
-        if os.path.exists(bridge_path):
-            bridge_log = open(os.path.join(log_dir, 'bridge.log'), 'a')
-            subprocess.Popen(
-                ['python3', bridge_path],
-                stdout=bridge_log,
-                stderr=subprocess.STDOUT,
-                start_new_session=True,
-            )
-    except Exception:
-        pass
+    # The error-to-rule bridge used to fire here. Retired 2026-07-25: it turned error
+    # frequency into a ticket telling someone to investigate, which cannot be turned back
+    # into a rule. 57 candidates accumulated since May, none promoted. Capture now happens
+    # when a guardrail blocks something, in hook_deny, where the command and reason exist.
 
     # Check error-index for known solution
     index_file = os.path.join(log_dir, 'error-index.md')

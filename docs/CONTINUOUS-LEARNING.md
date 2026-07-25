@@ -1,5 +1,21 @@
 # Continuous Learning System
 
+> **Retired 2026-07-25 — `rule_promoter.py` and `error_to_rule_bridge.py`.** The bridge fired
+> on every new error and produced candidates of the form *"Recurring [tooling] error (68x):
+> 'error TS'. Investigate root cause and add a preventive rule."* That is a ticket, not a
+> candidate: a frequency count cannot be turned back into a rule, because the context that
+> would make it writable is gone by the time the count exists. 57 candidates accumulated from
+> 2026-05-29 onward and none was ever promoted, which is the honest verdict on the input.
+>
+> What replaced it captures at the moment of the block instead of aggregating afterwards:
+> `hook_deny` in `hooks/lib/hook-common.sh` records the command, the rule that caught it and
+> the reason, and `hooks/learning-check.sh` reports at session end when an override was used
+> and no lesson was written down. The signal is the override rather than the block — being
+> correctly stopped teaches nothing.
+>
+> Layers 1 and 2 below (capture and curate) still run. Layer 3 as described no longer exists.
+
+
 **Last Updated:** 2026-06-17 | [← Back to README](../README.md)
 
 The continuous learning system automatically captures session patterns, detects recurring issues, and promotes proven practices into permanent rules — turning session learnings into enforced policy.
