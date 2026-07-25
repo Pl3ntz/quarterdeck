@@ -58,7 +58,12 @@ fi
 
 # Fast path: if command doesn't mention any prod alias, allow (unless catastrophic local)
 if ! echo "$command" | grep -qiE "$PROD_GREP"; then
-  if echo "$command" | grep -qE 'rm\s+-[a-zA-Z]*r[a-zA-Z]*f[a-zA-Z]*\s+(/|~|\$HOME)\b|git\s+reset\s+--hard|git\s+clean\s+-[a-zA-Z]*f'; then
+  # NOTE: no \b after the (/|~|$HOME) group. With it, `rm -rf ~/anything` slipped
+  # through -- `~` and `/` are both non-word characters, so there is no word
+  # boundary between them and the pattern never matched. `rm -rf /tmp/x` and
+  # `rm -rf $HOME/x` did match, which is why the hole went unnoticed. Found by
+  # scripts/test-guardrails.sh on 2026-07-25.
+  if echo "$command" | grep -qE 'rm\s+-[a-zA-Z]*r[a-zA-Z]*f[a-zA-Z]*\s+(/|~|\$HOME)|git\s+reset\s+--hard|git\s+clean\s+-[a-zA-Z]*f'; then
     echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"PRODUCTION GATE: Comando local destrutivo detectado. Confirme antes de executar."}}'
     exit 0
   fi
