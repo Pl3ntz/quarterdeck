@@ -209,7 +209,10 @@ if not stop_entry:
     stop.append(stop_entry)
 s_hooks = stop_entry['hooks']
 for cmd in [
-    'bash $HOME/.claude/hooks/verify-completion.sh',
+    # verify-completion.sh was retired 2026-07-24: it enforced a RECAP block that
+    # rules/output-discipline.md forbids. Do not re-add it.
+    'bash $HOME/.claude/hooks/track-agent-usage.sh',
+    'bash $HOME/.claude/hooks/transcript-error-scan.sh',
     'bash $HOME/.claude/hooks/update-error-index.sh',
 ]:
     if not any(cmd in h.get('command', '') for h in s_hooks):

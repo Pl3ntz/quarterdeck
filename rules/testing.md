@@ -1,30 +1,11 @@
-# Testing Requirements
+# Testing
 
-## Minimum Test Coverage: 80%
+Coverage floor for this codebase: **80%**, across unit, integration and E2E (Playwright).
+That number is a local policy choice, not a default — everything else about testing
+(red-green-refactor, isolation, mocking) the model already knows.
 
-Test Types (ALL required):
-1. **Unit Tests** - Individual functions, utilities, components
-2. **Integration Tests** - API endpoints, database operations
-3. **E2E Tests** - Critical user flows (Playwright)
+**Where tests run matters more than how they are written.** Never run a heavy suite on the
+host: see `performance.md` and the `block-build` hook. Containerised projects run tests in
+their container; projects with CI defer to the pipeline.
 
-## Test-Driven Development
-
-MANDATORY workflow:
-1. Write test first (RED)
-2. Run test - it should FAIL
-3. Write minimal implementation (GREEN)
-4. Run test - it should PASS
-5. Refactor (IMPROVE)
-6. Verify coverage (80%+)
-
-## Troubleshooting Test Failures
-
-1. Suggest **tdd-guide** agent to Owner for complex test issues
-2. Check test isolation
-3. Verify mocks are correct
-4. Fix implementation, not tests (unless tests are wrong)
-
-## Agent Support
-
-- **tdd-guide** - Suggest to Owner for new features (enforces write-tests-first)
-- **e2e-runner** - Suggest to Owner for Playwright E2E testing
+`tdd-guide` for new features, `e2e-runner` for Playwright journeys.

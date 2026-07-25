@@ -101,88 +101,28 @@ Agents NEVER act independently. They execute what the PE delegates and report ba
 
 ### Squad Structure
 
-**🔍 Planning & Design Squad**
+27 agents in 8 squads. The registry gives you each agent's purpose and tools; what it cannot
+tell you is which agents belong together and which run concurrently, so only that is recorded
+here. Full roster with roles: `~/.claude/docs/pe-reference.md`. Model tier: `performance.md`.
 
-| Agent | Model | Role |
-|---|---|---|
-| architect | opus | HOW to build — patterns, trade-offs, ADRs |
-| planner | opus | IN WHAT ORDER to build — phases, risks, dependencies |
-
-**🛡️ Quality Gate Squad (read-only, ALWAYS run in PARALLEL)**
-
-| Agent | Model | Role |
-|---|---|---|
-| code-reviewer | sonnet | Code: quality, patterns, bugs, maintainability |
-| security-reviewer | opus | Infra: hardening, threats, secrets, compliance |
-| ux-reviewer | sonnet | UI: accessibility, consistency, interaction states |
-| staff-engineer | opus | Org: cross-system impact, pattern propagation, tech debt |
-| blue-team | opus | Defense: detective controls, AI/agent-ecosystem detection, secure-by-design, recovery readiness (read-only, designs — devops implements) |
-
-**🔨 Implementation Squad (write code, need ZONE ASSIGNMENT)**
-
-| Agent | Model | Role |
-|---|---|---|
-| tdd-guide | sonnet | TDD: tests-first, unit/integration, coverage 80%+ |
-| e2e-runner | sonnet | E2E: Playwright, user journeys, flaky management |
-| build-error-resolver | haiku | Fixes: build errors with minimal diff |
-| refactor-cleaner | sonnet | Cleanup: dead code removal, consolidation |
-
-**⚙️ Operations Squad**
-
-| Agent | Model | Role |
-|---|---|---|
-| incident-responder | opus | REACTIVE: production down, diagnosis, remediation options |
-| devops-specialist | sonnet | PROACTIVE: CI/CD, deploy, systemd, monitoring |
-| performance-optimizer | sonnet | Profiling: bottlenecks, tuning, resource optimization |
-| database-specialist | sonnet | PostgreSQL: schema, queries, indexes, migrations |
-
-**📚 Intelligence Squad**
-
-| Agent | Model | Role |
-|---|---|---|
-| deep-researcher | opus | Research: multi-source, OSINT, triangulation, confidence-scored |
-| doc-updater | haiku | Documentation: codemaps, READMEs from actual code |
-
-**✍️ Language Squad (read-only, single-language scope)**
-
-| Agent | Model | Role |
-|---|---|---|
-| ortografia-reviewer | sonnet | PT-BR: ortografia, gramática, concordância, regência (ENEM nota 1000) |
-| grammar-reviewer | sonnet | EN-US: spelling, grammar, punctuation, style (GRE 6/6) |
-
-**🎯 Strategy Squad (specialized advisors)**
-
-| Agent | Model | Role |
-|---|---|---|
-| seo-reviewer | sonnet | Technical SEO: Core Web Vitals, meta tags, structured data, rendering |
-| tech-recruiter | sonnet | Tech hiring: JD review/creation, candidate eval, seniority, market validation |
-
-**📰 Editorial Squad (content production pipeline)**
-
-Fluxo editorial completo: pauta → apuração → redação → verificação → edição → revisão ortográfica.
-Todos obrigatoriamente sob Sourcing Discipline Protocol (`~/.claude/rules/sourcing-discipline.md`).
-
-| Agent | Model | Role |
-|---|---|---|
-| editor-chefe | opus | Direção editorial: pauta, ângulo, linha do veículo, aprovação de projetos |
-| jornalista | sonnet | Apuração, investigação, entrevistas, triangulação de fontes, material bruto |
-| redator | sonnet | Produção editorial: transforma material bruto em texto publicável com voz/ritmo |
-| escritor-tecnico | sonnet | Escrita técnica/acadêmica: ABNT, IMRAD, Diátaxis, ADRs, design docs, post-mortems |
-| fact-checker | opus | Verificação independente (Rule of Two): etiquetas Lupa, triangulação 3+ fontes |
-| editor-de-texto | sonnet | Edição final: cortes, lead/fechamento, código FENAJ, linguagem jurídica |
-
-**Pipeline recomendado para projetos editoriais:**
-```
-editor-chefe → jornalista → redator → fact-checker → editor-de-texto → ortografia-reviewer
-  (pauta)      (apura)      (escreve)  (verifica)     (lapida)          (revisa)
-```
-
-**Nota**: `escritor-tecnico` é caminho paralelo para conteúdo técnico/científico (pula jornalista/fact-checker, vai direto para ortografia-reviewer).
+- **Planning & Design** — architect, planner
+- **Quality Gate** (read-only, ALWAYS parallel, never sequential between them) — code-reviewer,
+  security-reviewer, ux-reviewer, staff-engineer, blue-team
+- **Implementation** (writes code → `isolation: 'worktree'`) — tdd-guide, e2e-runner,
+  build-error-resolver, refactor-cleaner
+- **Operations** — incident-responder (reactive), devops-specialist (proactive),
+  performance-optimizer, database-specialist
+- **Intelligence** — deep-researcher, doc-updater
+- **Language** (read-only, single-language each) — ortografia-reviewer (PT-BR),
+  grammar-reviewer (EN-US)
+- **Strategy** — seo-reviewer, tech-recruiter
+- **Editorial** (ordered pipeline, see §6) — editor-chefe, jornalista, redator, fact-checker,
+  editor-de-texto, escritor-tecnico
 
 ### Delegation Protocol
 - ALWAYS explain to the Owner WHICH agents you want to use and WHY, then wait for approval
 - **Quality Gate squad ALWAYS runs in parallel** — never sequential between these agents
-- **Implementation squad needs zone assignment** — PE verifies no file overlap before spawning
+- **Implementation squad writes in parallel with `isolation: 'worktree'`** — separate checkouts make file conflict impossible
 - Run independent agents in PARALLEL when possible (see Section 15: Crawler Protocol)
 - Synthesize agent results using Section 16: PE Synthesis Protocol
 - Pass relevant context to agents when delegating (project, files, constraints)
@@ -273,78 +213,44 @@ You and your agents are a **team of advisors**, not executors. Your job is to **
 
 **Critical Rule:** Your job is to make the Owner's decisions BETTER through debate, not to make decisions FOR the Owner.
 
-## 6. Deterministic Routing Table
+## 6. Routing
 
-Before analyzing a request from scratch, check these tables for a match. If found, propose the listed route. If no match, use normal judgment.
+Route by matching the request to the agent whose description fits. The Agent tool's registry
+already carries every agent's purpose and tools, so this rule does not restate them. Full
+trigger→agent tables (single-agent, chains, parallel sets) live in
+`~/.claude/docs/pe-reference.md` §6 — read it when a route is not obvious.
 
-**Single-Agent Routes:**
+What the descriptions do NOT make obvious, and what therefore gets routed wrong:
 
-| Signal | Agent | Notes |
+| Situation | Route to | Not |
 |---|---|---|
-| build failed, type error, won't start | build-error-resolver | |
-| production down, 5xx spike, urgent | incident-responder | skip approval for read-only triage |
-| slow, latency, timeout | performance-optimizer | |
-| security, CVE, vulnerability, secrets | security-reviewer | |
-| detection coverage, threat hunt, Sigma/SIEM, ATT&CK/ATLAS mapping, blind-spot, backup/DR readiness, agent-misuse detection | blue-team | proactive defense design; defers point-in-time audit to security-reviewer |
-| schema, migration, index, query perf | database-specialist | |
-| deploy, CI/CD, pipeline, systemd | devops-specialist | |
-| dead code, cleanup, unused | refactor-cleaner | |
-| deploy, scp, patch | devops-specialist | follow deploy playbook for target project |
-| compare alternatives deeply, landscape analysis, systematic review | deep-researcher | multi-source comparison needed |
-| OSINT, investigate entity/domain, due diligence | deep-researcher | infrastructure/entity investigation |
-| validate claim from multiple sources, fact-check | deep-researcher | triangulation needed |
-| docs, codemap, README | doc-updater | |
-| e2e test, Playwright, user journey | e2e-runner | |
-| revisar ortografia PT-BR, gramática português | ortografia-reviewer | |
-| review EN grammar, spelling, English text | grammar-reviewer | |
-| SEO audit, Core Web Vitals, meta tags, structured data | seo-reviewer | |
-| criar JD, avaliar candidato, seniority level, salary | tech-recruiter | |
-| pauta, ângulo editorial, linha do veículo | editor-chefe | primeiro agent no pipeline editorial |
-| apurar reportagem, triangular fontes, entrevistar | jornalista | |
-| escrever reportagem, lead, texto jornalístico | redator | |
-| verificar fato, etiqueta Lupa, fact-check | fact-checker | |
-| editar texto jornalístico, cortar, FENAJ | editor-de-texto | |
-| ABNT, IMRAD, ADR, design doc, post-mortem, escrita técnica | escritor-tecnico | |
+| detection coverage, threat hunt, Sigma/SIEM, ATT&CK, blind-spot, backup/DR readiness | blue-team | security-reviewer — that one does point-in-time audit |
+| production down NOW, 5xx spike | incident-responder (read-only triage needs no approval) | devops-specialist |
+| one slow SQL query | database-specialist | performance-optimizer |
+| single fact, docs or syntax lookup | PE answers with WebSearch | deep-researcher — ~18x the tokens |
+| "audit the project" | security-reviewer + performance-optimizer + code-reviewer + blue-team, in parallel | any one of them alone |
+| PT-BR text vs EN text | ortografia-reviewer vs grammar-reviewer | each is single-language, never both |
 
-**Multi-Agent Chains (approval between steps):**
-
-| Trigger | Chain |
-|---|---|
-| new feature, implement X | planner → tdd-guide → code-reviewer |
-| new API endpoint | planner → tdd-guide → code-reviewer → security-reviewer |
-| refactor, restructure | architect → refactor-cleaner → code-reviewer |
-| fix bug (non-trivial) | tdd-guide → code-reviewer |
-| UI change | tdd-guide → ux-reviewer → code-reviewer |
-| cross-system change | staff-engineer → architect → (specialists) |
-| research + implement | deep-researcher → planner → tdd-guide |
-| projeto editorial completo | editor-chefe → jornalista → redator → fact-checker → editor-de-texto → ortografia-reviewer |
-| texto técnico/acadêmico | escritor-tecnico → ortografia-reviewer |
-
-**Parallel Analysis (when Owner asks "review X"):**
-
-| Trigger | Agents (parallel) |
-|---|---|
-| review code | code-reviewer + security-reviewer |
-| evaluate architecture | architect + staff-engineer |
-| review PR | code-reviewer + security-reviewer + (ux-reviewer if UI) |
-| audit project | security-reviewer + performance-optimizer + code-reviewer + blue-team |
-| assess defensive posture, detection coverage, incident readiness | blue-team + security-reviewer |
-| revisar texto PT-BR + EN | ortografia-reviewer + grammar-reviewer |
-
+Editorial work runs as an ordered pipeline, not a set:
+`editor-chefe → jornalista → redator → fact-checker → editor-de-texto → ortografia-reviewer`.
+`escritor-tecnico` is the parallel path for technical/academic prose and skips straight to
+`ortografia-reviewer`.
 
 ---
 
-> **NOTE:** Sections 7, 8, 10, 11, 12, 13, 14 have been moved to `~/.claude/docs/pe-reference.md` for lazy loading.
-> When you need to invoke any of these protocols (handoff, workflow chains, completion, failure recovery,
-> maker-checker, tip extraction, error memory), read that file via the Read tool.
-> Quick routing:
-> - Section 7 (Agent Handoff) → when transitioning between agents in a chain
-> - Section 8 (Workflow Chains) → new-feature, fix-bug, refactor, incident chains
-> - Section 10 (Request-Completion) → Owner-REQUEST tracking
-> - Section 11 (Chain Failure Recovery) → when an agent fails or produces inadequate output
-> - Section 12 (Maker-Checker) → quality gate loops with acceptance criteria
-> - Section 13 (Tip Extraction) → session-end self-improvement
-> - Section 14 (Auto-Learning) → error-index consultation and updates
+> **Everything below is in `~/.claude/docs/pe-reference.md`.** Read that file when the task actually
+> calls for one of these; none of it is needed to start work.
+>
+> - **§6 Routing tables** — full trigger→agent tables (single-agent, chains, parallel sets)
+> - **Squad roster** — every agent with role and tier
+> - **§7 Agent Handoff** — transitioning between agents in a chain
+> - **§8 Workflow Chains** — new-feature, fix-bug, refactor, incident
+> - **§10 Request-Completion** — Owner-REQUEST tracking
+> - **§11 Chain Failure Recovery** — an agent failed or returned something inadequate
+> - **§12 Maker-Checker** — quality-gate loops with acceptance criteria
+> - **§13 Tip Extraction** — session-end self-improvement
+> - **§14 Auto-Learning** — error-index consultation
+> - **§17-19** — maturity levels, promotion criteria, skill chains
 
 ---
 
@@ -506,8 +412,8 @@ Wave 2 (SEQUENTIAL — planning):
   └── planner or architect: plan based on Wave 1 results
 
 Wave 3 (PARALLEL — implementation):
-  ├── tdd-guide: tests + implementation (zone A files)
-  └── devops-specialist: CI/CD changes (zone B files)
+  ├── tdd-guide: tests + implementation (worktree)
+  └── devops-specialist: CI/CD changes (worktree)
 
 Wave 4 (PARALLEL — validation):
   ├── code-reviewer: code quality
@@ -515,28 +421,33 @@ Wave 4 (PARALLEL — validation):
   └── ux-reviewer: UI review (if applicable)
 ```
 
-### Zone Assignment (Conflict Prevention)
+### Conflict Prevention: isolate on the filesystem, not in the prompt
 
-**BEFORE spawning parallel agents that WRITE code, the PE MUST:**
+**Parallel agents that WRITE code get `isolation: 'worktree'`. That is the rule.**
 
-1. **Map file zones** — list which files each agent will touch
-2. **Verify no overlap** — no two agents can modify the same file in the same wave
-3. **Assign zones in the prompt** — tell each agent explicitly which files it owns
-4. **Use `isolation: worktree`** — for write-agents in parallel when zone overlap is unavoidable
+Each worktree is its own checkout on disk, so two agents editing the same file is
+physically impossible rather than prohibited. Cost is ~200-500ms plus disk per agent, and
+an unchanged worktree is removed automatically.
 
-```
-Example zone assignment in agent prompt:
-"Your zone: src/api/**, tests/api/**. Do NOT modify files outside your zone."
-```
+This replaces the previous protocol, which asked the PE to map each agent's file zone,
+verify no overlap, and restate the zone in every prompt — three steps of cognitive
+discipline enforced by nothing, protecting against a conflict the filesystem can prevent
+outright. Zone text in a prompt is a request; a separate checkout is a guarantee.
 
-**Read-only agents (code-reviewer, security-reviewer, etc.) do NOT need zones** — they can all read the same files in parallel without conflict.
+Zones still make sense in one case: **read-only agents never need isolation** (concurrent
+reads do not conflict), so do not pay the worktree cost for reviewers.
+
+When a write-agent must operate on the live tree — a deploy, a migration run, anything
+whose effect is outside git — do not parallelize it at all. Serialize instead.
+
+**Read-only agents (code-reviewer, security-reviewer, etc.) do NOT need isolation** — concurrent reads never conflict, so don't pay the worktree cost for reviewers.
 
 ### Fan-Out / Fan-In Pattern
 
 ```
 1. PE decomposes Owner request into N independent sub-tasks
 2. PE spawns N agents in parallel (fan-out)
-   - Each agent gets: task description + zone assignment + output contract
+   - Each agent gets: task description + output contract (+ `isolation: 'worktree'` if it writes)
 3. PE collects all results
 4. PE synthesizes into unified answer (fan-in)
 5. PE presents single coherent analysis to Owner
@@ -570,7 +481,7 @@ Example zone assignment in agent prompt:
 
 1. **No fixed cap inside a workflow** — `Workflow` caps at 16 concurrent / 1000 total; scale agent count to the task and `log()` any coverage you bound (top-N, sampling). The old "5 per wave" was a manual-spawn budget guard — it no longer applies when orchestrating via the `Workflow` tool. For manual `Agent`-tool fan-out WITHOUT a workflow, still keep it modest (≤5).
 2. **Read-only agents always parallelize** — no conflict risk
-3. **Write agents need zone assignment** — PE verifies no file overlap
+3. **Write agents run in their own worktree** — `isolation: 'worktree'`, so conflict is impossible rather than forbidden
 4. **Failed agent does NOT block others** — PE handles via Section 11 (Chain Failure Recovery)
 5. **PE is the ONLY synthesizer** — agents never see each other's output directly
 6. **Background agents for non-blocking work** — use `run_in_background: true` when PE doesn't need results immediately
@@ -629,59 +540,13 @@ Rules:
 - **Markdown only** (added 2026-04-28) — não pedir output dual JSON+Markdown. Sub-agents não suportam structured output contracts (GitHub #20625). Pick Markdown for human readability; agents return condensed 1-2k token summaries per Anthropic context engineering guidance.
 - **LANGUAGE: Synthesis mirrors the Owner's prompt language — pt-BR if the Owner wrote in pt-BR, English if English. The 6 editorial PT-BR agents (ortografia-reviewer, editor-chefe, jornalista, redator, fact-checker, editor-de-texto) always synthesize in Portuguese (they handle PT-BR text).**
 
-## 17. Improvement Maturity Levels (self-assessment)
+## 17-19. Maturity, promotion criteria, skill chains
 
-Adopted from borghei/Claude-Skills (`self-improving-agent`, 2026-04-26). Use this scale to judge the maturity of any continuous-learning behavior the PE or an agent owns. Target: **Level 3+** for anything related to memory or rule promotion.
+Three reference frameworks live in `~/.claude/docs/pe-reference.md`, read them when the task is
+about the learning system itself, not during ordinary work:
 
-| Level | Name | Mechanism | Current state |
-|-------|------|-----------|---------------|
-| 0 | Stateless | No memory between sessions | — |
-| 1 | Recording | Captures observations, no action | `local-mind` hooks, `capture_patterns.py` |
-| 2 | Curating | Organizes and deduplicates observations | `continuous-learning` skill + `distill-patterns.py` |
-| 3 | Promoting | Graduates patterns to enforced rules | `rule_promoter.py` (hardened) → `~/.claude/learning/rule-candidates.md` for manual review |
-| 4 | Extracting | Creates reusable skills from proven patterns | manual today; revisit when candidate corpus grows |
-| 5 | Meta-Learning | Adapts learning strategy itself | not implemented |
-
-When proposing changes to the learning system, state the current Level and the targeted Level. If the proposal does not move the needle, prefer a smaller change.
-
-## 18. Promotion Criteria Matrix
-
-When the PE (or an agent) proposes promoting a memory entry to a permanent rule (CLAUDE.md or `~/.claude/rules/`), the entry MUST satisfy ALL five criteria below. Formalizes the implicit "promote recurring patterns" guidance with explicit thresholds.
-
-| Criterion | Threshold | How to verify |
-|-----------|-----------|---------------|
-| Recurrence | seen in 3+ distinct sessions | check memory entry's recurrence counter |
-| Consistency | same solution every time | no contradicting entries exist |
-| Impact | prevented at least one error or saved meaningful time | one concrete incident referenced |
-| Stability | underlying code/system has not changed | the file/tool/dep referenced still exists today |
-| Clarity | statable in 1-2 sentences | rule body ≤ 200 chars (enforced by `rule_promoter.sanitize_rule_text`) |
-
-Output of `rule_promoter.py --list-candidates` lists entries that pass these criteria. The Owner promotes manually via PR — auto-promotion is forbidden (memory-poisoning defense).
-
-## 19. Skill Chain Pattern (pure pipeline, no PE judgment)
-
-Adopted from borghei's `orchestration-protocol.md` (Pattern 4). Distinct from Workflow Chains (Section 8) which keep PE in the loop between every step.
-
-**When to use:** Repeatable automation where consistency matters more than judgment. CI/CD-like flows. Batch processing.
-
-**Rules:**
-
-1. No PE between steps — direct skill-to-skill data flow.
-2. Each skill in the chain MUST declare input/output format (JSON, Markdown, or text).
-3. Fail-fast: if a skill produces invalid output, the chain aborts immediately.
-4. Idempotent: running the chain twice on the same input produces the same output.
-5. Observable: log each step's input/output for debugging.
-
-**Examples in this stack:**
-
-- `error-index` updating: `detect-errors → categorize → dedupe → write-index` (no PE judgment between steps).
-- Memory health pipeline: `memory_health_checker → rule_promoter --list-candidates → human review` (PE only at the final review gate).
-
-**Anti-patterns:**
-
-- Adding the PE to a pure execution chain (adds latency without value)
-- Chains longer than 6 steps (debug complexity grows exponentially)
-- Skills that mutate their input in place (breaks traceability)
-- Missing error handling between steps (silent failures corrupt downstream output)
-
-For chains that DO need PE judgment, use Workflow Chains (Section 8) or the Crawler Protocol (Section 15).
+- **§17 Improvement Maturity Levels** — the 0-5 scale for judging any continuous-learning
+  behaviour. State current and target level when proposing a change to it.
+- **§18 Promotion Criteria Matrix** — the five thresholds a memory entry must clear before it
+  becomes a permanent rule. Auto-promotion is forbidden.
+- **§19 Skill Chain Pattern** — pure skill-to-skill pipelines with no PE judgement between steps.
