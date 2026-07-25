@@ -27,7 +27,21 @@ SCAN="$HOME/.claude/scripts/leak-guard/scan-content.sh"
 input=$(cat)
 
 [ "${EGRESS_OFF:-}" = "1" ] && hook_allow
-[ -x "$SCAN" ] || hook_allow   # scanner absent: this hook is advisory, not the last line
+# The leak-guard scanner is installed separately and is not shipped by this repo, so a
+# quarterdeck-only install would block every fetch if this failed closed. It fails open --
+# but says so, once per session, because a guard that is inert and silent is indistinguishable
+# from one that is working.
+if [ ! -x "$SCAN" ]; then
+  MARK="$HOME/.claude/tmp/.egress-guard-warned"
+  if [ ! -f "$MARK" ]; then
+    mkdir -p "$(dirname "$MARK")" 2>/dev/null && touch "$MARK" 2>/dev/null
+    python3 -c "
+import json
+print(json.dumps({'systemMessage': 'EGRESS GUARD inativo: scanner do leak-guard nao encontrado. Nada esta sendo verificado na saida por fetch/search/MCP.'}))"
+    exit 0
+  fi
+  hook_allow
+fi
 
 payload=$(printf '%s' "$input" | python3 -c "
 import json, sys
