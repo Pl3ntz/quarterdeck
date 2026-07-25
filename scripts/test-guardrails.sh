@@ -13,7 +13,9 @@
 # Usage: test-guardrails.sh [-v]      exit 0 = all pass, 1 = at least one regression
 
 set -uo pipefail
-HOOKS="$HOME/.claude/hooks"
+# Overridable so the commit gate can point the suite at the hooks being COMMITTED rather
+# than the ones installed. Testing the installed copy would pass while shipping a broken one.
+HOOKS="${HOOKS:-$HOME/.claude/hooks}"
 VERBOSE="${1:-}"
 pass=0; fail=0
 
