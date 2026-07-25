@@ -23,6 +23,34 @@ hook_transcript() {
   printf '%s' "$1" | python3 -c "import sys,json; print(json.load(sys.stdin).get('transcript_path',''))" 2>/dev/null
 }
 
+# hook_agent <payload>
+# Which agent made this tool call. Prints "<name>\t<agent_id>".
+#
+# The audit log recorded hook, command, reason and timestamp, but never who. With 400+ agent
+# spawns that made "which agent keeps hitting the production gate" unanswerable -- and that is
+# the question by which a runaway or misbehaving agent first becomes visible.
+#
+# Per the hooks reference, `agent_id` is present ONLY inside a subagent call, and is the
+# documented way to tell a subagent from the main thread. `agent_type` is the agent's name,
+# and is also set on a main session started with --agent, so agent_type alone does NOT mean
+# subagent. session_id and transcript_path cannot do this job at all: a subagent inherits both
+# from its parent verbatim.
+hook_agent() {
+  printf '%s' "$1" | python3 -c "
+import json, sys
+name = aid = ''
+try:
+    d = json.load(sys.stdin)
+    if isinstance(d, dict):
+        name = str(d.get('agent_type') or '')
+        aid = str(d.get('agent_id') or '')
+except Exception:
+    pass
+# No agent_id means the main thread, whether or not --agent named it.
+print(('%s\t%s' % (name or 'main-session', aid)) if aid else ('main-session' + (':' + name if name else '') + '\t'))
+" 2>/dev/null
+}
+
 # hook_expand_path <path>
 # Expand a leading ~ or $HOME that arrived as literal text. Shell expansion never happened
 # because the path came out of a JSON string, not out of the shell.
@@ -67,17 +95,20 @@ hook_deny() {
 import json, os, sys
 from datetime import datetime
 try:
+    who = ((sys.argv[4] if len(sys.argv) > 4 else '') + '\t').split('\t')
     entry = {
         'timestamp': datetime.now().isoformat(),
         'hook': os.path.basename(sys.argv[1]),
         'reason': sys.argv[2],
         'command': (sys.argv[3] or '')[:400],
+        'agent': who[0] or 'unknown',
+        'agent_id': who[1],
     }
     with open(os.path.join(os.path.expanduser('~/.claude/logs'), 'guardrail-denies.jsonl'), 'a') as fh:
         fh.write(json.dumps(entry, ensure_ascii=False) + '\n')
 except Exception:
     pass
-" "${0:-unknown}" "$1" "${command:-}" 2>/dev/null
+" "${0:-unknown}" "$1" "${command:-${COMMAND:-}}" "$(hook_agent "${input:-${INPUT:-}}")" 2>/dev/null
   } &
 
   echo "[Hook] $1" >&2
@@ -109,13 +140,15 @@ hook_override_requested() {
 import json, os, sys
 from datetime import datetime
 try:
+    who = ((sys.argv[4] if len(sys.argv) > 4 else '') + '\t').split('\t')
     entry = {'timestamp': datetime.now().isoformat(), 'override': sys.argv[1],
-             'hook': os.path.basename(sys.argv[2]), 'command': (sys.argv[3] or '')[:400]}
+             'hook': os.path.basename(sys.argv[2]), 'command': (sys.argv[3] or '')[:400],
+             'agent': who[0] or 'unknown', 'agent_id': who[1]}
     with open(os.path.join(os.path.expanduser('~/.claude/logs'), 'guardrail-overrides.jsonl'), 'a') as fh:
         fh.write(json.dumps(entry, ensure_ascii=False) + '\n')
 except Exception:
     pass
-" "$var" "${0:-unknown}" "$cmd" 2>/dev/null
+" "$var" "${0:-unknown}" "$cmd" "$(hook_agent "${input:-${INPUT:-}}")" 2>/dev/null
   } &
   return 0
 }
