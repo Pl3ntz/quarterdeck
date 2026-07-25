@@ -27,6 +27,7 @@ import json
 import os
 import subprocess
 import sys
+import threading
 from pathlib import Path
 
 EVAL_DIR = Path.home() / ".claude" / "evals" / "routing"
@@ -89,8 +90,13 @@ def score(question, actual):
     """Deterministic score for one answer. Returns (passed, composite)."""
     if actual is None:
         return False, 0.0
-    with_exp = EVAL_DIR / ".tmp-expected.json"
-    with_act = EVAL_DIR / ".tmp-actual.json"
+    # Unique per call. The runner scores in the main loop, so these never collided here -- but
+    # a fixed name is a trap for anyone who calls score() from a thread pool, and someone did:
+    # two identical answers came back 0.00 and 1.00 in the same batch because the scorer read
+    # a sibling's file. Cheap to make impossible.
+    tag = f"{os.getpid()}-{threading.get_ident()}"
+    with_exp = EVAL_DIR / f".tmp-expected-{tag}.json"
+    with_act = EVAL_DIR / f".tmp-actual-{tag}.json"
     with_exp.write_text(json.dumps(question))
     with_act.write_text(json.dumps(actual))
     try:
@@ -116,6 +122,12 @@ def main():
     ap.add_argument("--rules", help="directory holding the two rule files to route against")
     ap.add_argument("--label", help="name for this run, used in the result filename")
     ap.add_argument("--jobs", type=int, default=5, help="concurrent sessions (default 5)")
+    ap.add_argument("--runs", type=int, default=1,
+                    help="repeats per question (default 1). A single run cannot separate a "
+                         "real change from the model's variance: measured across six "
+                         "rulesets, 11 of the 26 questions swung by 0.20 or more, which is "
+                         "wider than any per-round delta this eval has produced. Use 3 or "
+                         "more before calling a delta an improvement.")
     ap.add_argument("--limit", type=int, help="run only the first N questions")
     ap.add_argument("--timeout", type=int, default=300, help="seconds per question")
     ap.add_argument("--compare", nargs=2, metavar=("A", "B"), help="compare two result files")
@@ -133,24 +145,44 @@ def main():
     print(f"routing eval: {len(questions)} questions against {rules} "
           f"({args.jobs} concurrent)", file=sys.stderr)
 
-    results = {}
+    import statistics
+    raw = {q["id"]: [] for q in questions}
+    jobs = [(q, k) for k in range(args.runs) for q in questions]
+    total = len(jobs)
     with cf.ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        futures = {pool.submit(run_one, q, rules, args.timeout): q for q in questions}
+        futures = {pool.submit(run_one, q, rules, args.timeout): q for q, _ in jobs}
         for n, fut in enumerate(cf.as_completed(futures), 1):
             qid, actual = fut.result()
             q = next(x for x in questions if x["id"] == qid)
             passed, composite = score(q, actual)
-            results[qid] = {"passed": passed, "composite": composite,
-                            "parsed": actual is not None}
-            mark = "ok  " if passed else "FAIL"
-            print(f"  [{n:>2}/{len(questions)}] {mark} {composite:.2f}  {qid}", file=sys.stderr)
+            raw[qid].append({"passed": passed, "composite": composite,
+                             "parsed": actual is not None})
+            print(f"  [{n:>3}/{total}] {composite:.2f}  {qid}", file=sys.stderr)
+
+    # The median is the reported value: one bad sample should not decide a question, and one
+    # lucky sample should not either.
+    results = {}
+    for qid, samples in raw.items():
+        comps = [s["composite"] for s in samples]
+        med = statistics.median(comps)
+        results[qid] = {"composite": round(med, 4), "passed": med >= 0.70,
+                        "min": round(min(comps), 4), "max": round(max(comps), 4),
+                        "spread": round(max(comps) - min(comps), 4),
+                        "runs": len(comps),
+                        "parsed": all(s["parsed"] for s in samples)}
 
     passed = sum(1 for r in results.values() if r["passed"])
     unparsed = sum(1 for r in results.values() if not r["parsed"])
     mean = sum(r["composite"] for r in results.values()) / len(results) if results else 0.0
+    spreads = [r["spread"] for r in results.values()]
+    noise = round(statistics.mean(spreads), 4) if spreads else 0.0
+    if args.runs > 1:
+        print(f"\n  mean spread within a question: {noise:.3f} "
+              f"-- a round-over-round delta smaller than this is not evidence.",
+              file=sys.stderr)
     summary = {"label": args.label, "rules": rules, "questions": len(results),
-               "passed": passed, "unparsed": unparsed, "mean_composite": round(mean, 4),
-               "results": results}
+               "runs_per_question": args.runs, "passed": passed, "unparsed": unparsed,
+               "mean_composite": round(mean, 4), "mean_spread": noise, "results": results}
     out = EVAL_DIR / f"results-{args.label}.json"
     out.write_text(json.dumps(summary, indent=1, ensure_ascii=False))
     print(f"\n{args.label}: {passed}/{len(results)} passed, mean composite {mean:.3f}"
