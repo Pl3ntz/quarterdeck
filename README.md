@@ -60,6 +60,7 @@ everything trains you to disable it.
 | `production-gate` | anything that modifies a production host over SSH; read-only passes through |
 | `block-build` | heavy builds on the host and on the server, where they compete with running services |
 | `egress-guard` | validated PII, secrets or infrastructure identifiers leaving through fetch, search or an MCP tool |
+| `authorship-guard` | a commit, PR or issue that credits an AI tool, or carries emoji |
 
 The leak guard covers commits. `egress-guard` covers everything else, because committing was
 never the only way data leaves.

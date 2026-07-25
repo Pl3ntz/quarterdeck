@@ -121,6 +121,24 @@ egress "ordinary search" allow \
 egress "ordinary navigation" allow \
   '{"tool_name":"mcp__chrome-devtools__navigate_page","tool_input":{"url":"https://github.com"}}'
 
+echo "authorship-guard — AI credit and emoji in commits and PRs"
+# The trailer and the emoji are assembled at run time for the same reason the egress
+# fixtures are: this file is mirrored to a public repo, and a literal example of the banned
+# trailer sitting in it would be the very thing the guard exists to keep out.
+COMMIT="git com""mit"
+TRAILER="Co-Authored""-By: Claude <noreply@""anthropic.com>"
+ROCKET=$(printf '\xf0\x9f\x9a\x80')
+check "AI trailer in a commit"           deny  authorship-guard.sh "$COMMIT -m 'fix: bug
+
+$TRAILER'"
+check "AI credit in a PR body"           deny  authorship-guard.sh "gh pr create --body 'Generated with Claude Code'"
+check "emoji in a commit subject"        deny  authorship-guard.sh "$COMMIT -m 'feat: ship it $ROCKET'"
+check "emoji in a PR body"               deny  authorship-guard.sh "gh pr create --body 'Features $ROCKET'"
+check "ordinary commit"                  allow authorship-guard.sh "$COMMIT -m 'fix(gate): expand a literal tilde'"
+check "Claude named as subject matter"   allow authorship-guard.sh "$COMMIT -m 'docs: how Claude Code resolves subagent models'"
+check "explicit override"                allow authorship-guard.sh "AUTHORSHIP_OFF=1 $COMMIT -m 'x $ROCKET'"
+check "unrelated command"                allow authorship-guard.sh "git status"
+
 echo "production-gate — destructive local commands"
 check "rm -rf on \$HOME"                  ask   production-gate.sh "rm -rf ~/something"
 check "git reset --hard"                 ask   production-gate.sh "git reset --hard origin/main"
