@@ -86,6 +86,16 @@ if [ -d "$SCRIPT_DIR/scripts/borghei" ] || [ -d "$SCRIPT_DIR/scripts/improvement
   echo "  Copied: $(find ~/.claude/scripts/borghei ~/.claude/scripts/improvement -name '*.py' 2>/dev/null | wc -l | tr -d ' ') vendored scripts"
 fi
 
+# Top-level scripts and the eval runners: the README documents these as entry points
+# (test-guardrails.sh, agent-usage-report.py, review-staged.sh), and suite-gate invokes the
+# suite from the repository, so an install without them ships broken instructions.
+cp "$SCRIPT_DIR"/scripts/*.sh "$SCRIPT_DIR"/scripts/*.py ~/.claude/scripts/ 2>/dev/null || true
+if [ -d "$SCRIPT_DIR/scripts/eval" ]; then
+  mkdir -p ~/.claude/scripts/eval
+  cp "$SCRIPT_DIR"/scripts/eval/*.py ~/.claude/scripts/eval/ 2>/dev/null || true
+fi
+find ~/.claude/scripts -maxdepth 2 \( -name '*.sh' -o -name '*.py' \) -exec chmod +x {} + 2>/dev/null || true
+
 echo "  Copied: $(ls "$SCRIPT_DIR"/agents/*.md | wc -l | tr -d ' ') agents"
 echo "  Copied: $(ls "$SCRIPT_DIR"/rules/*.md | wc -l | tr -d ' ') rules"
 echo "  Copied: $(ls "$SCRIPT_DIR"/hooks/*.sh | wc -l | tr -d ' ') hooks"
@@ -209,7 +219,11 @@ if not stop_entry:
     stop.append(stop_entry)
 s_hooks = stop_entry['hooks']
 for cmd in [
-    'bash $HOME/.claude/hooks/verify-completion.sh',
+    # Only hooks this repo actually ships belong here. verify-completion.sh was retired
+    # 2026-07-24 (it enforced a RECAP that output-discipline.md forbids), and
+    # transcript-error-scan.sh is excluded from the repo, so registering either would
+    # point a fresh install at a file that does not exist.
+    'bash $HOME/.claude/hooks/track-agent-usage.sh',
     'bash $HOME/.claude/hooks/update-error-index.sh',
 ]:
     if not any(cmd in h.get('command', '') for h in s_hooks):

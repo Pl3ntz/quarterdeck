@@ -1,30 +1,10 @@
-# Git Workflow
+# Git
 
-## Commit Message Format
+Conventional commits: `<type>: <description>`, types `feat|fix|refactor|docs|test|chore|perf|ci`.
 
-```
-<type>: <description>
+Attribution trailers are disabled — do not add `Co-Authored-By` or "Generated with" lines.
 
-<optional body>
-```
+**Never `git add -A` in the quarterdeck mirror.** It is a public repo behind a leak guard;
+stage explicit paths. See the leak-guard memory for what the guard blocks and why.
 
-Types: feat, fix, refactor, docs, test, chore, perf, ci
-
-Note: Attribution disabled globally via ~/.claude/settings.json.
-
-## Pull Request Workflow
-
-When creating PRs:
-1. Analyze full commit history (not just latest commit)
-2. Use `git diff [base-branch]...HEAD` to see all changes
-3. Draft comprehensive PR summary
-4. Include test plan with TODOs
-5. Push with `-u` flag if new branch
-
-## Feature Implementation Workflow
-
-Seguir Crawler Protocol (PE rule seção 15) com waves:
-1. **Wave 1:** planner → plano com fases e riscos
-2. **Wave 2:** tdd-guide → TDD (red-green-refactor), cobertura 80%+
-3. **Wave 3 (paralelo):** code-reviewer + security-reviewer
-4. **Commit:** conventional commits format
+For PRs, diff the whole branch (`git diff <base>...HEAD`), not just the last commit.

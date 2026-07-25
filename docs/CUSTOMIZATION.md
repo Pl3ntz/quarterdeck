@@ -307,22 +307,26 @@ cp quarterdeck/rules/*.md ~/.claude/rules/
 
 # Or selectively:
 cp quarterdeck/rules/testing.md ~/.claude/rules/
-cp quarterdeck/rules/security.md ~/.claude/rules/
 cp quarterdeck/rules/principal-engineer-always-on.md ~/.claude/rules/
 ```
+
+
+> **Note on `security.md`, `coding-style.md` and `hooks.md`:** these shipped until
+> 2026-07-25 and were retired. `hooks.md` documented seven hooks that did not exist.
+> The other two were generic advice -- an OWASP checklist and "prefer immutability" --
+> that current models apply without being told, and that cost tokens in every session.
+> If your team needs a house-specific version, create the file; nothing reads it by name.
 
 ### Key Rules to Know
 
 | Rule | Purpose |
 |------|---------|
 | `principal-engineer-always-on.md` | PE orchestration, agent squad model, workflow chains |
-| `zero-assumption-protocol.md` | Mandatory reasoning discipline (verify, don't assume) |
+| `performance.md` | Model tiers, the `availableModels` allowlist, model propagation |
 | `output-discipline.md` | Standardized output format (concise, no filler) |
 | `testing.md` | Test coverage requirements (80%+ minimum) |
-| `security.md` | Security checklist before commits |
 | `git-workflow.md` | Conventional commits, PR workflow |
 | `production-gate-mandatory.md` | Step-by-step approval for production changes |
-| `coding-style.md` | Immutability, file organization, error handling |
 
 ---
 
@@ -346,7 +350,7 @@ Edit rules in `~/.claude/rules/` to match your team's standards.
 
 ### Example: Add company-specific security checklist
 
-**Edit**: `~/.claude/rules/security.md`
+**Edit**: create `~/.claude/rules/security.md` (not shipped -- see below)
 
 **Add**:
 ```markdown

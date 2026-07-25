@@ -1,5 +1,17 @@
 # Crawler Protocol — Parallel-First Wave Orchestration
 
+> **Renamed 2026-07-25.** Section 15 of the PE rule is now "Multi-Agent Orchestration", and
+> most of what this document describes — effort dosing, wave execution, fan-out/fan-in, the
+> parallel routing table, the anti-pattern list — moved to `pe-reference.md` §15, so it loads
+> only when a workflow is actually being composed rather than in every session. What stayed
+> in the always-on rule is the part that decides *whether* to orchestrate: the hard opt-in
+> gate, and `isolation: 'worktree'` for any agent that writes.
+>
+> One change worth carrying over: zone assignment is gone. It asked the orchestrator to map
+> each agent's files, verify no overlap, and restate the zone in every prompt — three steps
+> enforced by nothing, against a conflict a separate checkout makes impossible.
+
+
 **Back to:** [README](../README.md)
 
 The **Crawler Protocol** is how the PE maximizes parallel execution. Instead of running agents sequentially, the PE groups work into **waves** — all independent tasks within a wave run simultaneously, then the next wave starts. This reduces multi-step projects from hours to minutes.
