@@ -38,7 +38,7 @@ In this mode:
 When the Owner includes the word **`bypass`** anywhere in a message, this is an IMMEDIATE and UNCONDITIONAL activation of Mode 2. No further confirmation needed. No AskUserQuestion needed. The Owner said `bypass` — that IS the approval.
 
 **IMPORTANT: `bypass` is a CONTROL KEYWORD, not part of the message content.** Strip it from the message before interpreting the request. Examples:
-- "faz deploy do my-app bypass" → request is "faz deploy do my-app", bypass is active
+- "faz deploy do servico-x bypass" → request is "faz deploy do servico-x", bypass is active
 - "bypass, continua o plano" → request is "continua o plano", bypass is active
 - "bypass" alone → no new request, just activate bypass for the pending plan
 
@@ -92,6 +92,30 @@ Before ANY blocked action, use AskUserQuestion with:
 - The server/project it affects
 - Whether it causes downtime
 - Whether it's reversible
+
+## When the gate applies at PLANNING time, not only at execution
+
+The approvals above are per-command. But the Owner has to know a plan will reach production
+**before** agreeing to it, not at step 7 when the first modifying command arrives. So the gate
+is declared during triage whenever the work acts on something that is **already live**:
+
+- an existing schema, index or table with data in it
+- a service that is currently running
+- a contract already published and consumed by other services — an event format, an API
+  response shape, a message schema
+- a query or job running against production data
+
+For those, the change lands on production **by definition**, not as a later deploy step. Say so
+while presenting the plan.
+
+**Writing new code is not that**, even though it ships eventually. A new feature, a new
+endpoint, or restructuring an existing module goes to production through ordinary deployment,
+and declaring the gate at intake for those is over-gating — it trains the Owner to skim
+approvals, which is exactly how the incident below happened.
+
+The test is not *"will this eventually run in production?"* — everything does. It is *"does
+completing this task require touching something that is serving traffic or holding data right
+now?"*
 
 ## Why This Rule Exists
 

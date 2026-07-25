@@ -48,7 +48,30 @@ tamanho, risco e reversibilidade do trabalho; paralelismo é decisão de execuç
 depois. Abrir PLAN, TASKS e Interview-Me porque dois agents vão rodar é a cerimônia que a
 regra existe para evitar.
 
-### Gate SPECIFY (obrigatório para Médio e Complexo)
+### Gate SPECIFY (obrigatório para Médio e Complexo, com as exceções abaixo)
+
+SPECIFY existe para **delimitar alvo e critério de pronto**. Quando o pedido já chega
+delimitado, ele é cerimônia. Não abra SPECIFY quando:
+
+- **O alvo já é um artefato concreto e nomeado** — "revisa esse PR", "compara Neo4j vs Memgraph
+  vs FalkorDB". O que examinar já está dado; não sobra escopo a definir.
+- **O pedido já é a especificação** — operação e alvo nomeados, sem escolha a fazer: "reinicia o
+  serviço X", "faz o deploy de Y: git pull, pip install, systemctl restart". Reformular isso
+  como spec devolve ao Owner o que ele acabou de escrever.
+- **É triagem reativa de incidente** — produção caindo agora. Diagnostica-se primeiro; spec de
+  correção vem depois, com o achado em mãos.
+- **Outro gate tem que resolver antes** — pedido ambíguo (Interview-Me) ou multi-goal (scope
+  split): a spec vem depois da resposta. Especificar sobre premissa não confirmada é escrever a
+  spec errada com confiança.
+
+**Ser read-only não dispensa SPECIFY.** O eixo é delimitação, não se a tarefa escreve código.
+"O app tá lento", "acho que temos blind spot de detecção", "tem CVE no projeto" são análises que
+não constroem nada — e ainda assim precisam de spec, porque o que será examinado e o que conta
+como pronto continuam abertos. Auditoria sem escopo definido vira varredura infinita.
+
+**Produção não dispensa SPECIFY, e urgência também não.** A exceção é o pedido já estar
+determinado, não ser urgente ou arriscado — um deploy vago continua precisando de spec, e o
+gate de produção é independente deste.
 
 PE reformula o request do Owner como spec estruturada:
 
@@ -260,6 +283,7 @@ What the descriptions do NOT make obvious, and what therefore gets routed wrong:
 | production down NOW, 5xx spike | incident-responder (read-only triage needs no approval) | devops-specialist |
 | single fact, docs or syntax lookup | PE answers with WebSearch | deep-researcher — ~18x the tokens |
 | "audit the project" | security-reviewer + performance-optimizer + code-reviewer + blue-team, in parallel | any one of them alone |
+| review a PR that spans layers (UI + API, front + back) | one reviewer per layer touched, in parallel — code-reviewer always, plus ux-reviewer for UI and security-reviewer for anything exposed | code-reviewer alone, which sees the diff but not the surface |
 | PT-BR text vs EN text | ortografia-reviewer vs grammar-reviewer | each is single-language, never both |
 
 A route driven by a **symptom** rather than by a role is not inferable from any agent's
