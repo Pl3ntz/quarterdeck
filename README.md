@@ -1,4 +1,9 @@
-# Quarterdeck
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-full-dark.png">
+    <img src="assets/logo-full.png" alt="Quarterdeck" width="420">
+  </picture>
+</p>
 
 Agent orchestration for [Claude Code](https://claude.ai/code): a set of specialist agents,
 and the gates that stop them from committing something wrong.
@@ -129,17 +134,15 @@ agent set, gate correctness, mode, ambiguity handling and production-gate respec
 vetoes. No judge, no model in the loop after the router, so two runs of one ruleset differ
 only by the model's own variance.
 
-|                          | before | after |
-|---|---|---|
-| median composite (K=3)   | 0.852  | **0.947** |
-| questions passing        | 22/26  | **26/26** |
-| within-question spread   | 0.084  | 0.032 |
-| always-on rule size      | 8,306 tok | 6,511 tok |
+| | |
+|---|---|
+| median composite (K=3) | **0.947** |
+| questions passing | **26/26** |
+| within-question spread | 0.032 |
+| always-on rule size | 6,511 tok |
 
-Better routing and a smaller rule were not guaranteed to arrive together. An earlier revision
-of that same cut scored **0.810**: moving the routing tables out of the always-on context
-looked like pure savings and cost 0.039 and three questions. That regression is the reason
-the eval exists rather than an argument about it.
+The spread matters as much as the score: it is the noise floor, and a round-over-round delta
+smaller than it is not evidence of anything.
 
 ### The method is the point
 
@@ -154,9 +157,9 @@ the eval exists rather than an argument about it.
   six questions fell. Uniform drops of the same magnitude mean one dimension is wrong, not
   that variance moved. The per-question table is what shows it.
 
-Honest limit: the golden set and the scorer are both authored here, so this measures movement
-in this system, not standing against anyone else's. Both ship, so the numbers are reproducible;
-they are not comparable.
+Honest limit: the golden set and the scorer are both authored here. That makes 0.947 a number
+about this system against its own definition of correct routing, not a position against anyone
+else's. Both ship, so it is reproducible; it is not comparable.
 
 ### Cost per agent
 

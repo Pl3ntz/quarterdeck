@@ -1,8 +1,73 @@
 # Quarterdeck Architecture
 
-A command-and-control system for orchestrating 26 specialized AI agents in parallel.
+A command-and-control system for orchestrating 26 specialized AI agents in parallel, plus the
+two layers that keep it honest: controls that run outside the model, and evals that say whether
+any of it works.
 
 See [README](../README.md) for overview.
+
+---
+
+## Three layers
+
+Most of this document describes the orchestration layer. It is the least load-bearing of the
+three. Agent definitions are prompts; prompts are easy to copy and impossible to trust on their
+own.
+
+```
+  ORCHESTRATION   26 agents, 8 squads, waves, chains          model-driven, advisory
+        │
+        ▼
+  ENFORCEMENT     9 PreToolUse hooks + the permission layer   deterministic, outside the model
+        │
+        ▼
+  MEASUREMENT     routing eval, agent baselines, cost report  deterministic, no judge
+```
+
+**Orchestration** decides who does the work. It runs inside the model, so it is guidance: the
+routing tables, the squad structure and the wave rules below all describe what the model is
+asked to do, not what it is prevented from doing.
+
+**Enforcement** decides what is allowed to happen. Every gate is a shell script the harness
+invokes before a tool call, and it returns `deny`, `ask` or `allow`. A model that is confidently
+wrong cannot argue past a process that already returned `deny`. This layer does not read the
+orchestration rules and does not care whether the model agrees with it.
+
+| Gate | Event | Refuses |
+|---|---|---|
+| `production-gate` | Bash | modifying commands on a production host; read-only passes |
+| `block-build` | Bash | heavy builds on the host |
+| `egress-guard` | WebFetch, WebSearch, `mcp__*` | PII, secrets or infrastructure identifiers leaving the machine |
+| `authorship-guard` | Bash | commits and PRs that credit a tool or carry emoji |
+| `review-gate` | Bash | `git commit` when this exact diff has no review |
+| `eval-gate` | Bash | `git commit` when an agent changed and its eval is older |
+| `test-gate` | Bash | `git commit` without evidence the suite ran against this code |
+| `suite-gate` | Bash | `git commit` when the guardrail suite fails on the staged files |
+
+Shared behaviour lives in `hooks/lib/hook-common.sh`: payload parsing, path expansion, the deny
+response, override handling, and the audit record. One copy, because three hooks independently
+reimplemented path handling and two of them shipped the same defect.
+
+**Measurement** decides whether a change to either layer above helped. It is deterministic by
+construction: no model judges another model's output anywhere in it. See the README for the
+numbers and the method.
+
+---
+
+## Two channels, and why it matters
+
+A hook can speak to the operator or to the model, and they are not the same channel.
+
+| Field | Reaches |
+|---|---|
+| `systemMessage` | the operator only; never enters the context window |
+| `hookSpecificOutput.additionalContext` | the model, wrapped in a system reminder |
+| `permissionDecisionReason` | the model, but only on a deny |
+
+Four hooks here spent their entire existence emitting `systemMessage` for messages the model was
+supposed to act on. They ran, exited 0, wrote their logs, and delivered nothing. Any hook whose
+purpose is to inform the model must emit `additionalContext`; a deny must carry
+`permissionDecisionReason`, or the model is refused with no reason and routes around it.
 
 ---
 
