@@ -283,5 +283,9 @@ if [ $python_exit -eq 0 ]; then
 fi
 
 # Fallback: if Python fails, BLOCK (fail-closed)
-echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny"},"systemMessage":"PRODUCTION GATE: Erro interno no hook de seguranca. Comando bloqueado por precaucao."}'
+# The reason goes on permissionDecisionReason, not only systemMessage: this is the fail-closed
+# path, so it blocks EVERY command while the hook is broken, and systemMessage never reaches the
+# model. A bare refusal with no explanation is the case where working around the gate looks like
+# the reasonable move.
+echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"PRODUCTION GATE: erro interno no proprio hook de seguranca, entao ele esta bloqueando tudo por precaucao (fail-closed). Isto NAO e uma proibicao do comando em si -- o gate quebrou. Nao contorne: rode bash -n ~/.claude/hooks/production-gate.sh e conserte o hook."},"systemMessage":"PRODUCTION GATE: erro interno no hook de seguranca. Comando bloqueado por precaucao (fail-closed)."}'
 exit 0
