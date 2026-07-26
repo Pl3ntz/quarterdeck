@@ -68,6 +68,22 @@ check "absolute path, no tests run"      deny  test-gate.sh "cd $ABS && git com"
 check "TILDE path, no tests run"         deny  test-gate.sh "cd $TILDE && git com""mit -m x" "$EMPTY_TR"
 check "tests present in transcript"      allow test-gate.sh "cd $TILDE && git com""mit -m x" "$TESTED_TR"
 check "not a commit"                     allow test-gate.sh "cd $ABS && npm test" "$EMPTY_TR"
+# The gate reads the session transcript, and hook output is written INTO that transcript. So a
+# deny message that names the very commands the gate greps for is a bypass token the gate hands
+# itself: it fired once, polluted the transcript, and allowed every commit afterwards. Found
+# 2026-07-26, after this suite had passed 57/57 against the broken version all day -- asserting
+# the FIRST decision cannot see a gate that only disarms on the second.
+SELFPOL_TR="$TMP/selfpolluted.jsonl"
+# Build the payload the same way decide() does. Hand-rolling the JSON with printf produced a
+# payload the hook rejected, so the fixture came out as "{}" and the check passed against the
+# BROKEN gate too -- a test that could not fail, which is the exact defect this suite exists to
+# catch. Caught only by running it against a deliberately broken copy.
+python3 -c "
+import json,sys
+print(json.dumps({'tool_input':{'command':sys.argv[1]},'transcript_path':sys.argv[2]}))" \
+  "cd $ABS && git com""mit -m x" "$EMPTY_TR" \
+  | bash "$HOOKS/test-gate.sh" 2>/dev/null > "$SELFPOL_TR"
+check "own deny output is not a bypass"   deny  test-gate.sh "cd $ABS && git com""mit -m x" "$SELFPOL_TR"
 
 echo "eval-gate — agent edited without a fresh eval"
 check "not a quarterdeck repo"           allow eval-gate.sh "cd $ABS && git com""mit -m x" "$EMPTY_TR"

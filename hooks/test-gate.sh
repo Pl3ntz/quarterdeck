@@ -91,5 +91,17 @@ if grep -qiE 'npm\s+test|npx\s+vitest|npx\s+jest|pytest|python3?\s+-m\s+pytest|c
 fi
 
 # No test execution found — BLOCK
-echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny"},"systemMessage":"TEST GATE: Nenhuma execucao de testes detectada nesta sessao. Rode os testes antes de commitar. Use: npm test, pytest, vitest run, bun test, etc."}'
+# CAUTION: this message must NEVER contain any literal that the grep above searches for.
+#
+# It used to end with "Use: npm test, pytest, vitest run, bun test, etc." -- four of the exact
+# patterns line 87 looks for. Hook output is persisted into the session transcript, so the
+# first deny wrote its own bypass token: every later commit in that session found "npm test"
+# in the transcript and was allowed through. Proven by running the gate against a transcript
+# containing nothing but this hook's own deny message: clean -> deny, self-polluted -> allow.
+# The gate disarmed itself permanently after firing once, which is worse than not existing --
+# it fires on the first commit, so it looks like it works.
+#
+# permissionDecisionReason added at the same time: without it the model receives a bare
+# refusal with no explanation and routes around it.
+echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"TEST GATE: nenhuma execucao da suite foi detectada nesta sessao. Rode a suite do projeto antes de commitar (dentro do container, se o projeto for containerizado). Override deliberado: TESTGATE_OFF=1"},"systemMessage":"TEST GATE: nenhuma execucao da suite detectada nesta sessao. Rode a suite do projeto antes de commitar."}'
 exit 0
