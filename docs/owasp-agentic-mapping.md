@@ -127,11 +127,11 @@ Compromise arrives through dependencies: MCP servers, plugins, models, packages.
 | Control | Tier |
 |---|---|
 | Chrome extension integration blocked at the permission layer (removed from context, not merely discouraged) | Enforced |
-| MCP servers pinned to reviewed versions | **Gap** |
+| MCP servers pinned to reviewed versions | **Accepted risk** (see below) |
 | AI bill of materials | **Gap** |
 | Third-party connector sandboxing | **Gap** |
 
-**Assessment: weak, with a concrete and cheap fix.** Both stdio MCP servers are configured as
+**Assessment: weak, and deliberately so.** Both stdio MCP servers are configured as
 `npx -y <package>@latest`. That resolves and installs the newest published version at every
 launch, with `-y` suppressing the install prompt. A compromised release of either package
 executes on this machine, with this user's privileges, without a version change ever being
@@ -142,10 +142,25 @@ Three remote MCP servers are also connected (mail, drive, calendar). Those are f
 hosted endpoints rather than fetched code, so they carry a different risk shape — data exposure
 rather than code execution — but they are unlisted anywhere as dependencies.
 
-**Fix prepared, not yet applied:** `scripts/pin-mcp-servers.sh` pins both to the versions that
-were `latest` on 2026-07-25 (so the pin is a zero-behaviour change), warms the npx cache first —
-npx keys its cache on the spec string, so `pkg@1.6.0` is a cold download even at the same
-version — and refuses to run while a session is open.
+**ACCEPTED RISK, decided by the Owner on 2026-07-26.** These two stay on `@latest`.
+
+The browser MCP is used daily, and being stuck on a stale version costs more than the pin
+buys. That is the correct call for a tool in constant use: pinning trades a small, low-
+probability supply-chain risk for a certain, recurring cost in missed fixes and features, and
+someone who has to remember to bump versions on a tool they use every day will either not do
+it or will do it without reviewing anything, which is the same posture with extra steps.
+
+What is being accepted, stated plainly so the decision is reviewable rather than forgotten:
+`chrome-devtools-mcp` attaches to the operator's real Chrome profile, so a malicious release
+would execute with their authenticated sessions available. The counterweight is that both
+packages are published by Google and Microsoft respectively, and that pinning a version does
+not pin integrity anyway — only a lockfile does, and a registry-level compromise defeats the
+pin regardless.
+
+`scripts/pin-mcp-servers.sh` stays in the repo for anyone who wants the other trade-off. It
+pins both to the versions that were `latest` on 2026-07-25 (a zero-behaviour change at the
+time), warms the npx cache first — npx keys its cache on the spec string, so `pkg@1.6.0` is a
+cold download even at the same version — and refuses to run while a session is open.
 
 That refusal is not caution, it is a demonstrated failure. Pinning was attempted from inside a
 live session: the `remove` succeeded, the running session flushed its in-memory copy of the
@@ -369,15 +384,13 @@ account); one is a two-line fix.
 
 ### Open
 
-1. **Run `scripts/pin-mcp-servers.sh` with every session closed** (ASI04). Prepared and guarded;
-   cannot be done from inside a session, as demonstrated above.
-2. **Add provenance to stored memory** (ASI06). One frontmatter field separating "the operator
+1. **Add provenance to stored memory** (ASI06). One frontmatter field separating "the operator
    said this" from "a web page said this" — the distinction that decides whether a recalled fact
    should be trusted or re-verified. Note the memory contract is supplied by the harness, so this
    has to be an additive instruction rather than an edit to the contract.
-3. **Per-agent identity** (ASI03). Structural: it requires agent execution to move off the
+2. **Per-agent identity** (ASI03). Structural: it requires agent execution to move off the
    operator's account. Nothing in the hook layer can approximate it.
-4. **An external adversarial pass** (all of ASI01–ASI10). `promptfoo` ships a preset mapped
+3. **An external adversarial pass** (all of ASI01–ASI10). `promptfoo` ships a preset mapped
    plugin-by-plugin to these risks, but an investigation on 2026-07-25 found it a poor fit: it
    targets an LLM endpoint, while this is a configuration layer around a CLI, and the obvious
    adapter scores every correct block as a breach because deny messages contain their own
