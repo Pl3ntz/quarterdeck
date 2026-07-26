@@ -14,15 +14,33 @@ Most of this document describes the orchestration layer. It is the least load-be
 three. Agent definitions are prompts; prompts are easy to copy and impossible to trust on their
 own.
 
+```mermaid
+flowchart TB
+    subgraph ORC["ORCHESTRATION — model-driven, advisory"]
+        direction LR
+        O1["Triage<br/>Trivial / Medio / Complexo"] --> O2["Route<br/>26 agents, 8 squads"] --> O3["Waves<br/>parallel within, sequential between"]
+    end
+
+    subgraph ENF["ENFORCEMENT — deterministic, outside the model"]
+        direction LR
+        E1["9 PreToolUse hooks"] --- E2["permission layer<br/>deny / ask / allow"]
+    end
+
+    subgraph MEA["MEASUREMENT — deterministic, no judge"]
+        direction LR
+        M1["routing eval<br/>26 frozen questions"] --- M2["agent baselines<br/>K=5"] --- M3["cost per agent"]
+    end
+
+    ORC -->|"proposes a tool call"| ENF
+    ENF -->|"allowed calls only"| EXEC["Tool executes"]
+    ENF -.->|"every deny and override<br/>is recorded"| MEA
+    MEA -.->|"says whether a change<br/>to either layer helped"| ORC
+
+    style ENF stroke-width:3px
 ```
-  ORCHESTRATION   26 agents, 8 squads, waves, chains          model-driven, advisory
-        │
-        ▼
-  ENFORCEMENT     9 PreToolUse hooks + the permission layer   deterministic, outside the model
-        │
-        ▼
-  MEASUREMENT     routing eval, agent baselines, cost report  deterministic, no judge
-```
+
+The middle layer is the load-bearing one. The top layer describes what the model is *asked* to
+do; only the middle decides what it is *allowed* to do.
 
 **Orchestration** decides who does the work. It runs inside the model, so it is guidance: the
 routing tables, the squad structure and the wave rules below all describe what the model is
@@ -47,6 +65,51 @@ orchestration rules and does not care whether the model agrees with it.
 Shared behaviour lives in `hooks/lib/hook-common.sh`: payload parsing, path expansion, the deny
 response, override handling, and the audit record. One copy, because three hooks independently
 reimplemented path handling and two of them shipped the same defect.
+
+### Where a hook actually sits
+
+Every tool call passes through the same path. The gates are not called by the model and cannot
+be skipped by it.
+
+```mermaid
+sequenceDiagram
+    participant M as Model
+    participant H as Harness
+    participant G as PreToolUse gates
+    participant T as Tool
+    participant P as PostToolUse hooks
+    participant L as Logs
+
+    M->>H: proposes tool call
+    H->>G: payload (tool_name, tool_input, agent_id)
+    Note over G: block-build, production-gate, test-gate,<br/>eval-gate, review-gate, suite-gate,<br/>authorship-guard on Bash<br/>egress-guard on fetch / search / MCP
+
+    alt a gate returns deny
+        G-->>H: deny + permissionDecisionReason
+        G->>L: agent, command, rule, reason
+        H-->>M: refused, WITH the reason
+        Note over M,L: the tool never runs
+    else a gate returns ask
+        G-->>H: ask
+        H-->>M: waits for the operator
+    else all gates allow
+        G-->>H: {}
+        H->>T: execute
+        T-->>H: tool_response
+        H->>P: tool_response
+        P->>L: errors, resolutions, injection attempts
+        P-->>M: additionalContext
+        H-->>M: result
+    end
+```
+
+Two details that decide whether any of this works:
+
+- A gate that fails to emit a decision is read as **allow**. Silence is permission, so a gate
+  that errors is a gate that is off. This is why every hook exits 0 and returns explicit JSON.
+- On the `deny` branch the reason travels on `permissionDecisionReason`. On the PostToolUse
+  branch anything the model must act on travels on `additionalContext`. `systemMessage` reaches
+  the operator on both branches and reaches the model on neither.
 
 **Measurement** decides whether a change to either layer above helped. It is deterministic by
 construction: no model judges another model's output anywhere in it. See the README for the
@@ -186,31 +249,46 @@ editor-chefe → jornalista → redator → fact-checker → editor-de-texto →
 
 ## Request Lifecycle
 
+```mermaid
+flowchart TD
+    REQ["Owner submits request"] --> TRI{"Triage"}
+
+    TRI -->|Trivial| DO["PE executes directly<br/>no SPECIFY, no PLAN"]
+    TRI -->|Medio| SPEC["SPECIFY<br/>scope, boundaries, done-criteria"]
+    TRI -->|Complexo| INT["Interview-Me<br/>3-5 questions first"] --> SPEC
+
+    SPEC --> APP1{"Owner approves spec"}
+    APP1 -->|corrects| SPEC
+    APP1 -->|approves| W1
+
+    W1["Wave 1 — Reconnaissance<br/>parallel, read-only"] --> W2["Wave 2 — Planning<br/>sequential, one planner or architect"]
+    W2 --> APP2{"Owner approves plan"}
+    APP2 -->|corrects| W2
+    APP2 -->|approves| W3
+
+    W3["Wave 3 — Implementation<br/>parallel writers, each in its own git worktree"] --> W4["Wave 4 — Validation<br/>quality gate squad, parallel, read-only"]
+    W4 --> SYN["PE synthesis<br/>merged by severity, contradictions surfaced"]
+    DO --> SYN
+    SYN --> OUT["Owner decides next action"]
+
+    W1 -.-> GATES(["Enforcement layer<br/>under every tool call,<br/>in every path above"])
+    W3 -.-> GATES
+    W4 -.-> GATES
+    DO -.-> GATES
+
+    style GATES stroke-width:3px
+    style TRI fill:none
+    style APP1 fill:none
+    style APP2 fill:none
 ```
-You submit request
-    ↓
-PE triages complexity (Trivial / Médio / Complexo)
-    ↓
-[For Médio+] PE specifies scope, boundaries, success criteria
-    ↓
-Owner approves spec
-    ↓
-PE decomposes into WAVES (parallel task groups)
-    ↓
-Wave 1: Reconnaissance (parallel agents explore, research)
-    ↓
-Wave 2: Planning (sequential — one planner/architect, learns from Wave 1)
-    ↓
-Owner approves plan
-    ↓
-Wave 3: Implementation (parallel agents write code, zone-assigned)
-    ↓
-Wave 4: Validation (parallel agents review: code-reviewer, security, UX)
-    ↓
-PE synthesizes results, presents to Owner
-    ↓
-Owner sees structured findings, decides next action
-```
+
+Read-only agents need no isolation, since concurrent reads cannot conflict. Write-agents get a
+separate git worktree instead of a prompt telling them which files to stay inside: a zone in a
+prompt is a request, a separate checkout is a guarantee.
+
+The dotted edges matter. The enforcement layer is not a stage in this flow; it sits under every
+tool call in every wave, including the ones the Owner already approved. Approving a plan is not
+approving the commands that implement it.
 
 ### Wave-Based Execution
 
