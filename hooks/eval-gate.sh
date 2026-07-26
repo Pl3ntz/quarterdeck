@@ -31,10 +31,11 @@
 #   "deny" = block with a reason.
 # - Exit 0 always.
 
-input=$(cat)
+. "$HOME/.claude/hooks/lib/hook-common.sh"
 
-command=$(echo "$input" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_input',{}).get('command',''))" 2>/dev/null)
-[ -z "$command" ] && { echo '{}'; exit 0; }
+input=$(cat)
+command=$(hook_command "$input")
+[ -z "$command" ] && hook_allow
 
 # Only gate git commit (supports `cd <dir> && ... && git commit`)
 if ! echo "$command" | grep -qE '(^|&&|;)\s*git\s+commit\b'; then
@@ -43,24 +44,10 @@ if ! echo "$command" | grep -qE '(^|&&|;)\s*git\s+commit\b'; then
 fi
 
 # Explicit, deliberate override -- mirrors the leak-guard's LEAKGUARD_OFF.
-if [ "${EVALGATE_OFF:-}" = "1" ] || echo "$command" | grep -q 'EVALGATE_OFF=1'; then
-  echo '{}'
-  exit 0
-fi
+hook_override_requested "$command" "EVALGATE_OFF" && hook_allow
 
-# Working dir from `cd <path> &&`, else PWD.
-# The tilde and $HOME must be expanded by hand: the path arrives as a literal string, so
-# `cd ~/dev/repo` would otherwise produce the directory "~/dev/repo", every subsequent -f
-# test would fail, and the gate would silently allow the commit. That is how this hook
-# passed on nearly every real invocation before 2026-07-24.
-work_dir=$(echo "$command" | grep -oE 'cd[[:space:]]+[^&;]+' | head -1 | sed -E 's/^cd[[:space:]]+//' | xargs)
-[ -z "$work_dir" ] && work_dir="$PWD"
-case "$work_dir" in
-  "~") work_dir="$HOME" ;;
-  "~/"*) work_dir="$HOME/${work_dir#\~/}" ;;
-  '$HOME') work_dir="$HOME" ;;
-  '$HOME/'*) work_dir="$HOME/${work_dir#\$HOME/}" ;;
-esac
+# Working dir, with a literal ~ / $HOME expanded (see hook-common.sh for why).
+work_dir=$(hook_work_dir "$command")
 
 # Only act on a Quarterdeck-shaped repo (has the eval harness + agents dir).
 # Any other repo commits normally -- this hook is installed globally.

@@ -211,8 +211,15 @@ try:
     else:
         msg += ' | Consulte ~/.claude/logs/error-index.md antes de tentar resolver.'
 
+    # systemMessage is shown to the USER only -- it never enters the context window. This
+    # hook's own header says it injects error context into the conversation, which it never
+    # did. The vendored hook-development skill states at two places that systemMessage
+    # reaches the model; that is wrong, and it is where this whole bug class came from.
+    # additionalContext is the model-facing channel. Both are emitted: the operator sees the
+    # alert, the model can act on it.
     print(json.dumps({
-        'systemMessage': msg
+        'systemMessage': msg,
+        'hookSpecificOutput': {'hookEventName': 'PostToolUse', 'additionalContext': msg}
     }))
 
 except Exception:

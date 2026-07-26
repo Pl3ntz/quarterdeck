@@ -279,8 +279,13 @@ try:
     if resolution.get('fix_candidates'):
         msg += f' Fix candidates: {len(resolution[\"fix_candidates\"])} comandos intermediarios capturados.'
 
+    # systemMessage never reaches the model (see detect-errors.sh for the full note). The
+    # ask is stated explicitly: a notification with no requested action produced 189 logged
+    # resolutions and zero promotions.
+    msg += ' Se o fix for reutilizavel, promova para ~/.claude/logs/error-index.md.'
     print(json.dumps({
-        'systemMessage': msg
+        'systemMessage': msg,
+        'hookSpecificOutput': {'hookEventName': 'PostToolUse', 'additionalContext': msg}
     }))
 
 except Exception:

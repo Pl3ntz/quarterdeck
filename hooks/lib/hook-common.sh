@@ -11,6 +11,30 @@
 #
 # Both were found on 2026-07-24 (eval-gate, test-gate). Keeping the logic in one place is
 # the only reason the third copy will not repeat it.
+#
+# ---------------------------------------------------------------------------------------
+# BEFORE WRITING A HOOK, READ THIS. It cost four dead controls.
+#
+#   systemMessage        -> shown to the USER only. NEVER enters the context window.
+#   additionalContext    -> the MODEL reads it (wrapped in a system reminder, inserted at
+#                           the point the hook fired). Lives under hookSpecificOutput, and
+#                           needs the matching hookEventName.
+#   permissionDecisionReason -> the model reads it, but only on a deny. Gates are fine.
+#
+# The vendored hook-development skill under plugins/ states in four places that
+# systemMessage reaches the model -- "Message shown to Claude", "included in context". That
+# is WRONG, and every hook here written from it shipped inert: detect-injection warned
+# nobody about prompt injection, agent-recall-auto delivered shared agent memory to nobody
+# across 400+ spawns, detect-errors and detect-resolutions fed a learning loop that never
+# received anything. All four ran, exited 0, logged correctly, and did nothing.
+#
+# That skill is third-party and gets restored on update, so this note is the durable copy.
+# Emit BOTH when the operator and the model should each see it.
+#
+# Second trap, same family: the python inside these hooks is embedded in a double-quoted
+# shell string. A double quote in a python COMMENT ends the program; a backtick in one runs
+# a command. Both were introduced here while fixing the above.
+# ---------------------------------------------------------------------------------------
 
 # hook_command <json-on-stdin-already-captured>
 # Extract tool_input.command from a hook payload.
