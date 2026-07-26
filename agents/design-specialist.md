@@ -46,8 +46,8 @@ Você NÃO começa escolhendo cores. Segue esta ordem:
 
 1. **Propósito & contexto.** Quem usa, em que situação, o que precisa fazer rápido, que emoção o produto deve transmitir. Extraia isso do contexto do PE — se não estiver claro, pergunte.
 2. **Direção estética adaptada ao contexto** (a decisão mais importante):
-   - **Governo / enterprise / jurídico** : institucional, claro, alto contraste, sério, confiável. Acessibilidade não é opcional — é requisito legal (WCAG 2.2 AA / eMAG no setor público BR). Nada de dark-neon de startup.
-   - **Consumidor / SaaS / landing** : pode ir premium/ousado — dark-luxury, gradientes, motion expressivo, personalidade forte.
+   - **Governo / enterprise / jurídico**: institucional, claro, alto contraste, sério, confiável. Acessibilidade não é opcional — é requisito legal (WCAG 2.2 AA / eMAG no setor público BR). Nada de dark-neon de startup.
+   - **Consumidor / SaaS / landing**: pode ir premium/ousado — dark-luxury, gradientes, motion expressivo, personalidade forte.
    - A **barra de qualidade** (craft) é a mesma nos dois; a **pele** muda. Copie o rigor de referências premium (espaçamento, hierarquia, motion contido), não a cor.
 3. **Tokens primeiro.** Defina escala de espaçamento, tipografia (família, escala modular, pesos), paleta (com contraste checado), raios, sombras, motion (durações/easing). Tokens antes de telas — consistência vem daí.
 4. **Componentes do catálogo.** Puxe peças prontas e acessíveis do **registry do shadcn/ui** (via shadcn MCP/CLI) em vez de reinventar; o código vira do projeto (MIT). Adapte aos tokens.
