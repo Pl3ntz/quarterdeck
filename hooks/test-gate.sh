@@ -74,7 +74,79 @@ if [ "$has_test_framework" = false ]; then
   exit 0
 fi
 
-# Check session transcript for test execution
+# --- Evidence, strongest first --------------------------------------------------------
+#
+# A test-run ARTIFACT that is newer than the code being committed is real evidence: it shows
+# the suite ran against this version. The transcript only shows a command was typed -- not
+# that it ran, not that it passed, and not that the code has not changed since. eval-gate.sh
+# migrated away from transcript-grepping for exactly this reason and its header says so.
+#
+# The transcript check is kept below as a weaker fallback, because removing it would deny
+# every project that emits no artifact, and a gate with that much friction gets switched off.
+# But the artifact path adds a case the transcript can NEVER catch: tests ran, then the code
+# changed, then the commit. Today that passes.
+artifact_verdict=$(WORK_DIR="$work_dir" python3 <<'PY' 2>/dev/null
+import os, glob
+from pathlib import Path
+import subprocess
+
+work = Path(os.environ.get('WORK_DIR', '.'))
+
+CANDIDATES = [
+    'coverage/lcov.info', 'coverage/coverage-final.json', 'coverage.xml', '.coverage',
+    'junit.xml', 'test-results.xml', 'test-results/*.xml', 'reports/junit/*.xml',
+    'htmlcov/index.html', 'coverage.out', '.nyc_output/processinfo/index.json',
+    '.pytest_cache/CACHEDIR.TAG', 'target/nextest/default/junit.xml',
+    '.claude/last-test-run',
+]
+newest_art = 0.0
+for pat in CANDIDATES:
+    for hit in glob.glob(str(work / pat)):
+        try:
+            newest_art = max(newest_art, os.path.getmtime(hit))
+        except OSError:
+            pass
+
+if not newest_art:
+    print('NO_ARTIFACT')
+    raise SystemExit
+
+try:
+    out = subprocess.run(['git', '-C', str(work), 'diff', '--cached', '--name-only'],
+                         capture_output=True, text=True, timeout=5)
+    staged = [l for l in out.stdout.splitlines() if l.strip()]
+except Exception:
+    print('NO_ARTIFACT')
+    raise SystemExit
+
+newest_src = 0.0
+for rel in staged:
+    p = work / rel
+    try:
+        newest_src = max(newest_src, os.path.getmtime(p))
+    except OSError:
+        pass
+
+if not newest_src:
+    print('NO_ARTIFACT')
+elif newest_art >= newest_src:
+    print('FRESH')
+else:
+    print('STALE')
+PY
+)
+
+if [ "$artifact_verdict" = "FRESH" ]; then
+  echo '{}'
+  exit 0
+fi
+
+if [ "$artifact_verdict" = "STALE" ]; then
+  echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"TEST GATE: existe resultado de suite no projeto, mas ele e MAIS ANTIGO que os arquivos no stage. A suite rodou antes desta alteracao, entao nao diz nada sobre o que voce esta commitando. Rode de novo (no container, se o projeto for containerizado). Override deliberado: TESTGATE_OFF=1"},"systemMessage":"TEST GATE: resultado de suite mais antigo que o codigo no stage."}'
+  exit 0
+fi
+
+# Fallback: session transcript. Weak on purpose -- see the note above.
 transcript_path=$(echo "$input" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('transcript_path',''))" 2>/dev/null)
 
 if [ -z "$transcript_path" ] || [ ! -f "$transcript_path" ]; then

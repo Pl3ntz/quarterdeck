@@ -85,6 +85,23 @@ print(json.dumps({'tool_input':{'command':sys.argv[1]},'transcript_path':sys.arg
   | bash "$HOOKS/test-gate.sh" 2>/dev/null > "$SELFPOL_TR"
 check "own deny output is not a bypass"   deny  test-gate.sh "cd $ABS && git com""mit -m x" "$SELFPOL_TR"
 
+# Artifact evidence. A suite result NEWER than the staged code proves the suite ran against this
+# version; an OLDER one proves it ran against a previous one, which the transcript check cannot
+# distinguish at all -- there, "tests ran, then the code changed, then commit" passes.
+GITREPO="$TMP/artifact-repo"; mkdir -p "$GITREPO/coverage"
+git -C "$GITREPO" init -q . 2>/dev/null
+printf '{"devDependencies":{"vitest":"^1.0.0"}}\n' > "$GITREPO/package.json"
+echo "x" > "$GITREPO/src.js"
+git -C "$GITREPO" add -A 2>/dev/null
+sleep 1; echo "cov" > "$GITREPO/coverage/lcov.info"
+check "artifact newer than staged code"  allow test-gate.sh "cd $GITREPO && git com""mit -m x" "$EMPTY_TR"
+sleep 1; echo "y" >> "$GITREPO/src.js"; git -C "$GITREPO" add -A 2>/dev/null
+# TESTED_TR on purpose, not EMPTY_TR: with an empty transcript the fallback denies anyway, so
+# the check would pass even with the artifact logic deleted -- satisfied for the wrong reason.
+# Against a transcript that DOES show a test command, only the artifact check can produce deny,
+# which is what makes this a discriminator.
+check "stale artifact beats transcript"  deny  test-gate.sh "cd $GITREPO && git com""mit -m x" "$TESTED_TR"
+
 echo "eval-gate — agent edited without a fresh eval"
 check "not a quarterdeck repo"           allow eval-gate.sh "cd $ABS && git com""mit -m x" "$EMPTY_TR"
 check "explicit override"                allow eval-gate.sh "EVALGATE_OFF=1 git com""mit -m x" "$EMPTY_TR"
