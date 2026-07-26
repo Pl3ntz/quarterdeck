@@ -38,7 +38,7 @@ In this mode:
 When the Owner includes the word **`bypass`** anywhere in a message, this is an IMMEDIATE and UNCONDITIONAL activation of Mode 2. No further confirmation needed. No AskUserQuestion needed. The Owner said `bypass` — that IS the approval.
 
 **IMPORTANT: `bypass` is a CONTROL KEYWORD, not part of the message content.** Strip it from the message before interpreting the request. Examples:
-- "faz deploy do servico-x bypass" → request is "faz deploy do servico-x", bypass is active
+- "faz deploy do servico X bypass" → request is "faz deploy do servico X", bypass is active
 - "bypass, continua o plano" → request is "continua o plano", bypass is active
 - "bypass" alone → no new request, just activate bypass for the pending plan
 
