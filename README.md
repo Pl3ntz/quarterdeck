@@ -68,7 +68,7 @@ never the only way data leaves.
 ### The suite
 
 ```bash
-scripts/test-guardrails.sh -v          # 49 checks, no model calls
+scripts/test-guardrails.sh -v          # 60 checks, no model calls
 HOOKS=./hooks scripts/test-guardrails.sh   # test what you are about to ship
 ```
 
@@ -78,19 +78,109 @@ and nothing noticed, because nothing executed them. The suite asserts the decisi
 returns, for both path forms, and one commit here turned out to describe a fix its own diff
 did not contain.
 
+## Design principles
+
+Five rules this repository follows, each of which exists because breaking it cost something
+here first.
+
+**Enforcement lives outside the model.** Every gate is a shell script the harness invokes
+before a tool runs. A model that is confidently wrong cannot reason past a process that
+already returned `deny`. Rules the model merely reads are guidance; only hooks are controls,
+and the two are labelled differently throughout.
+
+**A mechanism that is silent when it works is indistinguishable from a broken one.** Seven
+controls here ran, exited 0, wrote their logs, and did nothing. One read a payload field the
+runtime does not send, four wrote to a channel the model cannot read, one classified every
+success as an error, one wrote its own bypass token into the session transcript. None was
+visible on review. All were found by executing them against a realistic payload and comparing
+with the previous version.
+
+**A check nobody has watched fail is not a check.** Every guardrail test must be run against a
+deliberately broken copy and observed reporting `FAILED` before it counts. Three checks written
+here passed against the broken code they were meant to catch, including one inside the suite
+whose entire purpose is catching mechanisms that cannot fail.
+
+**Evidence is an artifact with a timestamp, not text in a transcript.** A transcript records
+that a command was typed. It does not record that the command ran, that it passed, or that the
+code has not changed since. Gates that compare a report's mtime against the file it describes
+catch a case grep structurally cannot: the work was done, then the subject changed.
+
+**Isolation beats instruction.** Parallel write-agents get their own git worktree rather than a
+prompt asking them to stay in their lane. A zone written into a prompt is a request; a separate
+checkout is a guarantee.
+
+---
+
 ## What it measures
+
+An orchestration layer is a set of claims about how work gets routed and gated. Claims are
+cheap. These are the ones that carry a number.
+
+### Routing quality
+
+```bash
+scripts/eval/routing_runner.py --rules ./rules --label mine --runs 3
+scripts/eval/routing_runner.py --compare results-a.json results-b.json
+```
+
+26 frozen questions, each routed by a fresh headless session that reads only the rules and
+emits `{route, gates}`. Scored by `scripts/routing-score.py`, which is deterministic and weighted across
+agent set, gate correctness, mode, ambiguity handling and production-gate respect, with hard
+vetoes. No judge, no model in the loop after the router, so two runs of one ruleset differ
+only by the model's own variance.
+
+|                          | before | after |
+|---|---|---|
+| median composite (K=3)   | 0.852  | **0.947** |
+| questions passing        | 22/26  | **26/26** |
+| within-question spread   | 0.084  | 0.032 |
+| always-on rule size      | 8,306 tok | 6,511 tok |
+
+Better routing and a smaller rule were not guaranteed to arrive together. An earlier revision
+of that same cut scored **0.810**: moving the routing tables out of the always-on context
+looked like pure savings and cost 0.039 and three questions. That regression is the reason
+the eval exists rather than an argument about it.
+
+### The method is the point
+
+- **`--runs K` reports medians, and prints the within-question spread.** Measured across six
+  rulesets, 11 of 26 questions swung by 0.20 or more between runs, wider than any per-round
+  delta this eval has produced. A single run cannot separate a change from variance.
+- **A round-over-round delta smaller than the printed noise band is not evidence**, and the
+  runner says so in its own output rather than leaving it to the reader.
+- **The bar applies in both directions.** A regression reported off one run turned out to be
+  run-level noise, confirmed only after ten fresh samples and a second full round.
+- **An average can hide a regression.** One rule edit moved the mean from 0.931 to 0.954 while
+  six questions fell. Uniform drops of the same magnitude mean one dimension is wrong, not
+  that variance moved. The per-question table is what shows it.
+
+Honest limit: the golden set and the scorer are both authored here, so this measures movement
+in this system, not standing against anyone else's. Both ship, so the numbers are reproducible;
+they are not comparable.
+
+### Cost per agent
 
 ```bash
 scripts/agent-usage-report.py --report --days 30
 ```
 
 Cost and volume per (agent, model), read from `attributionAgent` in the session transcripts.
-Native OpenTelemetry collapses every user-defined agent into `agent.name="custom"`, so this
-is the only view that distinguishes them.
+Native OpenTelemetry collapses every user-defined agent into `agent.name="custom"`, so this is
+the only view that distinguishes them. It is also how a policy stops being prose: a model ban
+that lived only in documentation accrued spend for a month before an `availableModels`
+allowlist replaced it.
 
-15 of the agents have K=5 stability baselines from `scripts/eval/`. The runners ship; the
-fixtures deliberately do not, since `expected-findings.md` is the answer key and publishing
-it would contaminate the benchmark.
+### Agent stability
+
+15 agents carry K=5 baselines from `scripts/eval/`. The runners and the validators ship; the
+fixtures deliberately do not, since `expected-findings.md` is the answer key and publishing it
+would contaminate the benchmark.
+
+### What none of this measures
+
+Whether the code a write-agent produces is well designed. Every number above is about
+**deciding**: routing, gating, finding stability. None is about the quality of the artifact.
+That gap is open and is named here rather than papered over.
 
 ---
 
