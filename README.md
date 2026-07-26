@@ -8,13 +8,20 @@
 Agent orchestration for [Claude Code](https://claude.ai/code): a set of specialist agents,
 and the gates that stop them from committing something wrong.
 
-[What it enforces](#what-it-enforces) · [Quick start](#quick-start) · [Agents](#the-26-agents) ·
+[What it enforces](#what-it-enforces) · [Quick start](#quick-start) · [Agents](#the-28-agents) ·
 [Architecture](docs/ARCHITECTURE.md) · [Customization](docs/CUSTOMIZATION.md)
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Routing eval](https://img.shields.io/badge/routing_eval-0.947_%C2%B7_26%2F26-2ea44f.svg)](#routing-quality)
+[![Guardrail checks](https://img.shields.io/badge/guardrail_checks-60-2ea44f.svg)](#the-suite)
+[![Agents](https://img.shields.io/badge/agents-28-0366d6.svg)](#the-28-agents)
+[![Measured baselines](https://img.shields.io/badge/agents_with_baselines-15-0366d6.svg)](#agent-stability)
+[![Claude Code](https://img.shields.io/badge/Claude_Code-2.1.32+-6f42c1.svg)](https://claude.ai/code)
+[![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey.svg)](LICENSE)
 [![Third-party notice](https://img.shields.io/badge/notice-third--party-lightgrey.svg)](NOTICE.md)
 
-Requires Claude Code 2.1.32 or later.
+Every number above links to how it is produced, and the tooling behind all four ships in this
+repository. `scripts/test-guardrails.sh` gives you the 60; `scripts/eval/routing_runner.py`
+with `scripts/routing-score.py` gives you the 0.947.
 
 ---
 
@@ -22,7 +29,7 @@ Requires Claude Code 2.1.32 or later.
 
 **Quarterdeck** is the command area of a ship, where the Captain coordinates the crew. In this project, **you are the Captain**.
 
-[Claude Code](https://claude.ai/code) (Anthropic's CLI for AI-assisted development) operates as a single generic agent by default. Quarterdeck transforms it into a **team of 26 specialists**, each focused on one area (code review, security, testing, deployment, research, etc.), working **in parallel**, like a real engineering squad.
+[Claude Code](https://claude.ai/code) (Anthropic's CLI for AI-assisted development) operates as a single generic agent by default. Quarterdeck transforms it into a **team of 28 specialists**, each focused on one area (code review, security, testing, deployment, research, etc.), working **in parallel**, like a real engineering squad.
 
 ### Before vs After
 
@@ -266,7 +273,7 @@ Create a `CLAUDE.md` at your project root to give agents context:
 ## How It Works
 
 ```
-Captain (you) ──→ PE (Principal Engineer) ──→ 26 Agents
+Captain (you) ──→ PE (Principal Engineer) ──→ 28 Agents
    decides            orchestrates              execute
 ```
 
@@ -274,7 +281,7 @@ Captain (you) ──→ PE (Principal Engineer) ──→ 26 Agents
 |------|-----|-------------|
 | **Captain** | **You**, the person using Claude Code | Give requests, approve plans, make decisions |
 | **PE** | Claude Code with Quarterdeck rules | Interprets your request, picks which agents to use, coordinates parallel work, synthesizes results |
-| **Agents** | 26 specialists (`.md` files) | Each executes a focused task and reports back to the PE |
+| **Agents** | 28 specialists (`.md` files) | Each executes a focused task and reports back to the PE |
 
 **Absolute rule:** Agents never act on their own. The PE coordinates everything and presents results to you. You decide.
 
@@ -311,7 +318,7 @@ Wave 4: Validation (2 agents in parallel):
 
 ---
 
-## The 26 Agents
+## The 28 Agents
 
 Organized into 8 squads (functional teams):
 
@@ -330,6 +337,7 @@ Organized into 8 squads (functional teams):
 | [**security-reviewer**](agents/security-reviewer.md) | Audits infrastructure security (SSH, firewall, SSL, databases) | Opus |
 | [**ux-reviewer**](agents/ux-reviewer.md) | Checks accessibility, visual consistency, interaction states | Sonnet |
 | [**staff-engineer**](agents/staff-engineer.md) | Evaluates cross-project impact and tech debt | Opus |
+| [**blue-team**](agents/blue-team.md) | Designs detection coverage and incident readiness before an attack, rather than auditing after one | Opus |
 
 ### Implementation: write code
 
@@ -339,6 +347,7 @@ Organized into 8 squads (functional teams):
 | [**e2e-runner**](agents/e2e-runner.md) | Creates and runs end-to-end tests with Playwright | Sonnet |
 | [**build-error-resolver**](agents/build-error-resolver.md) | Fixes build errors with minimal changes | Haiku |
 | [**refactor-cleaner**](agents/refactor-cleaner.md) | Removes dead code and consolidates duplicates | Sonnet |
+| [**design-specialist**](agents/design-specialist.md) | Builds polished UI: design tokens, layout, motion, screenshot-iterate loop. Distinct from ux-reviewer, which only audits | Sonnet |
 
 ### Operations: keep the system running
 
@@ -395,7 +404,7 @@ editor-chefe → jornalista → redator → fact-checker → editor-de-texto →
 
 ## Companion Skills & Scripts
 
-Beyond the 26 agents, Quarterdeck ships with one skill and four utility scripts vendored from [borghei/Claude-Skills](https://github.com/borghei/Claude-Skills) (see [NOTICE.md](NOTICE.md) for license attribution).
+Beyond the 28 agents, Quarterdeck ships with one skill and four utility scripts vendored from [borghei/Claude-Skills](https://github.com/borghei/Claude-Skills) (see [NOTICE.md](NOTICE.md) for license attribution).
 
 ### Skill
 
@@ -487,7 +496,7 @@ Agents come configured for **pt-BR**. To change, edit the language rule in each 
 
 | Document | What it covers |
 |----------|---------------|
-| [docs/AGENTS.md](docs/AGENTS.md) | Full catalog of 26 agents with tools and output |
+| [docs/AGENTS.md](docs/AGENTS.md) | Full catalog of 28 agents with tools and output |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture and request flow |
 | [docs/CRAWLER-PROTOCOL.md](docs/CRAWLER-PROTOCOL.md) | How parallel wave execution works |
 | [docs/OUTPUT-FORMAT.md](docs/OUTPUT-FORMAT.md) | Output format with per-agent examples |
@@ -499,7 +508,7 @@ Agents come configured for **pt-BR**. To change, edit the language rule in each 
 
 ## FAQ
 
-### Do I need all 26 agents?
+### Do I need all 28 agents?
 
 No, and measurement says most people will not use most of them. Over 45 days of real use
 here, four agents accounted for roughly half of all spawns, and eight were never invoked

@@ -1,6 +1,6 @@
 # Quarterdeck Architecture
 
-A command-and-control system for orchestrating 26 specialized AI agents in parallel, plus the
+A command-and-control system for orchestrating 28 specialized AI agents in parallel, plus the
 two layers that keep it honest: controls that run outside the model, and evals that say whether
 any of it works.
 
@@ -18,7 +18,7 @@ own.
 flowchart TB
     subgraph ORC["ORCHESTRATION — model-driven, advisory"]
         direction LR
-        O1["Triage<br/>Trivial / Medio / Complexo"] --> O2["Route<br/>26 agents, 8 squads"] --> O3["Waves<br/>parallel within, sequential between"]
+        O1["Triage<br/>Trivial / Medio / Complexo"] --> O2["Route<br/>28 agents, 8 squads"] --> O3["Waves<br/>parallel within, sequential between"]
     end
 
     subgraph ENF["ENFORCEMENT — deterministic, outside the model"]
@@ -141,7 +141,7 @@ Owner (decision-maker)
     ↓ directs
 Principal Engineer (PE)
     ↓ orchestrates
-26 Agents (specialists execute)
+28 Agents (specialists execute)
 ```
 
 **Absolute rule:** Agents NEVER act independently. The PE coordinates all work and presents results to the Owner, who decides.
@@ -152,11 +152,11 @@ Principal Engineer (PE)
 |------|-----|---|
 | **Owner** | You — the person using Claude Code | Give requests, approve plans, make decisions |
 | **PE** | Claude Code with Quarterdeck rules | Interpret requests, decompose into waves, coordinate parallel agents, synthesize results |
-| **Agent** | 26 specialized `.md` files | Execute focused task, report findings, follow PE delegation |
+| **Agent** | 28 specialized `.md` files | Execute focused task, report findings, follow PE delegation |
 
 ---
 
-## The 26 Agents Organized into 8 Squads
+## The 28 Agents Organized into 8 Squads
 
 ### Planning & Design Squad
 
@@ -177,10 +177,11 @@ Validate without modifying. ALWAYS runs in PARALLEL.
 | **security-reviewer** | Opus | Infrastructure security: SSH, firewall, SSL, credentials, hardening |
 | **ux-reviewer** | Sonnet | Accessibility, visual consistency, interaction states |
 | **staff-engineer** | Opus | Cross-system impact, tech debt, pattern propagation |
+| **blue-team** | Opus | Detection coverage and incident readiness, designed before an attack |
 
 ### Implementation Squad
 
-Write code. Requires zone assignment to prevent conflicts.
+Write code. Parallel writers each get their own git worktree, so a file conflict is impossible rather than prohibited.
 
 | Agent | Model | Role |
 |---|---|---|
@@ -188,6 +189,7 @@ Write code. Requires zone assignment to prevent conflicts.
 | **e2e-runner** | Sonnet | End-to-end tests with Playwright, user journeys |
 | **build-error-resolver** | Haiku | Fix build errors with minimal diff |
 | **refactor-cleaner** | Sonnet | Remove dead code, consolidate duplicates |
+| **design-specialist** | Sonnet | Builds polished UI; distinct from ux-reviewer, which only audits |
 
 ### ⚙️ Operations Squad
 
@@ -344,7 +346,7 @@ The PE automatically selects workflow patterns based on your request:
 
 1. **Max 5 agents per wave** — diminishing returns beyond this; cost explodes 15× per additional agent
 2. **Read-only agents always parallelize** — no conflict risk (code-reviewer, security-reviewer, etc.)
-3. **Write agents need zone assignment** — PE verifies no two agents modify same file in same wave
+3. **Write agents get worktree isolation** — a separate checkout per agent; a zone in a prompt is a request, a checkout is a guarantee
 4. **PE is the only synthesizer** — agents don't see each other's output; PE collects and merges
 5. **Failed agent doesn't block others** — PE handles via graceful degradation
 
