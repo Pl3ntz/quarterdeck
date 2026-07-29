@@ -416,17 +416,24 @@ edit stays solo.
 
 ### Conflict Prevention: isolate on the filesystem, not in the prompt
 
-**Parallel agents that WRITE code get `isolation: 'worktree'`. That is the rule.** A separate
-checkout on disk makes two agents editing the same file impossible, instead of merely
-prohibited — zone text in a prompt is a request, a checkout is a guarantee.
+**Parallel agents that WRITE code get `isolation: 'worktree'`. That is the rule.**
 
-**Read-only agents (code-reviewer, security-reviewer, etc.) do NOT need isolation** —
-concurrent reads never conflict, so don't pay the worktree cost for reviewers.
+Each worktree is its own checkout on disk, so two agents editing the same file is
+physically impossible rather than prohibited. Cost is ~200-500ms plus disk per agent, and
+an unchanged worktree is removed automatically.
 
-**Write-agent on the live tree — deploy, migration run, anything whose effect is outside git
-— NEVER parallelize. Serialize instead.**
+This replaces the previous protocol, which asked the PE to map each agent's file zone,
+verify no overlap, and restate the zone in every prompt — three steps of cognitive
+discipline enforced by nothing, protecting against a conflict the filesystem can prevent
+outright. Zone text in a prompt is a request; a separate checkout is a guarantee.
 
-Racional de por que worktree substituiu o mapeamento de zonas: `~/.claude/docs/pe-reference.md §15 (racional)`.
+Zones still make sense in one case: **read-only agents never need isolation** (concurrent
+reads do not conflict), so do not pay the worktree cost for reviewers.
+
+When a write-agent must operate on the live tree — a deploy, a migration run, anything
+whose effect is outside git — do not parallelize it at all. Serialize instead.
+
+**Read-only agents (code-reviewer, security-reviewer, etc.) do NOT need isolation** — concurrent reads never conflict, so don't pay the worktree cost for reviewers.
 
 **Everything else about orchestration is in `~/.claude/docs/pe-reference.md` §15** — effort
 dosing per task class, the Crawler→Workflow primitive mapping, wave execution, fan-out /
