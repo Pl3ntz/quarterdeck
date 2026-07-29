@@ -1,4 +1,4 @@
-# PE Reference: Lazy-loaded Protocols
+# PE Reference — Lazy-loaded Protocols
 
 > **This file is NOT auto-loaded.** It's read on-demand by the PE via the Read tool
 > when a workflow requires one of these protocols. Keeps the always-on rules leaner.
@@ -32,50 +32,50 @@ Rules:
 
 ### Context Summarization (BMAD cherry-pick, 2026-04-06)
 
-In chains of **4+ agents**, the PE MUST maintain a cumulative summary to prevent context loss:
+Em chains de **4+ agentes**, o PE DEVE manter um resumo acumulativo para evitar perda de contexto:
 
 ```
 ---context-summary---
-goal: [Owner's original goal in 1 sentence]
-agents_completed: [list of agents that already ran]
-key_decisions: [max 5 decisions made so far]
-open_issues: [max 3 unresolved questions]
-total_files_modified: [count]
+goal: [objetivo original do Owner em 1 frase]
+agents_completed: [lista de agentes que já rodaram]
+key_decisions: [max 5 decisões tomadas até agora]
+open_issues: [max 3 questões não resolvidas]
+total_files_modified: [contagem]
 ---end-context-summary---
 ```
 
-Rules:
-- **Create** the context-summary after the 3rd agent completes
-- **Update** after each subsequent agent (append decisions, update issues)
-- **Max 400 tokens**, forcing conciseness
-- **Include** it in the next agent's prompt ALONGSIDE the handoff block
-- **Does not replace** the handoff, it's complementary (handoff = last step, summary = overview)
+Regras:
+- **Criar** o context-summary após o 3º agente completar
+- **Atualizar** após cada agente subsequente (append decisions, update issues)
+- **Max 400 tokens** — forçar concisão
+- **Incluir** no prompt do próximo agente JUNTO com o handoff block
+- **Não substituir** o handoff — é complementar (handoff = último step, summary = visão geral)
 
 ## 8. Standard Workflow Chains
 
 Named chains the PE can reference. Each step uses the handoff protocol (section 7). Owner can skip steps or alter order.
 
-**CHAIN: new-feature** (trigger: "implement X", "new feature")
-1. Wave 1: planner → plan with phases and risks
-2. [Owner approves plan]
-3. Wave 2: tdd-guide → tests first, then implementation
-4. [Owner reviews implementation]
-5. Wave 3 (PARALLEL): code-reviewer + security-reviewer (if API)
+**CHAIN: new-feature** (trigger: "implementar X", "nova feature")
+1. Wave 1: planner → plano com fases e riscos
+2. [Owner aprova plano]
+3. Wave 2: tdd-guide → testes primeiro, depois implementa
+4. [Owner revisa implementação]
+5. Wave 3 (PARALELO): code-reviewer + security-reviewer (se API)
 
-**CHAIN: fix-bug** (trigger: "fix bug", "broken", "regression")
-1. Wave 1: tdd-guide → test that reproduces the bug, then fixes it
-2. Wave 2: code-reviewer → verifies the fix
+**CHAIN: fix-bug** (trigger: "fix bug", "quebrado", "regressão")
+1. Wave 1: tdd-guide → teste que reproduz bug, depois corrige
+2. Wave 2: code-reviewer → verifica correção
 
-**CHAIN: refactor** (trigger: "refactor", "cleanup", "restructure")
-1. Wave 1: architect → analyzes current structure, proposes target
-2. [Owner approves target]
-3. Wave 2: refactor-cleaner → executes
-4. Wave 3: code-reviewer → verifies
+**CHAIN: refactor** (trigger: "refatorar", "cleanup", "reestruturar")
+1. Wave 1: architect → analisa estrutura atual, propõe alvo
+2. [Owner aprova alvo]
+3. Wave 2: refactor-cleaner → executa
+4. Wave 3: code-reviewer → verifica
 
-**CHAIN: incident** (trigger: "production down", "errors", "urgent")
-1. incident-responder → diagnoses (skip approval for read-only)
-2. [Owner approves fix]
-3. devops-specialist → deploys fix (production gate applies if relevant)
+**CHAIN: incident** (trigger: "produção down", "erros", "urgente")
+1. incident-responder → diagnostica (skip approval para read-only)
+2. [Owner aprova fix]
+3. devops-specialist → deploya fix (production gate se aplica)
 
 
 ## 10. Request-Completion Protocol
@@ -87,12 +87,12 @@ The PE MUST verify that the Owner's request was fully addressed before stopping.
 On the FIRST substantive interaction of every session:
 1. Use TaskCreate to create a task with subject: `Owner-REQUEST: <concise summary of what the Owner asked>`
 2. Include the key requirements and success criteria in the task description
-3. This task is NEVER marked as completed during the session, it serves as a permanent reference anchor
+3. This task is NEVER marked as completed during the session — it serves as a permanent reference anchor
 4. If the Owner's request evolves mid-session, create a new `Owner-REQUEST-UPDATE: <updated requirements>` task
 
 ### Step 2: (removed 2026-07-24)
 
-This step required a `### RECAP` block before ending non-trivial work. It contradicted
+This step required a `### RESUMO` block before ending non-trivial work. It contradicted
 `rules/output-discipline.md`, which forbids trailing summaries verbatim -- Claude Code's
 native recap covers that ground. The rule that had enforcement code on disk
 (`hooks/verify-completion.sh`, never registered) was the one being overruled, so the
@@ -100,12 +100,12 @@ requirement is removed here rather than left to be rediscovered.
 
 ### Step 3: Simple Task Exception
 
-For trivial interactions (quick questions, typo fixes, conversation):
-- Skip the TaskCreate anchor
-- Skip the RECAP
-- A brief confirmation is sufficient
+Para interações triviais (perguntas rápidas, typo fixes, conversas):
+- Pule o TaskCreate anchor
+- Pule o RESUMO
+- Uma confirmação breve é suficiente
 
-**Threshold**: If the Owner's request requires 3+ tool calls or touches multiple files/topics, it's NOT trivial, apply the RECAP.
+**Threshold**: Se o request do Owner requer 3+ tool calls ou múltiplos arquivos/tópicos, NÃO é trivial — aplique o RESUMO.
 
 ### Compression Safety
 
@@ -125,7 +125,7 @@ When an agent fails or produces inadequate output during a multi-agent chain, th
 
 ### Recovery Steps
 
-1. **Detect**: If agent output is missing, malformed, or clearly wrong, do NOT pass it downstream
+1. **Detect**: If agent output is missing, malformed, or clearly wrong — do NOT pass it downstream
 2. **Classify**: Determine failure type (transient / quality / fundamental)
 3. **Retry** (max 2 retries per step):
    - Re-spawn the SAME agent with refined instructions and specific feedback about what was wrong
@@ -153,13 +153,13 @@ Before passing agent output to the next agent in a chain, the PE MUST verify:
 - [ ] Output format is usable by the receiving agent
 - [ ] No obvious errors or contradictions in the output
 
-If validation fails, trigger retry protocol, do NOT pass bad output downstream.
+If validation fails, trigger retry protocol — do NOT pass bad output downstream.
 
 ### Chain Checkpoint
 
 After each successful agent step in a multi-agent chain:
 1. Record the step result in a TaskCreate/TaskUpdate (survives compression)
-2. If the chain needs to restart later, resume from the last successful checkpoint, not from the beginning
+2. If the chain needs to restart later, resume from the last successful checkpoint — not from the beginning
 
 ## 12. Evaluator-Optimizer Protocol (Maker-Checker)
 
@@ -192,22 +192,22 @@ Maker Agent → Output → PE validates → {PASS: proceed to next step, FAIL: f
 
 ### Review Loopback (BMAD cherry-pick, 2026-04-06)
 
-When the checker (code-reviewer) finds a CRITICAL finding, the PE MUST classify the root cause:
+Quando o checker (code-reviewer) encontra um finding CRITICAL, o PE DEVE classificar a causa raiz:
 
-| Root cause | PE action |
+| Causa raiz | Ação do PE |
 |---|---|
-| **bad_code**, implementation error, code does not follow the spec | Normal retry: feedback → maker (tdd-guide) fixes it |
-| **bad_spec**, error in the plan/spec, the implementation followed the spec but the spec was wrong | **Automatic loopback**: PE goes back to planner/architect with the finding, without waiting for the Owner. Produces a corrected spec, then resumes implementation |
-| **intent_gap**, the Owner's original request was ambiguous and produced an incomplete spec | **Escalate to Owner**: PE presents the gap and asks for clarification before continuing |
+| **bad_code** — erro na implementação, código não segue a spec | Retry normal: feedback → maker (tdd-guide) corrige |
+| **bad_spec** — erro no plano/spec, a implementação seguiu a spec mas a spec estava errada | **Loopback automático**: PE volta para planner/architect com o finding, sem esperar Owner. Gera spec corrigida → retoma implementação |
+| **intent_gap** — o request original do Owner era ambíguo e gerou spec incompleta | **Escalate para Owner**: PE apresenta o gap e pede clarificação antes de continuar |
 
-**Rule:** Loopback for bad_spec is AUTOMATIC (PE decides without asking the Owner). Loopback for intent_gap ALWAYS requires Owner approval.
+**Regra:** Loopback para bad_spec é AUTO (PE decide sem perguntar ao Owner). Loopback para intent_gap SEMPRE requer aprovação do Owner.
 
 ### Quality Tracking
 
 After each maker-checker cycle, the PE records the outcome:
 - **PASS on 1st attempt**: Agent is performing well
-- **PASS on retry**: Note what needed correction, a potential improvement area
-- **FAIL after retries**: Flag for Owner, may need prompt refinement or a different agent
+- **PASS on retry**: Note what needed correction — potential improvement area
+- **FAIL after retries**: Flag for Owner — may need prompt refinement or different agent
 
 ## 13. Self-Improvement Protocol (Tip Extraction)
 
@@ -217,16 +217,16 @@ The PE SHOULD extract reusable tips from sessions and store them in memory for f
 
 At the end of substantial sessions (not simple Q&A), identify:
 
-1. **Strategy tips**, patterns from successful executions:
+1. **Strategy tips** — Patterns from successful executions:
    - "Searching for existing utilities before writing new ones saved 40% implementation time"
    - "Running code-reviewer + security-reviewer in parallel instead of sequential reduced review time"
 
-2. **Recovery tips**, lessons from failures that were corrected:
+2. **Recovery tips** — Lessons from failures that were corrected:
    - "When tdd-guide fails because test framework isn't configured, check package.json first"
    - "Deep-researcher OSINT queries on .gov.br domains need PT-BR search queries"
 
-3. **Optimization tips**, efficiency improvements discovered:
-   - "For FastAPI projects, architect is overkill for simple endpoint additions, planner suffices"
+3. **Optimization tips** — Efficiency improvements discovered:
+   - "For FastAPI projects, architect is overkill for simple endpoint additions — planner suffices"
    - "Using haiku model for doc-updater produces equivalent quality at 5x lower cost"
 
 ### How to Store Tips
@@ -234,9 +234,9 @@ At the end of substantial sessions (not simple Q&A), identify:
 Use the auto memory system. Write tips to topic-specific files in `~/.claude/projects/*/memory/`:
 
 ```
-File: tips-agents.md    - Tips about agent selection and orchestration
-File: tips-debugging.md - Tips about debugging patterns
-File: tips-[topic].md   - Tips about specific domains
+File: tips-agents.md    — Tips about agent selection and orchestration
+File: tips-debugging.md — Tips about debugging patterns
+File: tips-[topic].md   — Tips about specific domains
 ```
 
 Each tip should include:
@@ -247,25 +247,25 @@ Each tip should include:
 ### Tip Quality Rules
 
 - Only extract tips that are **generalizable** (not one-time situational fixes)
-- **Deduplicate**: Check existing tips before adding, don't repeat what's already stored
+- **Deduplicate**: Check existing tips before adding — don't repeat what's already stored
 - **Prune**: If a tip is contradicted by newer experience, update or remove it
-- **Max 10 tips per topic file**, forcing prioritization of the most valuable learnings
+- **Max 10 tips per topic file** — force prioritization of the most valuable learnings
 
 ## 14. Auto-Learning Protocol (Error Memory)
 
 The PE has a persistent error memory system. A PostToolUse hook on Bash automatically detects command errors and logs them to `~/.claude/logs/error-events.jsonl`. The PE is responsible for the intelligent layers: fix capture, index maintenance, and consultation.
 
-### Error Detection (Automatic, Hook)
+### Error Detection (Automatic — Hook)
 
 The `detect-errors.sh` hook runs on every Bash tool call and detects strong error patterns (Traceback, ModuleNotFoundError, command not found, Permission denied, etc.). It silently logs to `error-events.jsonl` with: timestamp, command, matched pattern, category, error snippet.
 
 Categories: `config`, `syntax`, `dependency`, `permission`, `connection`, `file`, `type`, `memory`, `logic`, `tooling`.
 
-The PE does NOT need to trigger detection, it happens mechanically.
+The PE does NOT need to trigger detection — it happens mechanically.
 
 ### Fix Capture (PE Responsibility)
 
-When the PE fixes an error (any tool, Bash, Edit, Write), it MUST log the resolution:
+When the PE fixes an error (any tool — Bash, Edit, Write), it MUST log the resolution:
 
 1. Append to `~/.claude/logs/error-resolutions.jsonl`:
 ```json
@@ -284,14 +284,14 @@ When the PE fixes an error (any tool, Bash, Edit, Write), it MUST log the resolu
 ```markdown
 ## dependency
 
-1. **neo4j driver not installed**: When `ModuleNotFoundError: neo4j`, add `neo4j` to requirements.txt and rebuild container. [2026-03-15]
+1. **neo4j driver not installed** — When `ModuleNotFoundError: neo4j`, add `neo4j` to requirements.txt and rebuild container. [2026-03-15]
 ```
 
-**When to capture**: After successfully resolving any error, a command that previously failed now works, an Edit that was corrected, a Write that needed adjustment.
+**When to capture**: After successfully resolving any error — command that previously failed now works, Edit that was corrected, Write that needed adjustment.
 
 **When NOT to capture**: One-time typos, trivial path mistakes, external service timeouts (not our problem).
 
-### Edit/Write Error Capture (Manual, No Hook)
+### Edit/Write Error Capture (Manual — No Hook)
 
 The PostToolUse hook only covers Bash. For Edit and Write tool failures (file not found, old_string not unique, permission denied), the PE MUST manually log them using the same resolution format above.
 
@@ -303,10 +303,10 @@ These failures are visible to the PE in the tool response. When the PE sees an E
 
 1. Read `~/.claude/logs/error-index.md`
 2. Check the relevant category for similar past errors
-3. If a match exists, apply the documented fix instead of a blind retry
-4. If no match, proceed normally, but if the retry succeeds, consider logging the fix
+3. If a match exists, apply the documented fix instead of blind retry
+4. If no match, proceed normally — but if the retry succeeds, consider logging the fix
 
-**When to consult**: Only on error paths. Do NOT read the index on every tool call, only when a tool fails or when attempting an operation known to be error-prone.
+**When to consult**: Only on error paths. Do NOT read the index on every tool call — only when a tool fails or when attempting an operation known to be error-prone.
 
 ### Index Maintenance
 
@@ -314,7 +314,7 @@ The `error-index.md` is organized by category with max **10 entries per category
 
 **Adding entries**: After resolving a reusable error, add it under the correct category with format:
 ```
-N. **short description**: When [error signal], [fix action]. [date]
+N. **short description** — When [error signal], [fix action]. [date]
 ```
 
 **Overflow**: When a category exceeds 10 entries, remove the oldest or least-useful entry.
@@ -326,16 +326,16 @@ N. **short description**: When [error signal], [fix action]. [date]
 During tip extraction at session end:
 1. Review `error-events.jsonl` for unresolved errors (status: unresolved)
 2. If any were resolved during the session but not logged, capture them now
-3. Patterns that recur across 3+ sessions should be promoted to `tips-debugging.md` or the relevant topic file
+3. Patterns that recur across 3+ sessions should be promoted to `tips-debugging.md` or relevant topic file
+
 
 
 ---
 
 ## 6. Routing tables (full)
 
-Moved out of the always-on rule on 2026-07-24. These are lookup tables, consulted when a route
-is not obvious from the agent descriptions the Agent tool already exposes. Trigger phrases stay
-in pt-BR because that is what the Owner actually types.
+Moved out of the always-on rule on 2026-07-24: these are lookup tables, consulted when a
+route is not obvious from the agent descriptions the Agent tool already exposes.
 
 Before analyzing a request from scratch, check these tables for a match. If found, propose the listed route. If no match, use normal judgment.
 
@@ -539,3 +539,137 @@ Adopted from borghei's `orchestration-protocol.md` (Pattern 4). Distinct from Wo
 - Missing error handling between steps (silent failures corrupt downstream output)
 
 For chains that DO need PE judgment, use Workflow Chains (Section 8) or the Crawler Protocol (Section 15).
+
+
+---
+
+## 15. Multi-Agent Orchestration — Workflow-First (Crawler Protocol)
+
+**When the PE needs MORE THAN ONE agent, the `Workflow` tool is the canonical engine.** It replaces manual fan-out of Task agents with deterministic control flow (`pipeline()`/`parallel()`), schema'd output, adversarial-verify patterns, budget control, and up to 16 concurrent / 1000 total agents. A SINGLE agent → use the `Agent` tool directly. The PE MUST maximize parallel execution: default to PARALLEL, go sequential only on a TRUE data dependency. (Hierarquia Owner>PE>Agents já definida na Section 2.)
+
+### Opt-in gate (HARD — harness-enforced)
+
+The `Workflow` tool can only be **called** when the Owner opted in: keyword `ultracode` in the message, OR ultracode on for the session, OR an explicit ask ("usa um workflow", "orquestra com subagents"), OR a skill that triggers it. Without opt-in the harness **forbids** launching a workflow. Therefore:
+
+- **Opted in** → PE authors and launches the Workflow.
+- **NOT opted in** → PE describes the proposed workflow (phases, agent count, rough token cost) and asks the Owner for the go (noting they can just say `ultracode`). NEVER fan out silently.
+- **Trivial verified edit** (1-few files, mechanical) → PE does it solo even if multi-step. Don't wrap a 4-line change in a workflow.
+
+### Effort dosing (calibrate per task — `opts.effort`)
+
+Every `agent()` call accepts `opts.effort` ∈ `low | medium | high | xhigh | max`. **Default = OMIT (inherit session effort). Do NOT over-specify.** Calibrate by difficulty:
+
+| Task class | effort | examples |
+|---|---|---|
+| Mechanical / deterministic | `low` | rename, frontmatter edit, file move, lint/build-error fix, doc stub, format |
+| Routine read / search / summarize | omit (inherit) | Explore sweeps, single-file edits, codemap, routine review |
+| Substantive implementation / planning | inherit → `high` | multi-file feature, integration, planner/architect plan |
+| Hardest reasoning | `high` / `xhigh` | adversarial verify, security analysis, architecture trade-off, judge panel, gnarly debugging |
+| Maximum-stakes arbiter | `max` | rare — final judge when a wrong call is very costly |
+
+Effort is the PRIMARY dial (scales tokens within a model); **model is SECONDARY** (scales $/token) — dose effort first. For `model`: the default is to inherit the session model, which is exactly how a workflow of N agents multiplies the session's cost by N — so **pin mechanical stages explicitly** (`opts.model: 'sonnet'`/`'haiku'`) instead of letting them inherit. Use `opts.agentType` to get a role agent (its frontmatter `model:` applies); keep opus for security/incident/deep reasoning. Tier prices and the allowlist live in `~/.claude/rules/performance.md`.
+
+### Crawler concepts → Workflow primitives
+
+| Crawler concept (manual, old) | Workflow primitive (now) |
+|---|---|
+| Wave (parallel within, sequential between) | `parallel()` barrier between phases — or `pipeline()` for no-barrier streaming (DEFAULT) |
+| Fan-out / fan-in | `parallel(thunks)`, then collect/synthesize in the script |
+| Zone assignment (write conflict) | `isolation: 'worktree'` per `agent()` |
+| Sequential dependency | pipeline stages / await order |
+| PE-only synthesizer | final synthesis stage or the script return value |
+
+Default to `pipeline()` (no barrier between stages). Use a `parallel()` barrier ONLY when a stage genuinely needs ALL prior results (dedup, early-exit on zero, cross-item compare). The conceptual reference below (waves, zones, routing) still holds — it now describes how to COMPOSE a workflow, not how to hand-spawn Task agents.
+
+### Wave Execution Model
+
+Instead of sequential chains, the PE groups work into **waves**. Within a wave, all tasks run in parallel. Between waves, sequential.
+
+```
+Wave 1 (PARALLEL — reconnaissance):
+  ├── Explore agent: codebase structure + existing patterns
+  ├── Explore agent: test coverage + dependencies
+  └── deep-researcher: external research (if needed)
+
+Wave 2 (SEQUENTIAL — planning):
+  └── planner or architect: plan based on Wave 1 results
+
+Wave 3 (PARALLEL — implementation):
+  ├── tdd-guide: tests + implementation (worktree)
+  └── devops-specialist: CI/CD changes (worktree)
+
+Wave 4 (PARALLEL — validation):
+  ├── code-reviewer: code quality
+  ├── security-reviewer: security audit
+  └── ux-reviewer: UI review (if applicable)
+```
+
+### Fan-Out / Fan-In Pattern
+
+```
+1. PE decomposes Owner request into N independent sub-tasks
+2. PE spawns N agents in parallel (fan-out)
+   - Each agent gets: task description + output contract (+ `isolation: 'worktree'` if it writes)
+3. PE collects all results
+4. PE synthesizes into unified answer (fan-in)
+5. PE presents single coherent analysis to Owner
+```
+
+### Updated Parallel Routing Table
+
+**Always Parallel (no dependencies between these):**
+
+| Trigger | Agents (PARALLEL) |
+|---|---|
+| review code/PR | code-reviewer + security-reviewer + (ux-reviewer if UI) |
+| evaluate architecture | architect + staff-engineer |
+| audit project | security-reviewer + performance-optimizer + code-reviewer + blue-team |
+| assess defensive posture, detection coverage, incident readiness | blue-team + security-reviewer |
+| investigate issue | Explore (codebase) + deep-researcher (web) |
+| validate implementation | code-reviewer + security-reviewer + tdd-guide (test run) |
+| multi-project analysis | 1 agent per project, all parallel |
+
+**Wave-Based Chains (parallel within waves, sequential between):**
+
+| Trigger | Wave 1 (parallel) | Wave 2 (sequential) | Wave 3 (parallel) |
+|---|---|---|---|
+| new feature | Explore + deep-researcher | planner | tdd-guide + code-reviewer + security-reviewer |
+| new API endpoint | Explore + deep-researcher | planner | tdd-guide + code-reviewer + security-reviewer |
+| refactor | Explore (structure) + Explore (tests) | architect | refactor-cleaner + code-reviewer |
+| fix bug (complex) | Explore (code) + Explore (tests) | tdd-guide | code-reviewer |
+| UI change | Explore + deep-researcher | planner | tdd-guide + ux-reviewer + code-reviewer |
+
+### Parallel Execution Rules
+
+1. **No fixed cap inside a workflow** — `Workflow` caps at 16 concurrent / 1000 total; scale agent count to the task and `log()` any coverage you bound (top-N, sampling). The old "5 per wave" was a manual-spawn budget guard — it no longer applies when orchestrating via the `Workflow` tool. For manual `Agent`-tool fan-out WITHOUT a workflow, still keep it modest (≤5).
+2. **Read-only agents always parallelize** — no conflict risk
+3. **Write agents run in their own worktree** — `isolation: 'worktree'`, so conflict is impossible rather than forbidden
+4. **Failed agent does NOT block others** — PE handles via Section 11 (Chain Failure Recovery)
+5. **PE is the ONLY synthesizer** — agents never see each other's output directly
+6. **Background agents for non-blocking work** — use `run_in_background: true` when PE doesn't need results immediately
+
+### SOTA 2026 — Parallel vs Single-Agent Decision (added 2026-04-28)
+
+Empirical evidence (arXiv 2604.02460, 2502.08788, ICLR 2025 MAD, Anthropic multi-agent research blog):
+
+| Task type | Use parallel multi-agent | Use single Opus + extended thinking |
+|---|---|---|
+| **Judging / review** (code-review, security-audit, fact-check) | ✅ wins — heterogeneous critics catch different failure modes | ❌ underused |
+| **Breadth-first research** (multi-source comparison, OSINT, landscape mapping) | ✅ wins at 15× cost — only when value justifies | ❌ misses sources |
+| **Solution-finding** (design API, plan refactor, architect choice) | ❌ ANTI-PATTERN — agents read same files, produce overlapping output | ✅ wins at equal token budget |
+| **Red team vs blue team debate on same artifact** | ❌ ANTI-PATTERN unless models are heterogeneous (e.g., Opus vs Sonnet) | ✅ Opus + adversarial framing |
+
+**Default rule:** if all agents in a wave would read the **same files** and produce **same-type findings**, you have an anti-pattern. Either specialize their angles (different zones, different depths) or collapse to a single agent with extended thinking.
+
+### Anti-Patterns to Avoid (audit 2026-04-28)
+
+1. **Dual-format output requirement** (JSON + Markdown) — sub-agents cannot declare structured output contracts (GitHub issue #20625); pick Markdown only. Format-insensitive on Opus/Sonnet (0% perf delta).
+2. **agent-recall on every spawn** — only Quality Gate agents need it. Implementation/Research agents waste preamble tokens on irrelevant history.
+3. **Scratch files for short tasks** — folklore, not Anthropic-validated. Skip for tasks <5 tool calls.
+4. **Re-spawning when SendMessage suffices** — for stateful continuation of the same logical agent, prefer SendMessage. Fresh spawn for fresh tasks.
+5. **Verbose preamble bloat** — keep ≤800 tokens; >2k = compaction risk for low-signal data.
+6. **Multi-agent debate for solution-finding** — empirically loses to single-Opus + extended thinking at equal budget.
+7. **Launching a workflow without opt-in** — harness-forbidden; propose the workflow + rough cost and ask instead.
+8. **Over-specifying `effort`/`model` on every `agent()`** — default is inherit; deviate only with a reason (mechanical→`low`, hardest→`high`+).
+9. **`parallel()` barrier where `pipeline()` suffices** — a barrier wastes wall-clock when no stage needs all prior results.
+10. **Wrapping a trivial verified edit in a workflow** — solo is correct there; reserve workflows for real fan-out.
