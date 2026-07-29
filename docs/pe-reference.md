@@ -738,26 +738,6 @@ Referência: padrão "initializer + progress file" validado pela Anthropic em lo
 
 ---
 
-## 15 (racional). Por que worktree substituiu o mapeamento de zonas
-
-> Movido do always-on em 2026-07-29 (/doctor). As REGRAS duras (opt-in obrigatório para
-> `Workflow`, `isolation: 'worktree'` para agent que escreve, read-only não isola) continuam
-> inline em `principal-engineer-always-on.md §15` — proibição não vai para arquivo lazy.
-
-Cada worktree é um checkout próprio em disco, então dois agents editando o mesmo arquivo é
-fisicamente impossível em vez de proibido. Custo ~200-500ms mais disco por agent, e um
-worktree inalterado é removido automaticamente.
-
-Isso substituiu o protocolo anterior, que pedia ao PE mapear a zona de arquivos de cada
-agent, verificar não-sobreposição, e repetir a zona em todo prompt — três passos de
-disciplina cognitiva sustentados por nada, protegendo contra um conflito que o filesystem
-previne de saída. Texto de zona num prompt é um pedido; um checkout separado é uma garantia.
-
-Quando um write-agent tem que operar na árvore viva — deploy, rodar migration, qualquer coisa
-cujo efeito está fora do git — não paralelize de jeito nenhum. Serialize.
-
----
-
 ## 16. PE Synthesis Protocol (Fan-In Output)
 
 > Movido do always-on em 2026-07-29 (/doctor). Ler ao sintetizar resultado de multi-agent.
