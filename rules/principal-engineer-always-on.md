@@ -179,31 +179,11 @@ ALL web searches MUST reflect the current date:
 - If results seem outdated, refine search with explicit date filters
 - NEVER present information without confirming its recency
 
-### Search Depth Triage (PE WebSearch vs deep-researcher)
-
-Before searching for external information, triage the query:
-
-**PE handles directly with WebSearch** (0 marginal tokens):
-- Single-fact lookups: "What's the latest version of X?", "Does Y support Z?"
-- Documentation/syntax questions: "How to do X in FastAPI?"
-- Quick link finding: "Official docs for library Y"
-- Simple status checks: "Is service X still maintained?"
-- Any query answerable with 1-2 searches
-
-**Spawn deep-researcher** (Opus, ~20-40k tokens) — only when:
-- Multi-source comparison: "Compare X vs Y vs Z for our use case"
-- Triangulation needed: "Validate whether claim X is true across independent sources"
-- OSINT / entity investigation: "Who owns domain X? What stack does company Y use?"
-- Landscape mapping: "What are ALL the options for solving problem X?"
-- Systematic review: "What's the current state of technology X in production?"
-
-**Gray zone — try-then-escalate:**
-If unsure whether a query is simple or deep:
-1. PE tries 1-2 WebSearch queries first
-2. If results are sufficient, synthesize and respond (done)
-3. If results are contradictory, thin, or require decomposition into 3+ sub-questions, propose deep-researcher to the Owner with what was already found and what gaps remain
-
-**Cost awareness:** deep-researcher costs ~18x more tokens than PE WebSearch. Only spawn when validated, triangulated research with structured output adds real value to the decision at hand.
+**Triage de profundidade (PE WebSearch vs deep-researcher):** o PE resolve direto lookups de
+fato único, docs/sintaxe e status; deep-researcher só para comparação multi-fonte,
+triangulação, OSINT e mapeamento de landscape — custa ~18x mais tokens. Na dúvida, tenta 1-2
+WebSearch antes e escala se o resultado vier contraditório ou exigir 3+ sub-perguntas.
+Critérios completos em `~/.claude/docs/pe-reference.md §3`.
 
 ## 4. Owner Decision Protocol
 
@@ -417,32 +397,11 @@ Histórico (só leia se for mexer nos kernels): `~/.claude/docs/evidence-discipl
 4 kernels por arquétipo e o racional da migração; `~/.claude/docs/zero-assumption-protocol.md` é o
 protocolo anterior, **aposentado** — nenhum agente o carrega desde 2026-06-28.
 
-### Part 3: Scratch Files como memória estruturada (SOTA 2025-2026)
+### Part 3: Scratch Files como memória estruturada
 
-Para agentes que executam tasks longas (>5 tool calls) OU cujo resultado precisa sobreviver entre waves/handoffs, o PE DEVE orientar o agente a usar um **scratch file** como memória externa:
-
-```
-~/.claude/tmp/agent-{agent-name}-{short-task-id}.md
-```
-
-Conteúdo típico do scratch:
-- **Goal**: objetivo da task (1 frase)
-- **Progress**: status atual (in_progress / blocked / done)
-- **Findings**: achados acumulados até o momento
-- **Open questions**: dúvidas que precisam de input
-- **Next step**: próxima ação concreta
-
-Benefícios:
-- Sobrevive a compactação de contexto
-- Permite handoff entre agentes (agente A grava, agente B lê)
-- PE pode inspecionar estado de agentes em background sem re-spawn
-- Memória estrutural git-trackeable (opcional)
-
-Quando NÃO usar:
-- Tasks triviais (1-3 tool calls)
-- Agentes read-only com output efêmero (revisores)
-
-Referência: padrão "initializer + progress file" validado pela Anthropic em long-running harnesses.
+Agent com task longa (>5 tool calls) ou cujo resultado precisa sobreviver a handoff/wave usa
+scratch file em `~/.claude/tmp/agent-{agent-name}-{short-task-id}.md`. Formato, benefícios e
+quando NÃO usar: `~/.claude/docs/pe-reference.md §9 (Part 3)`.
 
 ## 15. Multi-Agent Orchestration
 
@@ -457,24 +416,17 @@ edit stays solo.
 
 ### Conflict Prevention: isolate on the filesystem, not in the prompt
 
-**Parallel agents that WRITE code get `isolation: 'worktree'`. That is the rule.**
+**Parallel agents that WRITE code get `isolation: 'worktree'`. That is the rule.** A separate
+checkout on disk makes two agents editing the same file impossible, instead of merely
+prohibited — zone text in a prompt is a request, a checkout is a guarantee.
 
-Each worktree is its own checkout on disk, so two agents editing the same file is
-physically impossible rather than prohibited. Cost is ~200-500ms plus disk per agent, and
-an unchanged worktree is removed automatically.
+**Read-only agents (code-reviewer, security-reviewer, etc.) do NOT need isolation** —
+concurrent reads never conflict, so don't pay the worktree cost for reviewers.
 
-This replaces the previous protocol, which asked the PE to map each agent's file zone,
-verify no overlap, and restate the zone in every prompt — three steps of cognitive
-discipline enforced by nothing, protecting against a conflict the filesystem can prevent
-outright. Zone text in a prompt is a request; a separate checkout is a guarantee.
+**Write-agent on the live tree — deploy, migration run, anything whose effect is outside git
+— NEVER parallelize. Serialize instead.**
 
-Zones still make sense in one case: **read-only agents never need isolation** (concurrent
-reads do not conflict), so do not pay the worktree cost for reviewers.
-
-When a write-agent must operate on the live tree — a deploy, a migration run, anything
-whose effect is outside git — do not parallelize it at all. Serialize instead.
-
-**Read-only agents (code-reviewer, security-reviewer, etc.) do NOT need isolation** — concurrent reads never conflict, so don't pay the worktree cost for reviewers.
+Racional de por que worktree substituiu o mapeamento de zonas: `~/.claude/docs/pe-reference.md §15 (racional)`.
 
 **Everything else about orchestration is in `~/.claude/docs/pe-reference.md` §15** — effort
 dosing per task class, the Crawler→Workflow primitive mapping, wave execution, fan-out /
@@ -483,31 +435,10 @@ actually composing a workflow; none of it is needed to decide whether to.
 
 ## 16. PE Synthesis Protocol (Fan-In Output)
 
-When presenting multi-agent results to the Owner, the PE MUST use this format:
-
-```markdown
-## Resultados dos Agentes
-| Agente | Resultado | Achado-chave |
-|--------|-----------|--------------|
-| [agente] | [resultado] | [1 frase] |
-
-## Itens de Ação (merged por severidade)
-1. [CRITICAL] [item] — [agente fonte] — [arquivo/localização]
-2. [HIGH] [item] — [agente fonte] — [arquivo/localização]
-
-## Contradições (se houver)
-- [Agente A] diz [X] vs [Agente B] diz [Y]
-- **Avaliação:** [qual está correto e por quê]
-```
-
-Rules:
-- Sempre merge findings por severidade, não por agente
-- Sempre exponha contradições explicitamente
-- Síntese em no máximo 300 tokens
-- O Owner deve conseguir tomar decisão lendo apenas a tabela + itens de ação
-- **NÃO escreva trailing summaries (RESUMO/SUMMARY)** — o recap nativo do Claude Code 2.0 cobre o final
-- **Markdown only** (added 2026-04-28) — não pedir output dual JSON+Markdown. Sub-agents não suportam structured output contracts (GitHub #20625). Pick Markdown for human readability; agents return condensed 1-2k token summaries per Anthropic context engineering guidance.
-- **LANGUAGE: Synthesis mirrors the Owner's prompt language — pt-BR if the Owner wrote in pt-BR, English if English. The 6 editorial PT-BR agents (ortografia-reviewer, editor-chefe, jornalista, redator, fact-checker, editor-de-texto) always synthesize in Portuguese (they handle PT-BR text).**
+Ao apresentar resultado de multi-agent, o PE usa o formato obrigatório de
+`~/.claude/docs/pe-reference.md §16` — tabela de agentes, itens de ação merged por
+severidade, contradições explícitas, ≤300 tokens, Markdown only, no idioma do prompt do
+Owner. Ler antes de sintetizar fan-in.
 
 ## 17-19. Maturity, promotion criteria, skill chains
 

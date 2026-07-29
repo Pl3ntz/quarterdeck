@@ -673,3 +673,117 @@ Empirical evidence (arXiv 2604.02460, 2502.08788, ICLR 2025 MAD, Anthropic multi
 8. **Over-specifying `effort`/`model` on every `agent()`** — default is inherit; deviate only with a reason (mechanical→`low`, hardest→`high`+).
 9. **`parallel()` barrier where `pipeline()` suffices** — a barrier wastes wall-clock when no stage needs all prior results.
 10. **Wrapping a trivial verified edit in a workflow** — solo is correct there; reserve workflows for real fan-out.
+
+---
+
+## 3. Search Depth Triage (PE WebSearch vs deep-researcher)
+
+> Movido do always-on em 2026-07-29 (/doctor). A regra de recência das buscas ficou inline em
+> `principal-engineer-always-on.md §3`; só o triage vive aqui.
+
+Before searching for external information, triage the query:
+
+**PE handles directly with WebSearch** (0 marginal tokens):
+- Single-fact lookups: "What's the latest version of X?", "Does Y support Z?"
+- Documentation/syntax questions: "How to do X in FastAPI?"
+- Quick link finding: "Official docs for library Y"
+- Simple status checks: "Is service X still maintained?"
+- Any query answerable with 1-2 searches
+
+**Spawn deep-researcher** (Opus, ~20-40k tokens) — only when:
+- Multi-source comparison: "Compare X vs Y vs Z for our use case"
+- Triangulation needed: "Validate whether claim X is true across independent sources"
+- OSINT / entity investigation: "Who owns domain X? What stack does company Y use?"
+- Landscape mapping: "What are ALL the options for solving problem X?"
+- Systematic review: "What's the current state of technology X in production?"
+
+**Gray zone — try-then-escalate:**
+If unsure whether a query is simple or deep:
+1. PE tries 1-2 WebSearch queries first
+2. If results are sufficient, synthesize and respond (done)
+3. If results are contradictory, thin, or require decomposition into 3+ sub-questions, propose deep-researcher to the Owner with what was already found and what gaps remain
+
+**Cost awareness:** deep-researcher costs ~18x more tokens than PE WebSearch. Only spawn when validated, triangulated research with structured output adds real value to the decision at hand.
+
+---
+
+## 9 (Part 3). Scratch Files como memória estruturada
+
+> Movido do always-on em 2026-07-29 (/doctor). Ler ao spawnar agent de task longa.
+
+Para agentes que executam tasks longas (>5 tool calls) OU cujo resultado precisa sobreviver entre waves/handoffs, o PE DEVE orientar o agente a usar um **scratch file** como memória externa:
+
+```
+~/.claude/tmp/agent-{agent-name}-{short-task-id}.md
+```
+
+Conteúdo típico do scratch:
+- **Goal**: objetivo da task (1 frase)
+- **Progress**: status atual (in_progress / blocked / done)
+- **Findings**: achados acumulados até o momento
+- **Open questions**: dúvidas que precisam de input
+- **Next step**: próxima ação concreta
+
+Benefícios:
+- Sobrevive a compactação de contexto
+- Permite handoff entre agentes (agente A grava, agente B lê)
+- PE pode inspecionar estado de agentes em background sem re-spawn
+- Memória estrutural git-trackeable (opcional)
+
+Quando NÃO usar:
+- Tasks triviais (1-3 tool calls)
+- Agentes read-only com output efêmero (revisores)
+
+Referência: padrão "initializer + progress file" validado pela Anthropic em long-running harnesses.
+
+---
+
+## 15 (racional). Por que worktree substituiu o mapeamento de zonas
+
+> Movido do always-on em 2026-07-29 (/doctor). As REGRAS duras (opt-in obrigatório para
+> `Workflow`, `isolation: 'worktree'` para agent que escreve, read-only não isola) continuam
+> inline em `principal-engineer-always-on.md §15` — proibição não vai para arquivo lazy.
+
+Cada worktree é um checkout próprio em disco, então dois agents editando o mesmo arquivo é
+fisicamente impossível em vez de proibido. Custo ~200-500ms mais disco por agent, e um
+worktree inalterado é removido automaticamente.
+
+Isso substituiu o protocolo anterior, que pedia ao PE mapear a zona de arquivos de cada
+agent, verificar não-sobreposição, e repetir a zona em todo prompt — três passos de
+disciplina cognitiva sustentados por nada, protegendo contra um conflito que o filesystem
+previne de saída. Texto de zona num prompt é um pedido; um checkout separado é uma garantia.
+
+Quando um write-agent tem que operar na árvore viva — deploy, rodar migration, qualquer coisa
+cujo efeito está fora do git — não paralelize de jeito nenhum. Serialize.
+
+---
+
+## 16. PE Synthesis Protocol (Fan-In Output)
+
+> Movido do always-on em 2026-07-29 (/doctor). Ler ao sintetizar resultado de multi-agent.
+
+When presenting multi-agent results to the Owner, the PE MUST use this format:
+
+```markdown
+## Resultados dos Agentes
+| Agente | Resultado | Achado-chave |
+|--------|-----------|--------------|
+| [agente] | [resultado] | [1 frase] |
+
+## Itens de Ação (merged por severidade)
+1. [CRITICAL] [item] — [agente fonte] — [arquivo/localização]
+2. [HIGH] [item] — [agente fonte] — [arquivo/localização]
+
+## Contradições (se houver)
+- [Agente A] diz [X] vs [Agente B] diz [Y]
+- **Avaliação:** [qual está correto e por quê]
+```
+
+Rules:
+- Sempre merge findings por severidade, não por agente
+- Sempre exponha contradições explicitamente
+- Síntese em no máximo 300 tokens
+- O Owner deve conseguir tomar decisão lendo apenas a tabela + itens de ação
+- **NÃO escreva trailing summaries (RESUMO/SUMMARY)** — o recap nativo do Claude Code 2.0 cobre o final (regra já ativa sempre via `output-discipline.md`)
+- **Markdown only** (added 2026-04-28) — não pedir output dual JSON+Markdown. Sub-agents não suportam structured output contracts (GitHub #20625). Pick Markdown for human readability; agents return condensed 1-2k token summaries per Anthropic context engineering guidance.
+- **LANGUAGE: Synthesis mirrors the Owner's prompt language — pt-BR if the Owner wrote in pt-BR, English if English. The 6 editorial PT-BR agents (ortografia-reviewer, editor-chefe, jornalista, redator, fact-checker, editor-de-texto) always synthesize in Portuguese (they handle PT-BR text).**
