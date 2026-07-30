@@ -200,6 +200,83 @@ if [ -f "$CONF" ]; then
   done
 fi
 
+# --- leak-guard: which identifiers are private, and where -----------------------------
+#
+# Added 2026-07-30. The denylist had conflated two different questions -- "is this identifier
+# private?" and "does this repo have a reason to name it?" -- so six public repos could not
+# commit their own GPL copyright, their own site domain or the contact address their store
+# listing requires. It was patched three times with per-repo exemptions before the shape was
+# recognised as wrong, and nothing here would have caught it: the suite tested the PreToolUse
+# hooks and never the leak scanner.
+#
+# Samples are READ FROM THE LISTS at runtime, never written inline. This script is mirrored to
+# a public repo, exactly like the host aliases above.
+LG_SCAN="${LG_SCAN:-$HOME/.claude/scripts/quarterdeck-guard/leak-scan.sh}"
+DENY_L="${QD_DENYLIST:-$HOME/.claude/local/quarterdeck-denylist.txt}"
+PORTF_L="${QD_PORTFOLIOLIST:-$HOME/.claude/local/quarterdeck-denylist-portfolio.txt}"
+
+if [ -x "$LG_SCAN" ] && [ -r "$DENY_L" ] && [ -r "$PORTF_L" ]; then
+  # First pattern of each tier, unescaped into a literal that matches it. The lists lead with
+  # simple patterns (a bare IP, a bare name), so dropping the ERE escapes is enough.
+  unesc() { grep -vE '^[[:space:]]*(#|$)' "$1" | sed -n "${2:-1}p" | sed 's/\\b//g; s/\\//g'; }
+  raw() { grep -vE '^[[:space:]]*(#|$)' "$1" | sed -n "${2:-1}p"; }
+  HARD_SAMPLE="$(unesc "$DENY_L" 1)"
+  HARD_OTHER="$(unesc "$DENY_L" 2)"
+  ID_SAMPLE="$(unesc "$PORTF_L" 1)"
+
+  # A project-mode repo whose exempt term is a REAL denylist entry. Exempting an invented name
+  # would test nothing: a term absent from every list passes whether the exemption works or not,
+  # which is how the first version of this check turned out incapable of failing.
+  LGREPO="$TMP/leakrepo"; mkdir -p "$LGREPO"
+  git -C "$LGREPO" init -q .
+  raw "$DENY_L" 1 > "$LGREPO/.git/leakguard-self"
+  echo project > "$LGREPO/.git/leakguard-mode"
+
+  leak_check() {
+    # leak_check <label> <block|pass> <mode> <text> [cwd]
+    local label="$1" expected="$2" mode="$3" text="$4" dir="${5:-$HOME}" got
+    if printf '+ %s\n' "$text" | (cd "$dir" && QD_MODE="$mode" bash "$LG_SCAN") >/dev/null 2>&1; then
+      got=pass
+    else
+      got=block
+    fi
+    if [ "$got" = "$expected" ]; then
+      pass=$((pass+1)); [ "$VERBOSE" = "-v" ] && printf '  ok    %-56s %s\n' "$label" "$got"
+    else
+      fail=$((fail+1)); printf '  FAIL  %-56s expected=%s got=%s\n' "$label" "$expected" "$got"
+    fi
+  }
+
+  echo "leak-guard — private identifiers block everywhere"
+  leak_check "infra identifier in a project repo"   block project "$HARD_SAMPLE"
+  leak_check "infra identifier in a meta repo"      block meta    "$HARD_SAMPLE"
+
+  echo "leak-guard — published identity is not a leak in its own repo"
+  # This is the regression. Before the fix both of these blocked, and the repo was frozen.
+  leak_check "own identity, project repo"           pass  project "$ID_SAMPLE"
+  leak_check "own identity, meta repo"              block meta    "$ID_SAMPLE"
+
+  echo "leak-guard — self-exemption covers the repo, not its neighbours"
+  leak_check "repo naming its own exempt term"      pass  project "$HARD_SAMPLE" "$LGREPO"
+  leak_check "repo naming a neighbour too"          block project "$HARD_SAMPLE and $HARD_OTHER" "$LGREPO"
+
+  echo "leak-guard — fail-closed"
+  # An unclassified repo must get the STRICTER tier. Read as "project" it would ship identity.
+  if printf '+ %s\n' "$ID_SAMPLE" | QD_MODE_FILE=/nonexistent/leakguard-mode bash "$LG_SCAN" >/dev/null 2>&1; then
+    fail=$((fail+1)); printf '  FAIL  %-56s expected=block got=pass\n' "unclassified repo gets the strict tier"
+  else
+    pass=$((pass+1)); [ "$VERBOSE" = "-v" ] && printf '  ok    %-56s %s\n' "unclassified repo gets the strict tier" "block"
+  fi
+  # A meta repo whose identity list vanished must block, not silently drop the tier.
+  if printf '+ harmless text\n' | QD_MODE=meta QD_PORTFOLIOLIST=/nonexistent/list bash "$LG_SCAN" >/dev/null 2>&1; then
+    fail=$((fail+1)); printf '  FAIL  %-56s expected=block got=pass\n' "meta repo with the identity list missing"
+  else
+    pass=$((pass+1)); [ "$VERBOSE" = "-v" ] && printf '  ok    %-56s %s\n' "meta repo with the identity list missing" "block"
+  fi
+else
+  echo "leak-guard — SKIPPED (scanner or lists not present on this machine)"
+fi
+
 rm -rf "$TMP"
 
 echo

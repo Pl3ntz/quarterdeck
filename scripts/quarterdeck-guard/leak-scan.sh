@@ -10,6 +10,7 @@ set -uo pipefail
 
 DENY="${QD_DENYLIST:-$HOME/.claude/local/quarterdeck-denylist.txt}"
 WARN="${QD_WARNLIST:-$HOME/.claude/local/quarterdeck-denylist-warn.txt}"
+PORTF="${QD_PORTFOLIOLIST:-$HOME/.claude/local/quarterdeck-denylist-portfolio.txt}"
 
 # A public repository is allowed to name ITSELF. Blocking a project name inside that project's own repo would
 # make it uncommittable, and the risk this guard exists for is cross-contamination: one
@@ -22,6 +23,30 @@ if [[ -z "$SELF_FILE" ]] && git rev-parse --git-dir >/dev/null 2>&1; then
 fi
 QD_SELF=""
 [[ -n "$SELF_FILE" && -r "$SELF_FILE" ]] && QD_SELF="$(grep -vE '^[[:space:]]*(#|$)' "$SELF_FILE" 2>/dev/null | paste -sd '|' -)"
+
+# Two kinds of repo, two answers to "is naming the Owner a leak?".
+#
+#   project — a repo ABOUT something he built. It has to carry its own GPL copyright, its own
+#             AUTHORS file, its own site domain and the contact address the extension stores
+#             require. Blocking those froze six public repos over data the remotes were
+#             already serving. Hard denylist only.
+#   meta    — a public mirror of his config, dotfiles or tooling. Nothing there needs to say
+#             who he is, and that was the original reason this guard exists. Hard denylist
+#             PLUS the identity tier.
+#
+# Written to .git/leakguard-mode by install-public-repo-guard.sh. ABSENT = meta, so a repo
+# nobody classified gets the stricter tier rather than the looser one. QD_MODE overrides, for
+# tests.
+if [[ -z "${QD_MODE:-}" ]]; then
+  MODE_FILE="${QD_MODE_FILE:-}"
+  if [[ -z "$MODE_FILE" ]] && git rev-parse --git-dir >/dev/null 2>&1; then
+    MODE_FILE="$(git rev-parse --git-dir 2>/dev/null)/leakguard-mode"
+  fi
+  QD_MODE="meta"
+  [[ -n "$MODE_FILE" && -r "$MODE_FILE" ]] && \
+    QD_MODE="$(grep -vE '^[[:space:]]*(#|$)' "$MODE_FILE" 2>/dev/null | head -1 | tr -d '[:space:]')"
+fi
+[[ "$QD_MODE" == "project" ]] || QD_MODE="meta"
 
 if [[ ! -r "$DENY" ]]; then
   echo "‼️  quarterdeck-guard: hard denylist not found/readable at:" >&2
@@ -39,6 +64,23 @@ build_alt() { grep -vE '^[[:space:]]*(#|$)' "$1" 2>/dev/null | paste -sd '|' -; 
 rc=0
 
 deny_alt="$(build_alt "$DENY")"
+
+# In meta mode the identity tier is appended to the SAME alternation, so it goes through the
+# same self-exemption pass and reports under the same BLOCKED heading. Fail-closed: a meta repo
+# whose identity list is unreadable blocks, exactly as it does for the hard list.
+if [[ "$QD_MODE" == "meta" ]]; then
+  if [[ ! -r "$PORTF" ]]; then
+    echo "‼️  quarterdeck-guard: identity list not found/readable at:" >&2
+    echo "    $PORTF" >&2
+    echo "    This repo is in META mode, which requires it. BLOCKING (fail-closed)." >&2
+    echo "    Restore the file, or mark the repo as a project:" >&2
+    echo "      echo project > \"\$(git rev-parse --git-dir)/leakguard-mode\"" >&2
+    exit 1
+  fi
+  portf_alt="$(build_alt "$PORTF")"
+  [[ -n "$portf_alt" ]] && deny_alt="${deny_alt:+$deny_alt|}$portf_alt"
+fi
+
 if [[ -n "$deny_alt" ]]; then
   hits="$(printf '%s\n' "$input" | grep -inE "$deny_alt" 2>/dev/null)"
   # Drop lines whose ONLY denylist match is this repo's own name. A line that also carries a

@@ -13,6 +13,10 @@
 # repo's own terms and leak-scan.sh drops matches that are only that. A line carrying a
 # DIFFERENT project's identifier still blocks -- cross-contamination is the risk being closed.
 #
+# Tier: the installer also writes .git/leakguard-mode (project | meta). See META_REPOS below.
+# Per-repo exemptions are NOT the fix for a whole class of false positive -- if a term is being
+# exempted repo after repo, it is classified wrong. Move it, do not paper over it.
+#
 # Usage:
 #   install-public-repo-guard.sh --scan          list public repos and their guard status
 #   install-public-repo-guard.sh --all           install on every public repo found
@@ -25,6 +29,16 @@ set -uo pipefail
 
 LEAKGUARD_HOOKS="$HOME/.claude/scripts/leak-guard/hooks"
 SEARCH_DIRS=("$HOME/dev" "$HOME/dev/personal")
+
+# META repos are public mirrors of the operator's own config, dotfiles or tooling. They get the
+# identity tier on top of the hard denylist, because nothing in a config mirror needs to say who
+# he is -- that was the instruction this guard was built for. Everything else is a "project"
+# repo: it exists to publish something he made, so it must be able to carry its own GPL
+# copyright, AUTHORS file, site domain and store contact address. Getting this backwards froze
+# six public repos over data their own remotes were already serving.
+#
+# Match is on the repo's directory/slug name, case-insensitive, exact.
+META_REPOS=(quarterdeck claude-dotfiles claude-code-config)
 
 visibility() {
   local repo="$1" url slug
@@ -51,6 +65,27 @@ write_self() {
   } > "$repo/.git/leakguard-self"
 }
 
+repo_mode() {
+  local name lower m
+  name="$(basename "$1")"
+  lower="$(printf '%s' "$name" | tr '[:upper:]' '[:lower:]')"
+  for m in "${META_REPOS[@]}"; do
+    [ "$lower" = "$(printf '%s' "$m" | tr '[:upper:]' '[:lower:]')" ] && { echo meta; return; }
+  done
+  echo project
+}
+
+write_mode() {
+  local repo="$1" mode="$2"
+  {
+    echo "# leak-guard tier for this repo. Written by install-public-repo-guard.sh."
+    echo "#   project = hard denylist only (repo may name its own author, domain, contact)"
+    echo "#   meta    = hard denylist + identity tier (config/dotfiles mirror)"
+    echo "# Absent file is read as \"meta\" -- the stricter tier, on purpose."
+    echo "$mode"
+  } > "$repo/.git/leakguard-mode"
+}
+
 install_one() {
   local repo="$1" vis
   vis="$(visibility "$repo")"
@@ -71,20 +106,31 @@ install_one() {
     ln -sf "$LEAKGUARD_HOOKS/$h" "$repo/.git/hooks/$h"
   done
   write_self "$repo"
-  printf '  OK       %-24s guard installed, self-exempt: %s\n' \
-    "$(basename "$repo")" "$(basename "$repo")"
+  local mode
+  mode="$(repo_mode "$repo")"
+  write_mode "$repo" "$mode"
+  printf '  OK       %-24s guard installed, mode=%s, self-exempt: %s\n' \
+    "$(basename "$repo")" "$mode" "$(basename "$repo")"
 }
 
 scan() {
-  printf '%-26s %-10s %s\n' "REPO" "VISIBILITY" "GUARD"
-  local r vis
+  printf '%-26s %-10s %-10s %s\n' "REPO" "VISIBILITY" "GUARD" "MODE"
+  local r vis mode
   for d in "${SEARCH_DIRS[@]}"; do
    for r in "$d"/*/; do
     [ -d "$r/.git" ] || continue
     vis="$(visibility "$r")"
     [ "$vis" = "PUBLIC" ] || continue
-    printf '%-26s %-10s %s\n' "$(basename "$r")" "$vis" \
-      "$(installed "$r" && echo "installed" || echo "MISSING")"
+    # Report the mode the SCANNER will read, not the one the installer would pick, so a stale
+    # or missing file is visible here instead of surfacing as a mystery block later.
+    if [ -r "$r/.git/leakguard-mode" ]; then
+      mode="$(grep -vE '^[[:space:]]*(#|$)' "$r/.git/leakguard-mode" | head -1 | tr -d '[:space:]')"
+      [ "$mode" = "project" ] || mode="meta"
+    else
+      mode="meta (no file)"
+    fi
+    printf '%-26s %-10s %-10s %s\n' "$(basename "$r")" "$vis" \
+      "$(installed "$r" && echo "installed" || echo "MISSING")" "$mode"
    done
   done
 }
