@@ -123,7 +123,7 @@ case "$verdict" in
   BLOCK*)
     detail=$(printf '%s' "$verdict" | cut -f2)
     names=$(printf '%s' "$verdict" | cut -f3)
-    msg="EVAL GATE: ${detail}. Rode: python scripts/eval/stability_runner.py --agent <name> --runs 5 (para: ${names}). Override deliberado: EVALGATE_OFF=1 git commit ..."
+    msg="EVAL GATE: ${detail}. Como proceder: rode python scripts/eval/stability_runner.py --agent <name> --runs 5 (para: ${names}). Override deliberado: EVALGATE_OFF=1 git commit ..."
     echo "[Hook] $msg" >&2
     python3 -c "
 import json, sys

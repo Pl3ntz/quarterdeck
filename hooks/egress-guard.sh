@@ -76,4 +76,4 @@ fi
 
 detail=$(grep -m2 -E '^\s*\[BLOCK\]|BLOCKED' /tmp/egress-scan.$$ 2>/dev/null | tr '\n' ' ' | cut -c1-200)
 rm -f /tmp/egress-scan.$$
-hook_deny "EGRESS GUARD: o payload desta chamada carrega dado sensivel e sairia da maquina. ${detail}. Remova o dado, ou se for falso-positivo: EGRESS_OFF=1. Este guard usa o mesmo scanner do commit."
+hook_deny "EGRESS GUARD: o payload desta chamada carrega dado sensivel e sairia da maquina. ${detail}. Como proceder: tire o identificador do payload (substitua por um placeholder e descreva o formato em vez de colar o valor) e repita a chamada. Se for falso-positivo: EGRESS_OFF=1. Este guard usa o mesmo scanner do commit."

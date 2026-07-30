@@ -54,14 +54,24 @@ ABS="$TMP"
 TILDE="~/.claude/tmp/guardrail-test"
 
 echo "block-build — heavy build on the host"
-check "npm run build"                    deny  block-build.sh "npm run build"
-check "cargo build --release"            deny  block-build.sh "cargo build --release"
+# Anchored with an explicit cd. Without one the hook resolves $PWD, and since the per-repo
+# opt-out landed the answer legitimately depends on which repo the suite runs from: both of
+# these flipped to allow when the suite was run from inside an opted-in repo. The cwd
+# dependency was in the check, not in the hook.
+check "npm run build"                    deny  block-build.sh "cd $ABS && npm run build"
+check "cargo build --release"            deny  block-build.sh "cd $ABS && cargo build --release"
 check "build behind a tilde cd"          deny  block-build.sh "cd $TILDE && pnpm build"
 check "explicit override"                allow block-build.sh "ALLOW_HOST_BUILD=1 npm run build"
 check "test runner is not a build"       allow block-build.sh "vitest run"
 check "pytest is not a build"            allow block-build.sh "pytest -q"
 check "docker build (sanctioned path)"   allow block-build.sh "docker compose up -d --build"
 check "unrelated command"                allow block-build.sh "git status"
+# Per-repo opt-out (2026-07-30). The global block froze ordinary work in 44 light repos over a
+# rule written for one containerised stack.
+BB="$TMP/bbrepo"; mkdir -p "$BB"; git -C "$BB" init -q .
+check "repo not opted in"                deny  block-build.sh "cd $BB && npm run buil""d"
+: > "$BB/.git/allow-host-build"
+check "repo opted in"                    allow block-build.sh "cd $BB && npm run buil""d"
 
 echo "test-gate — commit without tests"
 check "absolute path, no tests run"      deny  test-gate.sh "cd $ABS && git com""mit -m x" "$EMPTY_TR"
@@ -199,6 +209,52 @@ if [ -f "$CONF" ]; then
     check "  read-only: disk"              allow production-gate.sh "ssh $host 'df -h'"
   done
 fi
+
+# --- every block states the route through it -------------------------------------------
+#
+# Added 2026-07-30, on the Owner's instruction: a gate that only says no costs productivity
+# twice -- once for the stop, once for the guessing that follows. Blocking is the obvious half;
+# the message has to carry the correct procedure or the guardrail just relocates the problem.
+#
+# The contract is a literal "Como proceder:" clause in permissionDecisionReason, which is the
+# model-facing channel. systemMessage does not count: only the user reads it, so a remediation
+# written there never reaches the thing that has to act on it.
+echo "gates — every block states how to proceed"
+
+reason() {
+  # reason <hook> <command> [transcript] -> permissionDecisionReason, or empty if it allowed
+  local hook="$1" cmd="$2" tr="${3:-}"
+  python3 -c "
+import json,sys
+print(json.dumps({'tool_input':{'command':sys.argv[1]},'transcript_path':sys.argv[2]}))" "$cmd" "$tr" \
+  | bash "$HOOKS/$hook" 2>/dev/null \
+  | python3 -c "
+import json,sys
+try: d=json.load(sys.stdin)
+except Exception: raise SystemExit
+h=d.get('hookSpecificOutput',{})
+if h.get('permissionDecision','allow') in ('deny','ask'):
+    print(h.get('permissionDecisionReason',''))"
+}
+
+remediation() {
+  # remediation <label> <hook> <command> [transcript]
+  local label="$1" hook="$2" cmd="$3" tr="${4:-}" r
+  r="$(reason "$hook" "$cmd" "$tr")"
+  if [ -z "$r" ]; then
+    fail=$((fail+1)); printf '  FAIL  %-56s did not block, cannot check the message\n' "$label"
+  elif printf '%s' "$r" | grep -q 'Como proceder:'; then
+    pass=$((pass+1)); [ "$VERBOSE" = "-v" ] && printf '  ok    %-56s %s\n' "$label" "has remediation"
+  else
+    fail=$((fail+1)); printf '  FAIL  %-56s blocks without saying how to proceed\n' "$label"
+  fi
+}
+
+BUILDCMD="npm run buil""d"
+remediation "block-build"       block-build.sh      "cd $ABS && $BUILDCMD"
+remediation "test-gate"         test-gate.sh        "cd $ABS && git com""mit -m x" "$EMPTY_TR"
+remediation "production-gate"   production-gate.sh  "rm -rf ~/something"
+remediation "authorship-guard"  authorship-guard.sh "git com""mit -m 'feat: ship it $ROCKET'"
 
 # --- leak-guard: which identifiers are private, and where -----------------------------
 #

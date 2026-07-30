@@ -58,12 +58,12 @@ report="$REVIEW_HOME/$(basename "$root")/$hash.md"
 count=$(echo "$staged" | wc -l | tr -d ' ')
 
 if [ ! -f "$report" ]; then
-  hook_deny "REVIEW GATE: ${count} arquivo(s) de codigo staged sem review para este diff (${hash}). Rode: bash ~/.claude/scripts/review-staged.sh. Override deliberado: REVIEWGATE_OFF=1 git commit ..."
+  hook_deny "REVIEW GATE: ${count} arquivo(s) de codigo staged sem review para este diff (${hash}). Como proceder: rode bash ~/.claude/scripts/review-staged.sh e commite em seguida. Override deliberado: REVIEWGATE_OFF=1 git commit ..."
 fi
 
 if grep -q '\[CRITICAL\]' "$report" 2>/dev/null; then
   finding=$(grep -m1 -o '\*\*\[CRITICAL\]\*\*[^\n]*' "$report" | cut -c1-160)
-  hook_deny "REVIEW GATE: achado CRITICAL neste diff. ${finding}. Corrija e rode o review de novo, ou: REVIEWGATE_OFF=1 git commit ... (relatorio: ${report})"
+  hook_deny "REVIEW GATE: achado CRITICAL neste diff. ${finding}. Como proceder: corrija o achado e rode o review de novo, ou: REVIEWGATE_OFF=1 git commit ... (relatorio: ${report})"
 fi
 
 summary=$(grep -oE '\[(HIGH|MEDIUM|LOW)\]' "$report" 2>/dev/null | sort | uniq -c | tr -s ' ' | tr '\n' ' ')

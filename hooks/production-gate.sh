@@ -64,7 +64,7 @@ if ! echo "$command" | grep -qiE "$PROD_GREP"; then
   # `rm -rf $HOME/x` did match, which is why the hole went unnoticed. Found by
   # scripts/test-guardrails.sh on 2026-07-25.
   if echo "$command" | grep -qE 'rm\s+-[a-zA-Z]*r[a-zA-Z]*f[a-zA-Z]*\s+(/|~|\$HOME)|git\s+reset\s+--hard|git\s+clean\s+-[a-zA-Z]*f'; then
-    echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"PRODUCTION GATE: Comando local destrutivo detectado. Confirme antes de executar."}}'
+    echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"PRODUCTION GATE: comando local destrutivo detectado -- ele apaga ou reescreve estado que nao volta sozinho. Como proceder: se a intencao for descartar trabalho, prefira a versao reversivel (git stash, ou git branch backup-$(date +%s) antes do reset); se o alvo for arquivo fora do git, copie antes. Se for isso mesmo e voce ja sabe o que perde, confirme."}}'
     exit 0
   fi
   echo '{}'
@@ -83,7 +83,13 @@ aliases_str = os.environ.get('PROD_ALIASES', '')
 PROD_PATTERN = aliases_str if aliases_str else 'prod_server'
 
 def ask(reason):
-    msg = f'PRODUCTION GATE: {reason}. Confirme antes de executar.'
+    # A gate that only says no costs productivity twice: once for the stop, once for the guessing
+    # that follows. Every block states the route through it.
+    msg = (f'PRODUCTION GATE: {reason}. Como proceder: rode antes a versao read-only do mesmo '
+           f'comando (systemctl status, docker ps, git log, SELECT) e confirme que o alvo e o que '
+           f'voce espera; execute UM comando modificador por vez, nunca encadeado com &&; se for '
+           f'um plano inteiro ja revisado, diga "bypass" e ele roda sem parar a cada passo. '
+           f'Confirme para executar este.')
     print(json.dumps({
         'hookSpecificOutput': {
             'hookEventName': 'PreToolUse',

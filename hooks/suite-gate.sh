@@ -48,4 +48,4 @@ print(json.dumps({'systemMessage': 'SUITE GATE ok: ' + sys.argv[1].strip().split
 fi
 
 failures=$(printf '%s' "$out" | grep '^  FAIL' | head -3 | tr -s ' ' | tr '\n' ' ')
-hook_deny "SUITE GATE: a suite de guardrails falha contra os arquivos DESTE commit. ${failures}. Rode: HOOKS=<repo>/hooks bash scripts/test-guardrails.sh -v. Override deliberado: SUITEGATE_OFF=1 git commit ..."
+hook_deny "SUITE GATE: a suite de guardrails falha contra os arquivos DESTE commit. ${failures}. Como proceder: rode HOOKS=<repo>/hooks bash scripts/test-guardrails.sh -v, conserte o que falhar e commite. Override deliberado: SUITEGATE_OFF=1 git commit ..."

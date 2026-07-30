@@ -142,7 +142,7 @@ if [ "$artifact_verdict" = "FRESH" ]; then
 fi
 
 if [ "$artifact_verdict" = "STALE" ]; then
-  echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"TEST GATE: existe resultado de suite no projeto, mas ele e MAIS ANTIGO que os arquivos no stage. A suite rodou antes desta alteracao, entao nao diz nada sobre o que voce esta commitando. Rode de novo (no container, se o projeto for containerizado). Override deliberado: TESTGATE_OFF=1"},"systemMessage":"TEST GATE: resultado de suite mais antigo que o codigo no stage."}'
+  echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"TEST GATE: existe resultado de suite no projeto, mas ele e MAIS ANTIGO que os arquivos no stage. A suite rodou antes desta alteracao, entao nao diz nada sobre o que voce esta commitando. Como proceder: rode a suite de novo (no container, se o projeto for containerizado) e commite em seguida. Override deliberado: TESTGATE_OFF=1"},"systemMessage":"TEST GATE: resultado de suite mais antigo que o codigo no stage."}'
   exit 0
 fi
 
@@ -175,5 +175,5 @@ fi
 #
 # permissionDecisionReason added at the same time: without it the model receives a bare
 # refusal with no explanation and routes around it.
-echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"TEST GATE: nenhuma execucao da suite foi detectada nesta sessao. Rode a suite do projeto antes de commitar (dentro do container, se o projeto for containerizado). Override deliberado: TESTGATE_OFF=1"},"systemMessage":"TEST GATE: nenhuma execucao da suite detectada nesta sessao. Rode a suite do projeto antes de commitar."}'
+echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"TEST GATE: nenhuma execucao da suite foi detectada nesta sessao. Como proceder: rode a suite do projeto (dentro do container, se o projeto for containerizado) e commite em seguida. Override deliberado: TESTGATE_OFF=1"},"systemMessage":"TEST GATE: nenhuma execucao da suite detectada nesta sessao. Rode a suite do projeto antes de commitar."}'
 exit 0

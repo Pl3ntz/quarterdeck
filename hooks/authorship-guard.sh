@@ -66,10 +66,10 @@ PY
 
 case "$verdict" in
   ATTRIB*)
-    hook_deny "AUTHORSHIP GUARD: o texto credita a ferramenta ($(printf '%s' "$verdict" | cut -f2)). Commits e PRs aqui nao levam atribuicao de IA. Remova a linha. Override: AUTHORSHIP_OFF=1"
+    hook_deny "AUTHORSHIP GUARD: o texto credita a ferramenta ($(printf '%s' "$verdict" | cut -f2)). Commits e PRs aqui nao levam atribuicao de IA. Como proceder: remova a linha de credito e refaca o comando (se ja commitou: git commit --amend). Override: AUTHORSHIP_OFF=1"
     ;;
   EMOJI*)
-    hook_deny "AUTHORSHIP GUARD: emoji no texto do commit/PR ($(printf '%s' "$verdict" | cut -f2)). A convencao aqui e prosa sem emoji. Override: AUTHORSHIP_OFF=1"
+    hook_deny "AUTHORSHIP GUARD: emoji no texto do commit/PR ($(printf '%s' "$verdict" | cut -f2)). A convencao aqui e prosa sem emoji. Como proceder: reescreva a mensagem sem o emoji e refaca o comando (se ja commitou: git commit --amend). Override: AUTHORSHIP_OFF=1"
     ;;
 esac
 

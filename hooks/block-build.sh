@@ -34,8 +34,23 @@ echo "$COMMAND" | grep -qE "$BUILD_PATTERN" || hook_allow
 if [[ "$(uname)" == "Darwin" ]]; then
   # Host. Allow a deliberate override, since some repos genuinely have no container.
   hook_override_requested "$COMMAND" "ALLOW_HOST_BUILD" && hook_allow
-  hook_deny "BLOQUEADO: build pesado no host (Mac). A regra existe porque uma execucao local ja quase travou a maquina. Rode no container/runner do projeto, ou defira ao CI se o projeto tiver pipeline. Override deliberado: ALLOW_HOST_BUILD=1 <comando>."
+
+  # Per-repo opt-out. The rule this hook enforces says "NUNCA build PESADO no host", and the
+  # incident behind it was a containerised multi-service stack. The pattern above cannot tell
+  # that from a two-second bundle of a browser extension, so it blocked both and froze ordinary
+  # work in every small project. The marker lives in .git/, not in the tree: several of these
+  # repos are public and the policy is nobody's business but this machine's.
+  #   allow:  host-build-policy.sh --allow <repo>
+  #   revert: host-build-policy.sh --block <repo>
+  WORKDIR="$(hook_work_dir "$COMMAND")"
+  GITDIR="$(git -C "$WORKDIR" rev-parse --git-dir 2>/dev/null)"
+  if [ -n "$GITDIR" ]; then
+    case "$GITDIR" in /*) ;; *) GITDIR="$WORKDIR/$GITDIR" ;; esac
+    [ -f "$GITDIR/allow-host-build" ] && hook_allow
+  fi
+
+  hook_deny "BLOQUEADO: build pesado no host (Mac). A regra existe porque uma execucao local ja quase travou a maquina. Como proceder: se o projeto for leve (bundle de front, extensao, CLI), libere-o de vez com bash ~/.claude/scripts/host-build-policy.sh --allow . e repita o comando; se for stack containerizada, rode dentro do container; se tiver pipeline, faca push e deixe a CI construir. So desta vez: ALLOW_HOST_BUILD=1 <comando>."
 fi
 
 # Server: no override. Builds here compete with running services.
-hook_deny "BLOQUEADO: comandos de build nao devem ser executados no servidor. Use a pipeline de CI/CD."
+hook_deny "BLOQUEADO: build no servidor compete com os servicos que estao servindo trafego -- foi assim que veio o OOM-kill. Como proceder: faca push da branch e deixe a pipeline construir (gh run watch para acompanhar); se precisar do artefato agora, construa na sua maquina e envie o resultado, nao o build."
