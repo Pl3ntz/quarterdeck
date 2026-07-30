@@ -72,6 +72,11 @@ BB="$TMP/bbrepo"; mkdir -p "$BB"; git -C "$BB" init -q .
 check "repo not opted in"                deny  block-build.sh "cd $BB && npm run buil""d"
 : > "$BB/.git/allow-host-build"
 check "repo opted in"                    allow block-build.sh "cd $BB && npm run buil""d"
+# A cd-chain must resolve to the LAST cd, where the command actually runs. Reading the first one
+# was wrong in both directions and defeated the whole per-repo scoping for any multi-hop command.
+BB2="$TMP/bbrepo2"; mkdir -p "$BB2"; git -C "$BB2" init -q .
+check "chain ends in a blocked repo"     deny  block-build.sh "cd $BB && cd $BB2 && npm run buil""d"
+check "chain ends in an opted-in repo"   allow block-build.sh "cd $ABS && cd $BB && npm run buil""d"
 
 echo "test-gate — commit without tests"
 check "absolute path, no tests run"      deny  test-gate.sh "cd $ABS && git com""mit -m x" "$EMPTY_TR"
@@ -331,6 +336,85 @@ if [ -x "$LG_SCAN" ] && [ -r "$DENY_L" ] && [ -r "$PORTF_L" ]; then
   fi
 else
   echo "leak-guard — SKIPPED (scanner or lists not present on this machine)"
+fi
+
+# --- who a control applies to, and how hard -------------------------------------------
+#
+# Added 2026-07-30. Every incident that day was in this layer -- the one that decides WHETHER a
+# control applies to a given repo -- and a grep for mode.sh / git-wrapper / leakguard_enabled
+# across this file returned zero. The 74 checks above test what accepts JSON on stdin; nothing
+# tested enrolment, which is where the damage was.
+#
+# Two content classes, because they must be treated differently:
+#   CRED  a credential. Never a false positive. Must block wherever the guard runs at all.
+#   NAME  a private identifier. False-positive-prone by design (a repo names its own project),
+#         so it is advisory in a project repo.
+# Collapsing the two is exactly the regression this section exists to catch: for a few hours the
+# advisory downgrade swallowed the credential layer along with the noisy one.
+# Overridable so these checks can be pointed at a deliberately broken copy. A check nobody has
+# watched fail is a check that might not be able to fail -- three in this file could not.
+LGH="${LEAKGUARD_HOOK:-$HOME/.claude/scripts/leak-guard/hooks/pre-commit}"
+LGC="${LEAKGUARD_SCAN:-$HOME/.claude/scripts/leak-guard/scan-content.sh}"
+
+if [ -r "$LGH" ] && [ -x "$LGC" ]; then
+  echo "leak-guard — enrolment: who the control applies to"
+
+  # Split literals: this file is mirrored publicly and scanned by the very guard it tests.
+  CRED="aws_key = AKIA""IOSFODNN7EXAMPLE"
+  NAME_SRC="$(grep -vE '^[[:space:]]*(#|$)' "$HOME/.claude/local/quarterdeck-denylist.txt" \
+              | head -1 | sed 's/\\b//g; s/\\//g')"
+
+  lg_repo() {
+    # lg_repo <name> <mode|private> <content> -> prints the pre-commit exit code
+    local d="$TMP/lg-$1"
+    mkdir -p "$d"; git -C "$d" init -q . 2>/dev/null
+    [ "$2" = "private" ] || echo "$2" > "$d/.git/leakguard-mode"
+    printf '%s\n' "$3" > "$d/file.txt"
+    git -C "$d" add file.txt 2>/dev/null
+    ( cd "$d" && bash "$LGH" >/dev/null 2>&1; echo $? )
+  }
+
+  lg_check() {
+    # lg_check <label> <expected 0|1> <name> <mode> <content>
+    local label="$1" expected="$2" got
+    got="$(lg_repo "$3" "$4" "$5")"
+    if [ "$got" = "$expected" ]; then
+      pass=$((pass+1)); [ "$VERBOSE" = "-v" ] && printf '  ok    %-56s exit=%s\n' "$label" "$got"
+    else
+      fail=$((fail+1)); printf '  FAIL  %-56s expected exit=%s got=%s\n' "$label" "$expected" "$got"
+    fi
+  }
+
+  lg_check "private repo is not scanned at all"   0 priv-c private "$CRED"
+  lg_check "project repo still blocks a credential" 1 proj-c project "$CRED"
+  lg_check "project repo only advises on a name"  0 proj-n project "$NAME_SRC"
+  lg_check "meta repo blocks a name"              1 meta-n meta    "$NAME_SRC"
+
+  echo "leak-guard — severity is not collapsed"
+  # scan-content must distinguish the two, or the advisory downgrade cannot be selective.
+  printf '%s\n' "$CRED" | bash "$LGC" probe >/dev/null 2>&1; sc=$?
+  if [ "$sc" = "1" ]; then pass=$((pass+1)); [ "$VERBOSE" = "-v" ] && printf '  ok    %-56s exit=1\n' "credential is the hard tier"
+  else fail=$((fail+1)); printf '  FAIL  %-56s expected exit=1 got=%s\n' "credential is the hard tier" "$sc"; fi
+  printf '%s\n' "$NAME_SRC" | bash "$LGC" probe >/dev/null 2>&1; sn=$?
+  if [ "$sn" = "2" ]; then pass=$((pass+1)); [ "$VERBOSE" = "-v" ] && printf '  ok    %-56s exit=2\n' "private name is the soft tier"
+  else fail=$((fail+1)); printf '  FAIL  %-56s expected exit=2 got=%s\n' "private name is the soft tier" "$sn"; fi
+
+  echo "leak-guard — the policy layer itself fails closed"
+  # A missing mode.sh leaves leakguard_enabled undefined. Read as "skip", one deleted and
+  # unversioned file disarms the guard in every repo at once.
+  BROKEN="$TMP/broken-pre-commit"
+  sed 's|\. "\$HOME/.claude/scripts/leak-guard/mode.sh"|. "/nonexistent/mode.sh"|' "$LGH" > "$BROKEN"
+  d="$TMP/lg-failclosed"; mkdir -p "$d"; git -C "$d" init -q . 2>/dev/null
+  echo project > "$d/.git/leakguard-mode"
+  printf '%s\n' "$NAME_SRC" > "$d/file.txt"; git -C "$d" add file.txt 2>/dev/null
+  fc="$( cd "$d" && bash "$BROKEN" >/dev/null 2>&1; echo $? )"
+  if [ "$fc" != "0" ]; then
+    pass=$((pass+1)); [ "$VERBOSE" = "-v" ] && printf '  ok    %-56s exit=%s\n' "mode.sh missing blocks" "$fc"
+  else
+    fail=$((fail+1)); printf '  FAIL  %-56s expected non-zero got=0 (fail-OPEN)\n' "mode.sh missing blocks"
+  fi
+else
+  echo "leak-guard — enrolment: SKIPPED (leak-guard not installed on this machine)"
 fi
 
 rm -rf "$TMP"

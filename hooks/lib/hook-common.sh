@@ -90,11 +90,17 @@ hook_expand_path() {
 }
 
 # hook_work_dir <command>
-# Best-effort working directory for a command, honouring a leading `cd <path> &&`.
+# Best-effort working directory for a command, honouring `cd <path> &&`.
 # Falls back to $PWD. Always returns an expanded, absolute-ish path.
+#
+# LAST cd, not the first: in `cd A && cd B && cmd` the command runs in B. Reading the first one
+# was wrong in both directions once block-build.sh started resolving a per-repo opt-out marker
+# through here -- `cd opted-in && cd blocked && npm run build` allowed a heavy build in the repo
+# that was still blocked, and `cd /tmp && cd opted-in && ...` denied one in the repo that was
+# allowed. Both reproduced 2026-07-30. Still a heuristic: a `cd` inside a quoted string fools it.
 hook_work_dir() {
   local cmd="$1" dir
-  dir=$(printf '%s' "$cmd" | grep -oE 'cd[[:space:]]+[^&;]+' | head -1 | sed -E 's/^cd[[:space:]]+//' | xargs)
+  dir=$(printf '%s' "$cmd" | grep -oE 'cd[[:space:]]+[^&;]+' | tail -1 | sed -E 's/^cd[[:space:]]+//' | xargs)
   [ -z "$dir" ] && dir="$PWD"
   hook_expand_path "$dir"
 }

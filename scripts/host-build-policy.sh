@@ -28,10 +28,14 @@ containerised() {
   # Advisory only. Searches a few levels because the repo this rule was written for keeps its
   # compose under infra/, and a root-only check reported it as NOT containerised -- the one
   # answer that had to be right.
-  local r="$1"
-  find "$r" -maxdepth 3 \( -name node_modules -o -name .git \) -prune -o \
+  local r="$1" hit
+  # Captured, not piped into a test: `producer | head -1 | grep -q .` reports SIGPIPE (141)
+  # through `pipefail` when the producer is still writing as head exits, which reads as "no
+  # match" even when there was one.
+  hit="$(find "$r" -maxdepth 3 \( -name node_modules -o -name .git \) -prune -o \
        -type f \( -name 'docker-compose*.y*ml' -o -name 'compose.y*ml' \) -print 2>/dev/null \
-    | head -1 | grep -q .
+    | head -1)"
+  [ -n "$hit" ]
 }
 
 # Repos that keep the block regardless. A compose file is a weak proxy for "heavy" -- plenty of
@@ -40,7 +44,18 @@ containerised() {
 BLOCKCONF="${HOST_BUILD_BLOCKCONF:-$HOME/.claude/local/host-build-block.conf}"
 kept_blocked() {
   [ -r "$BLOCKCONF" ] || return 1
-  grep -vE '^[[:space:]]*(#|$)' "$BLOCKCONF" | tr -d ' \t' | grep -qxF "$1"
+  # A plain loop, for two reasons. The previous pipeline could report SIGPIPE through pipefail
+  # on a large conf and answer "not listed" for an entry that IS listed -- and this one gates a
+  # real decision, unlike containerised(). It also stripped whitespace from the file's lines but
+  # not from the name being looked up, so a directory name with a space could never match.
+  local want line
+  want="$(printf '%s' "$1" | tr -d ' \t')"
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="$(printf '%s' "$line" | tr -d ' \t')"
+    case "$line" in ''|'#'*) continue ;; esac
+    [ "$line" = "$want" ] && return 0
+  done < "$BLOCKCONF"
+  return 1
 }
 
 status() {
