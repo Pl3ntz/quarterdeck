@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# leak-guard pre-commit — scans the STAGED BLOB of every changed file (real bytes,
+# binary/gitattributes-proof) plus path names, via scan-staged.sh. Fail-closed.
+# Chains to a prior repo hook preserved by the installer.
+set -uo pipefail
+. "$HOME/.claude/scripts/leak-guard/mode.sh"
+# Fail-closed on the policy layer itself. Sourcing a missing mode.sh leaves leakguard_enabled
+# undefined; `leakguard_enabled || exit 0` then reads command-not-found as "skip" and the hook
+# exits clean having scanned nothing. Every other missing component here blocks; this one has to
+# as well, or deleting one unversioned file silently disarms the guard everywhere.
+if ! command -v leakguard_enabled >/dev/null 2>&1; then
+  echo "leak-guard: mode.sh ausente ou ilegivel — BLOQUEANDO (fail-closed)." >&2
+  echo "Como proceder: restaure ~/.claude/scripts/leak-guard/mode.sh e repita o comando." >&2
+  exit 1
+fi
+# No .git/leakguard-mode means the installer never classified this repo, i.e. it is not
+# one of the public ones. Private repos carry their own identifiers legitimately.
+leakguard_enabled || exit 0
+
+GUARD="$HOME/.claude/scripts/leak-guard"
+STAGED="$GUARD/scan-staged.sh"
+if [[ ! -x "$STAGED" ]]; then
+  echo "leak-guard: scan-staged.sh missing/not executable — BLOCKING (fail-closed)" >&2
+  exit 1
+fi
+
+rc=0
+s=0
+"$STAGED" || s=$?
+# 1 (credential/PII) must never be masked by a later 2 (denylist only).
+if [ "$s" -eq 1 ]; then rc=1; elif [ "$s" -eq 2 ] && [ "$rc" -ne 1 ]; then rc=2; fi
+
+if [[ $rc -eq 2 ]] && ! leakguard_blocking; then
+  leakguard_advisory_notice "conteudo staged"
+  rc=0
+fi
+
+if [[ $rc -ne 0 ]]; then
+  echo "" >&2
+  echo "──────────────────────────────────────────────────────────────────────" >&2
+  echo "COMMIT BLOCKED by leak-guard — sensitive data in staged content (above)." >&2
+  echo "Fix the offending lines. If it is a genuine false-positive, adjust the" >&2
+  echo "denylist/allowlist. The git wrapper and pre-push re-scan, so --no-verify" >&2
+  echo "will be caught anyway." >&2
+  echo "──────────────────────────────────────────────────────────────────────" >&2
+fi
+
+# Normalise the severity code to a plain 1 before leaving. Internally 2 means "denylist
+# only", which is what makes the advisory downgrade selective; outside, 2 is the shell
+# convention for misuse, and a chained hook or CI reading it that way would be misled.
+[ "$rc" -ne 0 ] && rc=1
+
+HOOKS_DIR="$(git rev-parse --git-path hooks 2>/dev/null)"
+ORIG="$HOOKS_DIR/pre-commit.leakguard-orig"
+if [[ -n "$HOOKS_DIR" && -x "$ORIG" ]]; then
+  "$ORIG" "$@" || rc=1
+fi
+exit $rc

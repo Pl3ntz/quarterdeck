@@ -17,7 +17,7 @@ set -uo pipefail
 # than the ones installed. Testing the installed copy would pass while shipping a broken one.
 HOOKS="${HOOKS:-$HOME/.claude/hooks}"
 VERBOSE="${1:-}"
-pass=0; fail=0
+pass=0; fail=0; skipped=0
 
 decide() {
   # decide <hook> <command> [transcript_path]
@@ -77,6 +77,13 @@ check "repo opted in"                    allow block-build.sh "cd $BB && npm run
 BB2="$TMP/bbrepo2"; mkdir -p "$BB2"; git -C "$BB2" init -q .
 check "chain ends in a blocked repo"     deny  block-build.sh "cd $BB && cd $BB2 && npm run buil""d"
 check "chain ends in an opted-in repo"   allow block-build.sh "cd $ABS && cd $BB && npm run buil""d"
+# Naming a build command in a commit message or a PR body is prose, not an invocation. The gate
+# blocked its own commit over this. The exemption is narrow: quoted spans are stripped for git
+# and gh only, so a genuine `bash -c "..."` invocation still matches.
+check "build named in a commit message"  allow block-build.sh "git com""mit -m 'perf: speed up npm run buil""d'"
+check "build named in a PR body"         allow block-build.sh "gh pr create --body \"fixes npm run buil""d\""
+check "real build next to a commit"      deny  block-build.sh "git com""mit -m ok && cd $ABS && npm run buil""d"
+check "bash -c build is still a build"   deny  block-build.sh "bash -c \"npm run buil""d\""
 
 echo "test-gate — commit without tests"
 check "absolute path, no tests run"      deny  test-gate.sh "cd $ABS && git com""mit -m x" "$EMPTY_TR"
@@ -335,6 +342,7 @@ if [ -x "$LG_SCAN" ] && [ -r "$DENY_L" ] && [ -r "$PORTF_L" ]; then
     pass=$((pass+1)); [ "$VERBOSE" = "-v" ] && printf '  ok    %-56s %s\n' "meta repo with the identity list missing" "block"
   fi
 else
+  skipped=$((skipped+1))
   echo "leak-guard — SKIPPED (scanner or lists not present on this machine)"
 fi
 
@@ -399,6 +407,38 @@ if [ -r "$LGH" ] && [ -x "$LGC" ]; then
   if [ "$sn" = "2" ]; then pass=$((pass+1)); [ "$VERBOSE" = "-v" ] && printf '  ok    %-56s exit=2\n' "private name is the soft tier"
   else fail=$((fail+1)); printf '  FAIL  %-56s expected exit=2 got=%s\n' "private name is the soft tier" "$sn"; fi
 
+  echo "leak-guard — a worktree inherits its repo's policy"
+  # --git-dir inside a linked worktree points at <main>/.git/worktrees/<name>, which holds no
+  # policy file, so the worktree read "skip" while its own main checkout read "meta". The rules
+  # mandate worktrees for parallel write-agents, so this was agent commits running unguarded.
+  WT="$TMP/wt-main"; mkdir -p "$WT"
+  git -C "$WT" init -q . 2>/dev/null
+  git -C "$WT" config user.email t@t; git -C "$WT" config user.name t
+  echo x > "$WT/a.txt"; git -C "$WT" add a.txt 2>/dev/null
+  git -C "$WT" commit -q -m init 2>/dev/null
+  echo meta > "$WT/.git/leakguard-mode"
+  git -C "$WT" worktree add -q "$TMP/wt-linked" -b wtb 2>/dev/null
+  if [ -d "$TMP/wt-linked" ]; then
+    wtm="$( cd "$TMP/wt-linked" && QD_MODE= bash -c '. "$HOME/.claude/scripts/leak-guard/mode.sh"; leakguard_mode' )"
+    if [ "$wtm" = "meta" ]; then
+      pass=$((pass+1)); [ "$VERBOSE" = "-v" ] && printf '  ok    %-56s %s\n' "worktree reads the main checkout's mode" "$wtm"
+    else
+      fail=$((fail+1)); printf '  FAIL  %-56s expected=meta got=%s\n' "worktree reads the main checkout's mode" "$wtm"
+    fi
+  fi
+
+  echo "leak-guard — an emptied list is not an empty threat"
+  # Deleting a pattern list already failed closed; emptying one did not, and silently disarmed
+  # every tier. The two have to behave the same way.
+  : > "$TMP/empty-deny.txt"
+  printf '+ anything\n' | QD_DENYLIST="$TMP/empty-deny.txt" QD_MODE=project \
+    bash "$HOME/.claude/scripts/quarterdeck-guard/leak-scan.sh" >/dev/null 2>&1; el=$?
+  if [ "$el" != "0" ]; then
+    pass=$((pass+1)); [ "$VERBOSE" = "-v" ] && printf '  ok    %-56s exit=%s\n' "empty denylist blocks" "$el"
+  else
+    fail=$((fail+1)); printf '  FAIL  %-56s expected non-zero got=0 (fail-OPEN)\n' "empty denylist blocks"
+  fi
+
   echo "leak-guard — the policy layer itself fails closed"
   # A missing mode.sh leaves leakguard_enabled undefined. Read as "skip", one deleted and
   # unversioned file disarms the guard in every repo at once.
@@ -414,15 +454,20 @@ if [ -r "$LGH" ] && [ -x "$LGC" ]; then
     fail=$((fail+1)); printf '  FAIL  %-56s expected non-zero got=0 (fail-OPEN)\n' "mode.sh missing blocks"
   fi
 else
+  skipped=$((skipped+1))
   echo "leak-guard — enrolment: SKIPPED (leak-guard not installed on this machine)"
 fi
 
 rm -rf "$TMP"
 
 echo
+# A skipped section reads as a passing one unless the count says otherwise: the only signal that
+# a whole block had vanished was the total quietly dropping, which nobody watches.
+SKIPNOTE=""
+[ "$skipped" -gt 0 ] && SKIPNOTE=", ${skipped} SECTION(S) SKIPPED"
 if [ "$fail" -eq 0 ]; then
-  echo "guardrails: ${pass} passed"
+  echo "guardrails: ${pass} passed${SKIPNOTE}"
   exit 0
 fi
-echo "guardrails: ${pass} passed, ${fail} FAILED"
+echo "guardrails: ${pass} passed, ${fail} FAILED${SKIPNOTE}"
 exit 1

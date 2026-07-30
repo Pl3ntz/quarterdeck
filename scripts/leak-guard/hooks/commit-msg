@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# leak-guard commit-msg — scans the commit MESSAGE for sensitive data (a secret
+# pasted into -m / the editor leaks on push in the commit subject/body). $1 is the
+# path to the message file. Fail-closed. Chains to a prior repo hook.
+set -uo pipefail
+. "$HOME/.claude/scripts/leak-guard/mode.sh"
+# Fail-closed on the policy layer itself. Sourcing a missing mode.sh leaves leakguard_enabled
+# undefined; `leakguard_enabled || exit 0` then reads command-not-found as "skip" and the hook
+# exits clean having scanned nothing. Every other missing component here blocks; this one has to
+# as well, or deleting one unversioned file silently disarms the guard everywhere.
+if ! command -v leakguard_enabled >/dev/null 2>&1; then
+  echo "leak-guard: mode.sh ausente ou ilegivel — BLOQUEANDO (fail-closed)." >&2
+  echo "Como proceder: restaure ~/.claude/scripts/leak-guard/mode.sh e repita o comando." >&2
+  exit 1
+fi
+# No .git/leakguard-mode means the installer never classified this repo, i.e. it is not
+# one of the public ones. Private repos carry their own identifiers legitimately.
+leakguard_enabled || exit 0
+
+GUARD="$HOME/.claude/scripts/leak-guard"
+SCAN="$GUARD/scan-content.sh"
+if [[ ! -x "$SCAN" ]]; then
+  echo "leak-guard: scanner missing — BLOCKING (fail-closed)" >&2
+  exit 1
+fi
+
+rc=0
+if [[ -r "${1:-}" ]]; then
+  s=0
+  "$SCAN" "commit-message" < "$1" || s=$?
+  # 1 (credential/PII) must never be masked by a later 2 (denylist only).
+  if [ "$s" -eq 1 ]; then rc=1; elif [ "$s" -eq 2 ] && [ "$rc" -ne 1 ]; then rc=2; fi
+fi
+
+if [[ $rc -eq 2 ]] && ! leakguard_blocking; then
+  leakguard_advisory_notice "texto do commit"
+  rc=0
+fi
+
+if [[ $rc -ne 0 ]]; then
+  echo "" >&2
+  echo "COMMIT BLOCKED by leak-guard — sensitive data in the commit MESSAGE (above)." >&2
+fi
+
+# Normalise the severity code to a plain 1 before leaving. Internally 2 means "denylist
+# only", which is what makes the advisory downgrade selective; outside, 2 is the shell
+# convention for misuse, and a chained hook or CI reading it that way would be misled.
+[ "$rc" -ne 0 ] && rc=1
+
+HOOKS_DIR="$(git rev-parse --git-path hooks 2>/dev/null)"
+ORIG="$HOOKS_DIR/commit-msg.leakguard-orig"
+if [[ -n "$HOOKS_DIR" && -x "$ORIG" ]]; then
+  "$ORIG" "$@" || rc=1
+fi
+exit $rc

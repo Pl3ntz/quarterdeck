@@ -29,7 +29,27 @@ COMMAND=$(hook_command "$INPUT")
 
 BUILD_PATTERN='(npm run build|npx .* ?build|pnpm (run )?build|yarn (run )?build|bun (run )?build|vite build|next build|nuxt build|remix build|webpack|rollup -|esbuild |tsc --build|tsc -b |cargo build|go build)'
 
-echo "$COMMAND" | grep -qE "$BUILD_PATTERN" || hook_allow
+# `git commit -m "fix: speed up npm run build"` is prose about a build, not a build. So is a PR
+# body. For git/gh only, the quoted spans are stripped before matching -- a commit message is the
+# one place where naming a command is the normal thing to do, and blocking it stops work while
+# preventing nothing. Deliberately narrow: `bash -c "npm run build"` is a real invocation and
+# still matches, because the strip does not apply to it.
+SCANNABLE="$COMMAND"
+case "$COMMAND" in
+  git\ *|gh\ *|*\ git\ *|*\ gh\ *)
+    # Single-quoted outer string, \x27 for the inner apostrophe: a literal ' would end it, and a
+    # double quote or backtick here would be interpreted by the shell before python ever sees it.
+    SCANNABLE="$(CMD="$COMMAND" python3 -c '
+import os, re
+s = os.environ["CMD"]
+s = re.sub(r"\x27[^\x27]*\x27", " ", s)
+s = re.sub(r"\"[^\"]*\"", " ", s)
+print(s)
+' 2>/dev/null)" || SCANNABLE="$COMMAND"
+    ;;
+esac
+
+echo "$SCANNABLE" | grep -qE "$BUILD_PATTERN" || hook_allow
 
 if [[ "$(uname)" == "Darwin" ]]; then
   # Host. Allow a deliberate override, since some repos genuinely have no container.

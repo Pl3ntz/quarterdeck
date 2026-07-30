@@ -17,9 +17,14 @@ PORTF="${QD_PORTFOLIOLIST:-$HOME/.claude/local/quarterdeck-denylist-portfolio.tx
 # project's identifiers appearing in a DIFFERENT public repo. QD_SELF is a regex alternation
 # of the terms this particular repo may use, written by the installer into .git/leakguard-self
 # and exported by the hook. It exempts nothing else.
+# --git-common-dir, not --git-dir: inside a linked worktree --git-dir points at
+# <main>/.git/worktrees/<name>, which holds neither of these files, so a worktree silently lost
+# both its self-exemption and its mode.
+qd_common_dir() { git rev-parse --path-format=absolute --git-common-dir 2>/dev/null; }
 SELF_FILE="${QD_SELF_FILE:-}"
-if [[ -z "$SELF_FILE" ]] && git rev-parse --git-dir >/dev/null 2>&1; then
-  SELF_FILE="$(git rev-parse --git-dir 2>/dev/null)/leakguard-self"
+if [[ -z "$SELF_FILE" ]]; then
+  _gd="$(qd_common_dir)"
+  [[ -n "$_gd" ]] && SELF_FILE="$_gd/leakguard-self"
 fi
 QD_SELF=""
 [[ -n "$SELF_FILE" && -r "$SELF_FILE" ]] && QD_SELF="$(grep -vE '^[[:space:]]*(#|$)' "$SELF_FILE" 2>/dev/null | paste -sd '|' -)"
@@ -39,8 +44,9 @@ QD_SELF=""
 # tests.
 if [[ -z "${QD_MODE:-}" ]]; then
   MODE_FILE="${QD_MODE_FILE:-}"
-  if [[ -z "$MODE_FILE" ]] && git rev-parse --git-dir >/dev/null 2>&1; then
-    MODE_FILE="$(git rev-parse --git-dir 2>/dev/null)/leakguard-mode"
+  if [[ -z "$MODE_FILE" ]]; then
+    _gd="$(qd_common_dir)"
+    [[ -n "$_gd" ]] && MODE_FILE="$_gd/leakguard-mode"
   fi
   QD_MODE="meta"
   [[ -n "$MODE_FILE" && -r "$MODE_FILE" ]] && \
@@ -64,6 +70,14 @@ build_alt() { grep -vE '^[[:space:]]*(#|$)' "$1" 2>/dev/null | paste -sd '|' -; 
 rc=0
 
 deny_alt="$(build_alt "$DENY")"
+if [[ -z "$deny_alt" ]]; then
+  echo "‼️  quarterdeck-guard: a denylist existe mas nao tem nenhum padrao:" >&2
+  echo "    $DENY" >&2
+  echo "    Uma lista vazia desarmaria o guard inteiro em silencio, entao isto BLOQUEIA" >&2
+  echo "    (fail-closed), igual ao arquivo ausente." >&2
+  echo "    Como proceder: restaure a lista, ou aponte QD_DENYLIST para a correta." >&2
+  exit 1
+fi
 
 # In meta mode the identity tier is appended to the SAME alternation, so it goes through the
 # same self-exemption pass and reports under the same BLOCKED heading. Fail-closed: a meta repo
